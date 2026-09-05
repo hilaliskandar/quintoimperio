@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, informação, serviços portuários, expedições, permanências, eventos marítimos ou viagem na camada gráfica.
+A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, informação, acesso institucional, serviços portuários, expedições, permanências, eventos marítimos ou viagem na camada gráfica.
 
-A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, canais de informação, mercado, armada ativa quando houver, cronologia, escala histórica ativa, rotas de saída e o último evento `SIM` de viagem quando houver.
+A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, estado de acesso, serviços portuários, canais de informação, mercado, armada ativa quando houver, cronologia, escala histórica ativa, rotas de saída e o último evento `SIM` de viagem quando houver.
 
 ## Dois estados explicitamente distintos
 
@@ -22,7 +22,21 @@ Quando uma rota/data possui observação histórica exata e a sessão está em `
 
 ### TECHNICAL
 
-É um cenário de integração que começa em Calecute em 22 de maio de 1498. Permite testar `mercado -> compra -> viagem -> chegada -> venda`, os canais informativos e a camada de risco em uma sessão contrafactual. Um banner informa que não representa o estado histórico inicial do personagem. Esse cenário usa cronologia `COUNTERFACTUAL`.
+É um cenário de integração que começa em Calecute em 22 de maio de 1498. O override técnico concede conhecimento do mercado, rota Calecute–Aden e acesso inicial a Calecute para permitir a compra. Após a viagem, Aden volta a obedecer ao regime normal `FOREIGN_NEGOTIATED`, de modo que a sequência testável passa a ser `mercado -> compra -> viagem -> chegada -> negociação -> venda`.
+
+O banner informa que esse cenário não representa o estado histórico inicial do personagem. Ele usa cronologia `COUNTERFACTUAL`.
+
+## Acesso institucional
+
+O painel consulta `GameSessionModel.access_view()` e mostra o estado e o `access_regime` do nó atual.
+
+Quando `AccessView.negotiable=True`, aparece `Negociar acesso (Nd)`. A ação é delegada a `GameSessionModel.negotiate_access()` e a interface apenas mostra o resultado. Ela não calcula probabilidade de sucesso, não cobra taxa, não atribui valor a presente e não inventa diálogo.
+
+O botão genérico existe somente para o gate `FOREIGN_NEGOTIATED`. `ROYAL_MONOPOLY`, `ROYAL_MONOPOLY_LEASED` e `MILITARY_POST` não recebem botão de abertura comercial comum. `ANCHORAGE_CONTACT` e `NAVIGATION_ONLY` permanecem não comerciais.
+
+A interface separa conhecimento e autorização. Quando o mercado é conhecido operacionalmente mas o acesso ainda está bloqueado, as cotações da simulação podem ser exibidas com `actionable=False`, e os botões `Comprar`/`Vender` permanecem desabilitados. Isso permite representar a situação “sei o que circula aqui, mas ainda não posso operar”.
+
+Mercadorias marcadas `restricted=TRUE` aparecem com `*` quando conhecidas. Mesmo depois de acesso portuário, a tentativa de operação é rejeitada pelo domínio; a interface não possui atalho para contornar a restrição específica.
 
 ## Informação
 
@@ -38,9 +52,7 @@ A interface **não mostra o alvo antes do clique**. Portanto não usa a própria
 
 `RUMOR` pode ocorrer em portos e ancoradouros, mas não em `NAVIGATION_POINT` puro. Isso não transforma o ancoradouro em mercado. `MERCHANT_CONTACT` depende de `broker_availability`; `PILOT_CONSULTATION` depende de piloto historicamente registrado e competência específica de rota.
 
-Cada interação custa um dia na v0.1 e usa o mesmo calendário de viagem, serviços e permanência. Em uma escala guiada, portanto, pode reduzir o tempo restante até a partida documentada. Nenhum canal concede provisões, condição, carga ou capital.
-
-Os limites de conhecimento são definidos no domínio e em `simulation/information_rules.csv`: a interface não pode elevar rumor/contato/consulta a conhecimento de rota `OPERATIONAL`.
+Cada interação custa um dia na v0.1 e usa o mesmo calendário de viagem, serviços, negociação e permanência. Nenhum canal concede provisões, condição, carga ou capital.
 
 ## Mapa
 
@@ -54,9 +66,9 @@ A costa real permanece na ferramenta cartográfica de referência separada em `t
 
 O painel consulta `GameSessionModel.service_quote()` para provisões e reparo e mantém `UNKNOWN`, `NONE`, `LOW`, `MEDIUM` e `HIGH` distintos.
 
-`Reabastecer +30` solicita 30 dias-equivalentes e `Reparar +20` solicita 20 pontos abstratos de condição. Esses números são parâmetros de simulação. Em uma escala guiada, o tempo dessas ações conta contra o mesmo intervalo até a partida documentada.
+`Reabastecer +30` solicita 30 dias-equivalentes e `Reparar +20` solicita 20 pontos abstratos de condição. Esses números são parâmetros de simulação. Em uma escala guiada, o tempo dessas ações — assim como informação e negociação — conta contra o mesmo intervalo até a partida documentada.
 
-O mercado usa `GameSessionModel.market_view()`. Se `market_knowledge < OPERATIONAL`, nenhuma mercadoria acionável é mostrada. Nós logísticos com `market_scale=NONE` não recebem mercadorias apenas por terem sido escalas da expedição.
+O mercado usa `GameSessionModel.market_view()`. Se `market_knowledge < OPERATIONAL`, a cesta permanece oculta. Se o conhecimento é operacional mas o acesso não está concedido, a cesta pode ser lida e a operação fica bloqueada. Nós logísticos com `market_scale=NONE` não recebem mercadorias apenas por terem sido escalas da expedição.
 
 ## Viagem e eventos marítimos
 
@@ -72,10 +84,11 @@ A interface não apresenta calmaria, mau tempo ou avaria genérica como fato his
 
 ## Interação
 
+- `Negociar acesso (Nd)` aparece somente onde o gate institucional é negociável;
 - `Ouvir rumor`, `Falar mercador` e `Consultar piloto` executam aquisição ativa de informação sem mostrar o alvo previamente;
 - `Reabastecer +30` e `Reparar +20` acionam serviços do porto atual;
 - `Esperar N dia(s)` avança somente o restante da permanência histórica guiada;
-- clique em mercadoria, depois `Comprar 1` ou `Vender 1`;
+- clique em mercadoria, depois `Comprar 1` ou `Vender 1` quando o mercado estiver acionável;
 - clique em rota ou destino conectado e use `Executar viagem`;
 - `R` reinicia;
 - `Tab` alterna `HISTORICAL`/`TECHNICAL`;
