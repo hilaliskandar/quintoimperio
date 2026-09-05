@@ -27,6 +27,7 @@ from quintoimperio.domain import (
     ChronologyMode,
     GameSessionModel,
     GameSessionState,
+    InformationChannel,
     KnowledgeLevel,
     KnowledgeState,
     MapExtent,
@@ -72,7 +73,7 @@ class PlayablePrototype:
         self.state = self._make_state(self.scenario)
         self.selected_good: str | None = None
         self.selected_route: str | None = None
-        self.message = "Selecione uma mercadoria ou rota."
+        self.message = "Selecione uma ação, mercadoria ou rota."
         self.targets: list[ClickTarget] = []
 
     def _make_state(self, scenario: str) -> GameSessionState:
@@ -155,6 +156,20 @@ class PlayablePrototype:
             if with_pilot.feasible:
                 return with_pilot
         return self.session.plan_voyage(self.state, route_id, seed=SEED)
+
+    def acquire_information(self, channel: InformationChannel) -> None:
+        result = self.session.acquire_information(self.state, channel, seed=SEED)
+        if not result.executed:
+            self.message = f"Informação indisponível ({channel.value}): " + ", ".join(result.reasons)
+            return
+        self.state = result.state_after
+        assert result.opportunity is not None
+        opportunity = result.opportunity
+        pilot = f"; piloto={opportunity.pilot_id}" if opportunity.pilot_id else ""
+        self.message = (
+            f"{channel.value}: informação sobre {opportunity.target_node_id} / "
+            f"{opportunity.target_route_id}; +{opportunity.time_days} dia{pilot}."
+        )
 
     def buy_selected(self) -> None:
         if not self.selected_good:
@@ -407,16 +422,33 @@ class PlayablePrototype:
         )
         y += 32
 
+        self._draw_text(surface, tiny, "Informação", (x, y), MUTED)
+        y += 18
+        info_specs = [
+            (InformationChannel.RUMOR, "Ouvir rumor", 125),
+            (InformationChannel.MERCHANT_CONTACT, "Falar mercador", 135),
+            (InformationChannel.PILOT_CONSULTATION, "Consultar piloto", 145),
+        ]
+        info_x = x + 5
+        for channel, label, width in info_specs:
+            available = bool(self.session.information_opportunities(self.state, channel))
+            rect = pygame.Rect(info_x, y, width, 24)
+            pygame.draw.rect(surface, BUTTON if available else BUTTON_DISABLED, rect, border_radius=3)
+            self._draw_text(surface, micro, label, (rect.x + 8, rect.y + 5))
+            self.targets.append(ClickTarget(rect, "information", channel.value))
+            info_x += width + 6
+        y += 31
+
         self._draw_text(surface, body, "Carga", (x, y))
         y += 21
         if self.state.commerce.cargo:
-            for item in self.state.commerce.cargo[:4]:
+            for item in self.state.commerce.cargo[:3]:
                 self._draw_text(surface, tiny, f"{item.good_id}: {item.quantity:.1f}", (x + 8, y))
                 y += 17
         else:
             self._draw_text(surface, tiny, "vazia", (x + 8, y), MUTED)
             y += 17
-        y += 5
+        y += 4
 
         market = self.session.market_view(self.state, seed=SEED)
         self._draw_text(surface, body, "Mercado", (x, y))
@@ -426,7 +458,7 @@ class PlayablePrototype:
             self._draw_text(surface, micro, "Mercado não operacional com o conhecimento atual.", (x + 8, y), BAD)
             y += 21
         else:
-            for entry in market.entries[:9]:
+            for entry in market.entries[:6]:
                 rect = pygame.Rect(x + 3, y - 2, 460, 18)
                 if entry.good_id == self.selected_good:
                     pygame.draw.rect(surface, SELECTED, rect, border_radius=2)
@@ -456,7 +488,7 @@ class PlayablePrototype:
         if not outgoing:
             self._draw_text(surface, micro, "Nenhuma rota de saída na base atual.", (x + 8, y), MUTED)
             y += 19
-        for route_id in outgoing[:7]:
+        for route_id in outgoing[:5]:
             route = self.session.routes[route_id]
             plan = self.plan_for_route(route_id)
             status = "OK" if plan.feasible else "BLOQ"
@@ -488,7 +520,7 @@ class PlayablePrototype:
             y += 15
 
         note_y = SIDE_RECT.bottom - 33
-        note = "Índices econômicos/capacidade são simulação; linhas do mapa são arestas do grafo."
+        note = "Informação e índices econômicos são simulação; linhas do mapa são arestas do grafo."
         for line in self._wrap(micro, note, SIDE_RECT.width - 34)[:2]:
             self._draw_text(surface, micro, line, (x, note_y), MUTED)
             note_y += 14
@@ -520,6 +552,8 @@ class PlayablePrototype:
                     self.message = f"Rota {target.value}: disponível por {basis}."
                 else:
                     self.message = f"Rota {target.value}: " + ", ".join(plan.blockers)
+            elif target.kind == "information":
+                self.acquire_information(InformationChannel(target.value))
             elif target.kind == "action":
                 if target.value == "buy":
                     self.buy_selected()
