@@ -49,11 +49,11 @@ class PortServiceTests(unittest.TestCase):
         self.assertEqual(result.state_after.clock.current_date, date(1497, 7, 2))
 
     def test_reprovision_respects_abstract_onboard_cap(self):
-        state = self.state(provisions=85.0)
+        state = self.state(provisions=115.0)
         result = self.model.reprovision(state, "LIS", requested_days=20.0)
         self.assertTrue(result.success)
         self.assertEqual(result.effect, 5.0)
-        self.assertEqual(result.state_after.provision_days, 90.0)
+        self.assertEqual(result.state_after.provision_days, 120.0)
 
     def test_unknown_provision_service_blocks_without_inventing_it(self):
         state = self.state(node="MAL")
