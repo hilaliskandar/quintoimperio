@@ -1,4 +1,4 @@
-name: Validate historical data
+name: Validate historical data and simulation
 
 on:
   push:
@@ -19,3 +19,7 @@ jobs:
           python-version: "3.12"
       - name: Validate CSV data
         run: python scripts/validate_data.py
+      - name: Run economy prototype tests
+        run: python -m unittest discover -s tests -v
+      - name: Render economy prototype report
+        run: python prototype/economy.py
