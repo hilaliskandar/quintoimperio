@@ -32,7 +32,7 @@ O MVP não precisa reproduzir ainda o retorno a Lisboa, Cochim, a armada de 1500
 
 Issue: #33.
 
-Status: **em execução**.
+Status: concluído.
 
 Objetivos:
 
