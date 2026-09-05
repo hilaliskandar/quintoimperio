@@ -14,9 +14,7 @@ Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameS
 - conhecimento náutico do personagem por rota;
 - expedição ativa opcional e número da perna corrente.
 
-O conhecimento de rota é deliberadamente separado do conhecimento do porto. Saber onde Calecute está ou conhecer seu mercado não torna automaticamente operacional uma ligação marítima Calecute–Aden, Calecute–Hurmuz ou Calecute–Melaka.
-
-Do mesmo modo, participar de uma armada que percorre uma rota não torna o personagem conhecedor daquela rota antes da experiência.
+O conhecimento de rota é deliberadamente separado do conhecimento do porto. Saber onde Calecute está ou conhecer seu mercado não torna automaticamente operacional uma ligação marítima Calecute–Aden, Calecute–Hurmuz ou Calecute–Melaka. Do mesmo modo, participar de uma armada que percorre uma rota não torna o personagem conhecedor daquela rota antes da experiência.
 
 ## Conhecimento inicial de rota
 
@@ -31,11 +29,11 @@ A conversão é parâmetro de simulação. Na v0.1:
 
 ## Expedições e comando institucional
 
-`ExpeditionModel` lê `data/expeditions.csv` e `data/expedition_routes.csv`. A primeira expedição normalizada é `EXP_GAMA_1497`, com cinco arestas agregadas de saída até Calecute.
+`ExpeditionModel` lê `data/expeditions.csv` e `data/expedition_routes.csv`. A primeira expedição normalizada é `EXP_GAMA_1497`, agora com dez pernas operacionais até Calecute. As antigas conexões Lisboa–Cabo e Cabo–Moçambique permanecem somente como `STRATEGIC_AGGREGATE` e são bloqueadas pelo `TravelModel` para execução.
 
 Uma sessão pode possuir `active_expedition_id` e `expedition_leg_sequence`. Quando a rota escolhida coincide com a perna corrente, o período é válido e a tabela histórica registra `FLEET_COMMAND`, a viagem recebe essa base institucional.
 
-Isso não altera o conhecimento pessoal antes da partida. As bases de viagem são hierarquicamente distintas:
+Isso não altera o conhecimento pessoal antes da partida. As bases de viagem são distintas:
 
 1. `OWN_KNOWLEDGE` quando o personagem possui conhecimento operacional;
 2. `PILOT` quando um piloto historicamente registrado é competente para a rota e o conhecimento próprio não basta;
@@ -43,19 +41,23 @@ Isso não altera o conhecimento pessoal antes da partida. As bases de viagem sã
 
 Assim, o piloto guzerate de Melinde continua sendo a base específica da travessia Melinde–Calecute quando fornecido ao plano, mesmo se a armada estiver ativa.
 
-Depois de completar uma perna da expedição, a sessão avança para a próxima. Ao concluir a última, os campos de expedição ativa voltam a `None`.
+Depois de completar uma perna da expedição, a sessão avança para a próxima. Ao concluir a última, os campos de expedição ativa voltam a `None`. A camada não fixa identidade, profissão, navio ou estatuto social do protagonista.
 
-A camada não fixa identidade, profissão, navio ou estatuto social do protagonista.
+## Permanências logísticas
+
+`data/expedition_stops.csv` separa tempo de permanência de tempo de navegação. A primeira base registra São Thiago, baía de Santa Helena, São Brás, Rio do Cobre e Rio dos Bons Sinais, com atividades documentadas como água, madeira, limpeza/carenagem, reparos e transferência de carga.
+
+Na v0.1 esses fatos ainda são dados históricos, não uma sequência automática de ações. A sessão não concede quantidades físicas de água ou mantimentos porque o corpus ainda não sustenta essas conversões. Integrar permanência, espera e serviços ao calendário é o próximo incremento.
 
 ## Mercado
 
 O mercado do porto atual só é operacional quando `market_knowledge >= OPERATIONAL`. Antes disso a sessão não expõe cotações nem permite compra/venda. Isso evita que a interface revele toda a cesta comercial histórica a um personagem que apenas ouviu falar do lugar.
 
-Quando operacional, a sessão delega cotações e operações ao `TradeModel`; nenhuma mercadoria ausente de `node_goods.csv` é criada para completar o loop.
+Quando operacional, a sessão delega cotações e operações ao `TradeModel`; nenhuma mercadoria ausente de `node_goods.csv` é criada para completar o loop. Ancoradouros logísticos com `market_scale=NONE` não recebem mercado apenas por serem escalas documentadas.
 
 ## Serviços portuários
 
-`GameSessionModel` compõe `PortServiceModel`. A sessão expõe a disponibilidade documentada de provisões e reparo no porto atual e devolve um novo `GameSessionState` quando uma ação é executada.
+`GameSessionModel` compõe `PortServiceModel`. A sessão expõe a disponibilidade documentada de provisões e reparo no nó atual e devolve um novo `GameSessionState` quando uma ação é executada.
 
 As regras continuam as mesmas do módulo portuário:
 
@@ -68,15 +70,15 @@ As regras continuam as mesmas do módulo portuário:
 - o estado comercial e o conhecimento permanecem inalterados por esses serviços na v0.1;
 - nenhum custo monetário é inventado enquanto o corpus não sustentar uma regra histórica ou uma hipótese de balanceamento separada.
 
-`SessionPortServiceResult` preserva o estado antes/depois, bloqueios, efeito e dias gastos.
+O limite máximo abstrato de provisões foi ampliado para comportar a perna observada São Thiago–baía de Santa Helena. Esse valor não representa tonelagem, ração diária, água por tripulante ou capacidade histórica de uma embarcação.
 
 ## Navegação e observações históricas
 
 A sessão delega duração e execução ao `TravelModel`/`NavigationModel`. Observações documentadas para a rota e data exatas têm precedência sobre extrapolações geodésicas.
 
-Por isso a partida de Lisboa em 8 de julho de 1497 usa a observação agregada de 134 dias até o Cabo registrada para `R_LIS_CGH`, em vez de aplicar a taxa derivada de Melinde–Calecute. A chegada correspondente é 19 de novembro segundo a observação usada.
+A partida histórica inicial é agora `R_LIS_STG`: 8 de julho de 1497 até São Thiago/baía de Santa Maria. O itinerário segue depois por baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais e Moçambique. Datas reconstruídas entre colchetes pela edição Ravenstein do `Roteiro` são marcadas como editoriais nas notas de evidência.
 
-A aresta permanece agregada: ela não implica 134 dias sem escalas e ainda não deve ser a unidade final para contabilizar provisões. A segmentação pelas escalas documentadas da viagem é um aprofundamento separado.
+A observação agregada Lisboa–Cabo de Subrahmanyam continua preservada para comparação historiográfica, mas `R_LIS_CGH` não é executável como uma única viagem.
 
 ## Aprendizagem por experiência
 
@@ -108,6 +110,4 @@ No modo `HISTORICAL`, a sessão começa em 8 de julho de 1497 associada a `EXP_G
 
 ## Próximos passos
 
-O próximo problema imediato é operacional, não de autorização: a aresta agregada Lisboa–Cabo inclui escalas e reabastecimentos documentados, mas o modelo de provisões a trata como uma única perna. O itinerário deve ser segmentado antes de transformar essa aresta em unidade final de jogabilidade.
-
-Depois disso, a próxima camada institucional é aquisição de informação: rumor, conversa, carta, contato mercantil e piloto devem produzir mudanças distintas de conhecimento sem revelar automaticamente o estado da Coroa ao personagem.
+O problema imediato passa a ser incorporar as permanências documentadas ao calendário e às ações do jogador sem transformar automaticamente uma duração histórica em quantidades inventadas de recursos. Depois disso, a próxima camada institucional é aquisição de informação: rumor, conversa, carta, contato mercantil e piloto devem produzir mudanças distintas de conhecimento sem revelar automaticamente o estado da Coroa ao personagem.
