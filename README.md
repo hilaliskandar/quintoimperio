@@ -9,48 +9,45 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 ## Princípios
 
 - separar evidência histórica, inferência e parâmetro de simulação;
-- não inventar mapas, portos, preços ou cronologias quando a documentação não sustentar precisão;
-- modelar portos como nós de funções distintas: porto metropolitano, praça militar, colônia, feitoria, mercado estrangeiro e ponto náutico;
-- tratar conhecimento geográfico, náutico e comercial como recursos distintos;
-- representar monções, sazonalidade, risco, intermediação, tributação e regimes de acesso;
-- distinguir produção local, hinterland, importação, trânsito e reexportação;
+- não inventar mapas, portos, preços ou cronologias;
+- tratar porto, hinterland e rota de abastecimento como dimensões distintas;
+- tratar conhecimento geográfico, náutico, comercial e político como recursos distintos;
+- separar conhecimento do personagem, conhecimento institucional e capacidade de participar de uma expedição;
+- representar monções, risco, intermediação, tributação e regimes de acesso;
 - manter pessoas escravizadas fora da tabela de mercadorias ordinárias, com modelagem histórica própria.
 
 ## Estado atual
 
-A fundação histórica, a economia relativa, navegação/viagem, serviços portuários, comércio, cartografia, sessão integrada e a **primeira interface jogável Pygame v0.1** estão operacionais.
+A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
 
-A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. Todos os 20 nós possuem uma âncora cartográfica explícita. **Mpinda/Soyo** e **Sofala** permanecem marcados como coordenadas provisórias de confiança `MEDIUM`, sem pretensão de localizar exatamente o cais medieval. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada em linhas distintas.
+A base contém atualmente **20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 3 observações de viagem, 1 piloto histórico e 1 expedição com 5 pernas normalizadas**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
 
 O domínio já oferece:
 
 - economia relativa com estoques estruturais e de trânsito;
-- calendário, monções, distâncias geodésicas e duração determinística por semente;
-- calibração inicial Melinde–Calecute e propagação da confiança espacial da rota;
-- quatro dimensões independentes de conhecimento por nó;
-- conhecimento náutico de rota separado do conhecimento do porto;
+- calendário, monções e distâncias geodésicas de referência;
+- observações de viagem com precedência sobre extrapolações quando rota e data coincidem;
+- Melinde–Calecute em 1498 preservada em 26/27 dias;
+- Lisboa–Cabo em 1497 registrada como observação agregada de 134 dias segundo a fonte usada;
+- quatro dimensões de conhecimento por nó e conhecimento náutico separado por rota;
 - estados separados para personagem e Coroa;
-- piloto histórico guzerate de Melinde associado somente à rota documentada até Calecute;
-- estado imutável do navio, provisões abstratas e condição 0–100;
-- reabastecimento e reparo com distinção entre `UNKNOWN` e `NONE`;
-- capital, capacidade de carga e inventário abstratos;
-- compra e venda somente em mercados documentados em `node_goods.csv`;
-- `GameSessionState` imutável reunindo navio, comércio e conhecimento;
-- mercado condicionado ao `market_knowledge`;
-- serviços portuários integrados ao mesmo estado de sessão, alterando navio e calendário sem inventar custo monetário;
-- viagem condicionada ao conhecimento da rota ou a piloto competente;
-- aprendizagem explícita por chegada e por conclusão de rota;
-- cenário técnico determinístico que executa `mercado → compra → viagem → chegada → venda` sem ser apresentado como estado histórico inicial;
-- mapa de runtime em Pygame e referência cartográfica programática com costa real e sem fronteiras políticas modernas;
-- estética náutica procedural sem alterar a geometria real;
-- interface Pygame com mapa conhecido, porto atual, data, navio, capital, carga, serviços, mercado e rotas de saída;
-- compra, venda, reabastecimento, reparo e viagem acionados pela interface sem duplicar regras de domínio;
-- modo `HISTORICAL`, que preserva bloqueios reais da base atual, e modo `TECHNICAL`, explicitamente marcado como cenário de integração não histórico;
+- piloto guzerate de Melinde associado somente à rota documentada até Calecute;
+- `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
+- `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
+- `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND` como bases distintas de viagem;
+- `GameSessionState` imutável reunindo navio, comércio, conhecimento e expedição ativa;
+- provisões/condição abstratas, reabastecimento e reparo;
+- compra/venda somente em mercados documentados;
+- aprendizagem explícita por chegada e conclusão de rota;
+- mapa de runtime em Pygame e referência cartográfica programática com costa real;
+- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, mercado, armada ativa e rotas;
+- modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
+- modo `TECHNICAL` separado para testes de integração;
 - testes automatizados, smoke tests e capturas de interface no GitHub Actions.
 
-A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
+A arquitetura do primeiro jogável é **Python 3.12 + pygame-ce**, com núcleo de domínio independente da camada gráfica.
 
-Próximo incremento: modelar a participação institucional do personagem numa armada comandada pela Coroa, distinguindo conhecimento individual, conhecimento institucional, piloto e cadeia de comando sem conceder onisciência ao personagem. Em seguida, ampliar a aquisição de informação por rumor, contato, carta e interação mercantil.
+A próxima correção histórica é decompor a aresta agregada Lisboa–Cabo em escalas documentadas. A viagem de 1497 incluiu reabastecimentos e reparos; portanto 134 dias não devem ser tratados como uma única perna operacional de provisões. Depois dessa segmentação, o próximo sistema será aquisição de informação por rumor, conversa, carta, piloto e contato mercantil.
 
 ## Estrutura
 
@@ -65,6 +62,8 @@ data/
   voyage_observations.csv
   pilots.csv
   pilot_routes.csv
+  expeditions.csv
+  expedition_routes.csv
 
 simulation/
   README.md
@@ -90,23 +89,23 @@ docs/
   sources.md
   evidence/
     pilot-malindi-1498.md
+    expedition-gama-1497.md
     provisional-coordinates.md
   adr/
     0001-runtime-and-engine.md
 
-src/quintoimperio/
-  data/
-  domain/
-    calendar.py
-    economy.py
-    knowledge.py
-    navigation.py
-    port.py
-    route_knowledge.py
-    session.py
-    trade.py
-    travel.py
-    world_map.py
+src/quintoimperio/domain/
+  calendar.py
+  economy.py
+  expedition.py
+  knowledge.py
+  navigation.py
+  port.py
+  route_knowledge.py
+  session.py
+  trade.py
+  travel.py
+  world_map.py
 
 prototype/
   economy.py
@@ -123,6 +122,7 @@ tools/
 
 tests/
   test_economy.py
+  test_expedition.py
   test_knowledge.py
   test_navigation.py
   test_port.py
@@ -141,70 +141,50 @@ Instalação do núcleo:
 python -m pip install -e .
 ```
 
-Com Pygame:
+Com Pygame e cartografia:
 
 ```bash
-python -m pip install -e ".[game]"
+python -m pip install -e ".[game,cartography]"
 ```
 
-Com ferramentas cartográficas:
-
-```bash
-python -m pip install -e ".[cartography]"
-```
-
-Validação manual:
+Validação:
 
 ```bash
 python scripts/validate_data.py
 python -m unittest discover -s tests -v
-python prototype/economy.py
-python prototype/navigation.py
-python prototype/travel.py
-python prototype/port.py
-python prototype/trade.py
 python prototype/session.py
-python prototype/map.py
 ```
 
-Primeira interface interativa, preservando o estado histórico inicial:
+Interface histórica:
 
 ```bash
 python prototype/game.py --scenario HISTORICAL
 ```
 
-Cenário técnico jogável de integração, explicitamente não histórico:
+Cenário técnico de integração:
 
 ```bash
 python prototype/game.py --scenario TECHNICAL
 ```
 
-Na interface, `R` reinicia o cenário, `Tab` alterna entre os dois modos e `Esc` encerra.
+`R` reinicia, `Tab` alterna os modos e `Esc` encerra.
 
-Smoke test da interface sem janela:
+Renderização sem janela:
 
 ```bash
 SDL_VIDEODRIVER=dummy python prototype/game.py --scenario HISTORICAL --output /tmp/game-historical.png
 SDL_VIDEODRIVER=dummy python prototype/game.py --scenario TECHNICAL --output /tmp/game-technical.png
 ```
 
-Mapa de runtime sem janela interativa:
-
-```bash
-SDL_VIDEODRIVER=dummy python prototype/map.py --output /tmp/quintoimperio-map.png
-```
-
-Referência cartográfica programática:
+Referência cartográfica:
 
 ```bash
 python tools/render_cartographic_map.py --perspective REFERENCE --output build/map-reference.png
 ```
 
-O GitHub Actions executa essas verificações automaticamente e publica as capturas da interface jogável como artefato do workflow.
-
 ## Fontes de dados
 
-As tabelas em `data/` mantêm campos de proveniência e grau de evidência. Os números em `simulation/` são índices de balanceamento e não devem ser apresentados como dados históricos. A costa usada pela ferramenta de referência pertence somente à camada cartográfica de desenvolvimento; a posição dos nós continua vindo de `data/nodes.csv`. A justificativa específica para as âncoras provisórias de Mpinda/Soyo e Sofala está em `docs/evidence/provisional-coordinates.md`.
+As tabelas em `data/` mantêm proveniência e grau de evidência. Os números em `simulation/` são parâmetros de balanceamento e não devem ser apresentados como dados históricos. A costa usada pela ferramenta cartográfica pertence à camada de desenvolvimento; a posição dos nós continua vindo de `data/nodes.csv`.
 
 ## Licença
 
