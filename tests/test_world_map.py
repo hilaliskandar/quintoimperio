@@ -47,6 +47,10 @@ class WorldMapTests(unittest.TestCase):
         self.assertNotIn("R_MAL_CAL", edges)
         self.assertNotIn("R_CAL_MLK", edges)
 
+    def test_visible_routes_rejects_invalid_perspective_locally(self):
+        with self.assertRaisesRegex(ValueError, "perspective deve ser PLAYER ou CROWN"):
+            self.model.visible_routes("INVALID")
+
     def test_projection_preserves_east_west_order(self):
         lisbon = self.model.point_for_node("LIS", "PLAYER")
         calicut = self.model.point_for_node("CAL", "PLAYER")
