@@ -18,9 +18,9 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, a economia relativa e a primeira camada de navegação/conhecimento v0.1 estão operacionais.
+A fundação histórica, a economia relativa e o núcleo de navegação/viagem v0.1 estão operacionais.
 
-A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias e 2 observações de viagem para calibração. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 é preservada em linhas distintas.
+A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 é preservada em linhas distintas.
 
 O domínio já oferece:
 
@@ -30,11 +30,15 @@ O domínio já oferece:
 - duração de viagem determinística por semente;
 - calibração inicial Melinde–Calecute;
 - quatro dimensões independentes de conhecimento do personagem e da Coroa;
-- validação automática e suíte de testes no GitHub Actions.
+- pilotos históricos associados a rotas e períodos específicos;
+- bloqueio de rotas sem conhecimento náutico operacional ou piloto competente;
+- estado imutável do navio, dias-equivalentes de provisões e condição abstrata 0–100;
+- planejamento e execução de viagem com consumo de provisões e desgaste;
+- 33 testes automatizados no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: provisões, desgaste, pilotos e estado de viagem; depois, um mapa 2D mínimo construído a partir de coordenadas e dados cartográficos reais.
+Próximo incremento: serviços portuários mínimos e primeiro mapa 2D baseado em coordenadas reais; a costa de fundo só será adicionada a partir de dados cartográficos reais.
 
 ## Estrutura
 
@@ -47,6 +51,8 @@ data/
   routes.csv
   route_goods.csv
   voyage_observations.csv
+  pilots.csv
+  pilot_routes.csv
 
 simulation/
   README.md
@@ -54,12 +60,15 @@ simulation/
   rules.csv
   navigation_rules.csv
   knowledge_rules.csv
+  travel_rules.csv
 
 docs/
   historical-method.md
   navigation-method.md
   roadmap.md
   sources.md
+  evidence/
+    pilot-malindi-1498.md
   adr/
     0001-runtime-and-engine.md
 
@@ -70,15 +79,18 @@ src/quintoimperio/
     economy.py
     knowledge.py
     navigation.py
+    travel.py
 
 prototype/
   economy.py
   navigation.py
+  travel.py
 
 tests/
   test_economy.py
   test_knowledge.py
   test_navigation.py
+  test_travel.py
 ```
 
 ## Desenvolvimento
@@ -102,6 +114,7 @@ python scripts/validate_data.py
 python -m unittest discover -s tests -v
 python prototype/economy.py
 python prototype/navigation.py
+python prototype/travel.py
 ```
 
 O GitHub Actions executa essas verificações automaticamente.
