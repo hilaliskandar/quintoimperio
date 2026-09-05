@@ -2,6 +2,7 @@
 
 from .calendar import GameClock, MonsoonPhase, monsoon_phase
 from .economy import EconomyModel
+from .expedition import ExpeditionLeg, ExpeditionModel
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .navigation import NavigationModel, great_circle_nm
 from .port import (
@@ -30,6 +31,8 @@ __all__ = [
     "CargoHolding",
     "CommercialState",
     "EconomyModel",
+    "ExpeditionLeg",
+    "ExpeditionModel",
     "GameClock",
     "GameSessionModel",
     "GameSessionState",
