@@ -5,6 +5,7 @@ from quintoimperio.domain import (
     GameSessionModel,
     KnowledgeLevel,
     KnowledgeState,
+    PortServiceKind,
     RouteKnowledgeModel,
 )
 
@@ -54,6 +55,48 @@ class GameSessionTests(unittest.TestCase):
         blocked = self.model.buy(state, "PEPPER", 1.0, seed=1)
         self.assertFalse(blocked.executed)
         self.assertIn("MARKET_KNOWLEDGE_NOT_OPERATIONAL", blocked.reasons)
+
+    def test_lisbon_port_services_are_exposed_through_session(self):
+        state = self.model.initial_state(provision_days=10.0, condition=80.0)
+        provisions = self.model.service_quote(state, PortServiceKind.PROVISIONS)
+        repair = self.model.service_quote(state, PortServiceKind.REPAIR)
+        self.assertTrue(provisions.actionable)
+        self.assertTrue(repair.actionable)
+
+        capital_before = state.commerce.capital_index
+        reprovisioned = self.model.reprovision(state, 30.0)
+        self.assertTrue(reprovisioned.executed)
+        self.assertGreater(
+            reprovisioned.state_after.vessel.provision_days,
+            state.vessel.provision_days,
+        )
+        self.assertGreater(
+            reprovisioned.state_after.vessel.clock.current_date,
+            state.vessel.clock.current_date,
+        )
+        self.assertEqual(reprovisioned.state_after.commerce.capital_index, capital_before)
+        self.assertEqual(reprovisioned.state_after.node_knowledge, state.node_knowledge)
+
+        repaired = self.model.repair(reprovisioned.state_after, 20.0)
+        self.assertTrue(repaired.executed)
+        self.assertGreater(
+            repaired.state_after.vessel.condition,
+            reprovisioned.state_after.vessel.condition,
+        )
+        self.assertEqual(repaired.state_after.commerce.capital_index, capital_before)
+
+    def test_unknown_port_service_does_not_mutate_session(self):
+        state = self.model.initial_state(
+            location_node="MAL",
+            start_date=date(1498, 4, 24),
+            provision_days=20.0,
+        )
+        quote = self.model.service_quote(state, PortServiceKind.PROVISIONS)
+        self.assertFalse(quote.actionable)
+        result = self.model.reprovision(state, 20.0)
+        self.assertFalse(result.executed)
+        self.assertIn("SERVICE_AVAILABILITY_UNKNOWN", result.reasons)
+        self.assertEqual(result.state_after, state)
 
     def test_documented_malindi_pilot_teaches_route_and_destination(self):
         state = self.model.initial_state(
