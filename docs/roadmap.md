@@ -13,6 +13,7 @@ Entregas já existentes:
 - `node_goods.csv` distinguindo produção, hinterland, importação, exportação e trânsito;
 - `routes.csv` com conexões históricas e propriedades de navegação;
 - `route_goods.csv` com fluxos por mercadoria;
+- `voyage_observations.csv` para âncoras documentadas de viagem;
 - documentação de proveniência e incerteza;
 - validação automática dos CSVs;
 - lista explícita de lacunas bibliográficas.
@@ -30,7 +31,7 @@ O protótipo atual já inclui:
 - custos relativos de provisões, frete, acesso/tributação e intermediação;
 - estoques estruturais e estoques dependentes de trânsito;
 - choques determinísticos por semente;
-- oito testes automatizados;
+- testes automatizados;
 - relatório textual de inspeção.
 
 Invariantes validadas:
@@ -44,24 +45,32 @@ Nenhum índice da simulação é tratado como preço ou quantidade histórica.
 
 ## Fase 2 — Navegação, calendário e conhecimento
 
-Status: **próxima fase**.
+Status: **núcleo v0.1 implementado; logística de viagem em andamento**.
 
-Objetivo: transformar o mapa em sistema histórico, não em simples grafo de distâncias.
-
-Entregas mínimas:
+Já implementado:
 
 - calendário do jogo;
-- distância geodésica entre nós com coordenadas confiáveis;
-- duração-base de viagem;
-- vento, monção e sazonalidade;
-- provisões e desgaste;
-- pilotos;
+- fases gerais da monção de nordeste, sudoeste e transições;
+- distância geodésica entre nós com coordenadas disponíveis;
+- preservação de observações documentadas de viagem e divergências entre fontes;
+- primeira calibração de duração com Melinde–Calecute em 1498;
+- ruído determinístico de duração;
+- penalidade explícita de junho/julho para rotas com dependência monçônica, tratada como parâmetro de simulação;
 - `geo_knowledge`, `nav_knowledge`, `market_knowledge` e `political_knowledge`;
-- nós desconhecidos, rumoreados, localizados e navegáveis;
-- eventos de risco marítimo;
-- testes determinísticos para janelas de navegação.
+- estados separados para personagem e Coroa;
+- testes determinísticos e relatório textual de navegação.
 
-A primeira implementação deve continuar independente de Pygame.
+Próximo incremento da fase:
+
+- provisões e consumo diário;
+- desgaste do navio;
+- pilotos e competência regional;
+- estado de viagem e chegada;
+- eventos de risco marítimo;
+- regras para transformar conhecimento parcial em rotas rumoreadas, localizadas e navegáveis;
+- perfis direcionais de vento apenas quando documentados por trecho.
+
+A implementação continua independente de Pygame.
 
 ## Fase 3 — Primeiro mapa e loop jogável
 
@@ -124,13 +133,16 @@ Somente após estabilizar o núcleo:
 - motor do primeiro jogável: Python 3.12 + pygame-ce;
 - lógica de domínio independente da camada gráfica;
 - CSVs históricos separados dos parâmetros de simulação;
-- ausência de preços históricos fictícios na calibração inicial.
+- ausência de preços históricos fictícios na calibração inicial;
+- distância de rota calculada como geodésica de referência, não confundida com percurso histórico efetivo;
+- conhecimento dividido em quatro dimensões e separado entre personagem e Coroa.
 
 ## Decisões ainda abertas
 
-- granularidade temporal final;
+- granularidade temporal final do loop jogável;
 - unidade física/abstrata de carga;
 - modelo de provisões e desgaste;
+- classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
 - formato definitivo do mapa costeiro e nível de detalhe cartográfico.
