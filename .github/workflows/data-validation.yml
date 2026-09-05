@@ -21,7 +21,9 @@ jobs:
         run: python -m pip install -e .
       - name: Validate CSV data
         run: python scripts/validate_data.py
-      - name: Run economy prototype tests
+      - name: Run domain tests
         run: python -m unittest discover -s tests -v
       - name: Render economy prototype report
         run: python prototype/economy.py
+      - name: Render navigation prototype report
+        run: python prototype/navigation.py
