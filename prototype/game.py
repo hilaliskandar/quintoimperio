@@ -28,6 +28,7 @@ from quintoimperio.domain import (
     KnowledgeState,
     MapExtent,
     MapPoint,
+    PortServiceKind,
     WorldMapModel,
 )
 
@@ -175,6 +176,28 @@ class PlayablePrototype:
         else:
             self.message = "Venda bloqueada: " + ", ".join(result.reasons)
 
+    def reprovision(self) -> None:
+        result = self.session.reprovision(self.state, 30.0)
+        if result.executed:
+            self.state = result.state_after
+            self.message = (
+                f"Reabastecimento: +{result.service_result.effect:.1f} dias-eq.; "
+                f"{result.service_result.days_spent} dia(s)."
+            )
+        else:
+            self.message = "Reabastecimento bloqueado: " + ", ".join(result.reasons)
+
+    def repair(self) -> None:
+        result = self.session.repair(self.state, 20.0)
+        if result.executed:
+            self.state = result.state_after
+            self.message = (
+                f"Reparo: +{result.service_result.effect:.1f} condição; "
+                f"{result.service_result.days_spent} dia(s)."
+            )
+        else:
+            self.message = "Reparo bloqueado: " + ", ".join(result.reasons)
+
     def travel_selected(self) -> None:
         if not self.selected_route:
             self.message = "Nenhuma rota selecionada."
@@ -201,6 +224,23 @@ class PlayablePrototype:
         color=INK,
     ) -> None:
         surface.blit(font.render(text, True, color), pos)
+
+    @staticmethod
+    def _wrap(font: pygame.font.Font, text: str, width: int) -> list[str]:
+        words = text.split()
+        lines: list[str] = []
+        current = ""
+        for word in words:
+            candidate = word if not current else f"{current} {word}"
+            if font.size(candidate)[0] <= width:
+                current = candidate
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        return lines
 
     def _draw_map(self, surface: pygame.Surface, small: pygame.font.Font) -> None:
         pygame.draw.rect(surface, SEA, MAP_RECT, border_radius=4)
@@ -273,24 +313,25 @@ class PlayablePrototype:
         body: pygame.font.Font,
         small: pygame.font.Font,
         tiny: pygame.font.Font,
+        micro: pygame.font.Font,
     ) -> None:
         pygame.draw.rect(surface, PANEL, SIDE_RECT, border_radius=4)
         pygame.draw.rect(surface, LINE, SIDE_RECT, width=1, border_radius=4)
         x = SIDE_RECT.left + 16
-        y = SIDE_RECT.top + 14
+        y = SIDE_RECT.top + 13
 
         node = self.world.nodes[self.state.vessel.location_node]
         self._draw_text(surface, body, f"Porto: {node['historical_name']} [{self.state.vessel.location_node}]", (x, y))
-        y += 28
+        y += 26
         self._draw_text(surface, small, f"Data: {self.state.vessel.clock.current_date.isoformat()}", (x, y))
-        y += 22
+        y += 20
         self._draw_text(
             surface,
             small,
             f"Navio: condição {self.state.vessel.condition:.1f}/100 | provisões {self.state.vessel.provision_days:.1f} dias-eq.",
             (x, y),
         )
-        y += 22
+        y += 20
         used = self.session.trade.capacity_used(self.state.commerce)
         self._draw_text(
             surface,
@@ -298,104 +339,128 @@ class PlayablePrototype:
             f"Capital índice: {self.state.commerce.capital_index:.2f} | carga {used:.1f}/{self.state.commerce.capacity_total:.1f}",
             (x, y),
         )
-        y += 30
+        y += 25
+
+        provisions = self.session.service_quote(self.state, PortServiceKind.PROVISIONS)
+        repair = self.session.service_quote(self.state, PortServiceKind.REPAIR)
+        self._draw_text(
+            surface,
+            tiny,
+            f"Serviços: provisões {provisions.availability.value} | reparo {repair.availability.value}",
+            (x, y),
+            MUTED,
+        )
+        y += 20
+        prov_rect = pygame.Rect(x + 5, y, 130, 25)
+        repair_rect = pygame.Rect(x + 145, y, 120, 25)
+        pygame.draw.rect(surface, BUTTON if provisions.actionable else BUTTON_DISABLED, prov_rect, border_radius=3)
+        pygame.draw.rect(surface, BUTTON if repair.actionable else BUTTON_DISABLED, repair_rect, border_radius=3)
+        self._draw_text(surface, micro, "Reabastecer +30", (prov_rect.x + 10, prov_rect.y + 6))
+        self._draw_text(surface, micro, "Reparar +20", (repair_rect.x + 17, repair_rect.y + 6))
+        self.targets.extend(
+            [
+                ClickTarget(prov_rect, "action", "provisions"),
+                ClickTarget(repair_rect, "action", "repair"),
+            ]
+        )
+        y += 32
 
         self._draw_text(surface, body, "Carga", (x, y))
-        y += 24
+        y += 21
         if self.state.commerce.cargo:
-            for item in self.state.commerce.cargo[:5]:
+            for item in self.state.commerce.cargo[:4]:
                 self._draw_text(surface, tiny, f"{item.good_id}: {item.quantity:.1f}", (x + 8, y))
-                y += 18
+                y += 17
         else:
             self._draw_text(surface, tiny, "vazia", (x + 8, y), MUTED)
-            y += 18
-        y += 8
+            y += 17
+        y += 5
 
         market = self.session.market_view(self.state, seed=SEED)
         self._draw_text(surface, body, "Mercado", (x, y))
-        self._draw_text(surface, tiny, f"conhecimento: {market.knowledge_level.name}", (x + 190, y + 3), MUTED)
-        y += 25
+        self._draw_text(surface, micro, f"conhecimento: {market.knowledge_level.name}", (x + 190, y + 3), MUTED)
+        y += 22
         if not market.actionable:
-            self._draw_text(surface, tiny, "Mercado não operacional com o conhecimento atual.", (x + 8, y), BAD)
-            y += 24
+            self._draw_text(surface, micro, "Mercado não operacional com o conhecimento atual.", (x + 8, y), BAD)
+            y += 21
         else:
             for entry in market.entries[:9]:
-                rect = pygame.Rect(x + 3, y - 2, 460, 20)
+                rect = pygame.Rect(x + 3, y - 2, 460, 18)
                 if entry.good_id == self.selected_good:
                     pygame.draw.rect(surface, SELECTED, rect, border_radius=2)
                 self._draw_text(
                     surface,
-                    tiny,
+                    micro,
                     f"{entry.good_id:<14} compra {entry.buy_price_index:>5.2f} | venda {entry.sell_price_index:>5.2f}",
                     (x + 8, y),
                 )
                 self.targets.append(ClickTarget(rect, "good", entry.good_id))
-                y += 21
+                y += 19
 
-            buy_rect = pygame.Rect(x + 5, y + 3, 105, 28)
-            sell_rect = pygame.Rect(x + 120, y + 3, 105, 28)
+            buy_rect = pygame.Rect(x + 5, y + 1, 105, 25)
+            sell_rect = pygame.Rect(x + 120, y + 1, 105, 25)
             pygame.draw.rect(surface, BUTTON if self.selected_good else BUTTON_DISABLED, buy_rect, border_radius=3)
             pygame.draw.rect(surface, BUTTON if self.selected_good else BUTTON_DISABLED, sell_rect, border_radius=3)
-            self._draw_text(surface, tiny, "Comprar 1", (buy_rect.x + 18, buy_rect.y + 7))
-            self._draw_text(surface, tiny, "Vender 1", (sell_rect.x + 22, sell_rect.y + 7))
+            self._draw_text(surface, micro, "Comprar 1", (buy_rect.x + 18, buy_rect.y + 6))
+            self._draw_text(surface, micro, "Vender 1", (sell_rect.x + 22, sell_rect.y + 6))
             self.targets.extend(
                 [ClickTarget(buy_rect, "action", "buy"), ClickTarget(sell_rect, "action", "sell")]
             )
-            y += 42
+            y += 32
 
         self._draw_text(surface, body, "Rotas de saída", (x, y))
-        y += 25
+        y += 22
         outgoing = self.outgoing_routes()
         if not outgoing:
-            self._draw_text(surface, tiny, "Nenhuma rota de saída na base atual.", (x + 8, y), MUTED)
-            y += 22
+            self._draw_text(surface, micro, "Nenhuma rota de saída na base atual.", (x + 8, y), MUTED)
+            y += 19
         for route_id in outgoing[:7]:
             route = self.session.routes[route_id]
             plan = self.plan_for_route(route_id)
             status = "OK" if plan.feasible else "BLOQ"
             status_color = GOOD if plan.feasible else BAD
-            rect = pygame.Rect(x + 3, y - 2, 460, 21)
+            rect = pygame.Rect(x + 3, y - 2, 460, 19)
             if route_id == self.selected_route:
                 pygame.draw.rect(surface, SELECTED, rect, border_radius=2)
             self._draw_text(
                 surface,
-                tiny,
+                micro,
                 f"{route_id} -> {route['destination_node']}  {status}  {plan.travel_days} d",
                 (x + 8, y),
                 status_color,
             )
             self.targets.append(ClickTarget(rect, "route", route_id))
-            y += 22
+            y += 20
 
-        travel_rect = pygame.Rect(x + 5, y + 4, 130, 30)
+        travel_rect = pygame.Rect(x + 5, y + 2, 130, 26)
         pygame.draw.rect(surface, BUTTON if self.selected_route else BUTTON_DISABLED, travel_rect, border_radius=3)
-        self._draw_text(surface, tiny, "Executar viagem", (travel_rect.x + 14, travel_rect.y + 8))
+        self._draw_text(surface, micro, "Executar viagem", (travel_rect.x + 14, travel_rect.y + 6))
         self.targets.append(ClickTarget(travel_rect, "action", "travel"))
-        y += 43
+        y += 34
 
-        self._draw_text(surface, tiny, "Mensagem:", (x, y), MUTED)
-        y += 18
-        msg = self.message if len(self.message) <= 70 else self.message[:67] + "..."
-        self._draw_text(surface, tiny, msg, (x, y), INK)
-        y += 28
-        self._draw_text(
-            surface,
-            tiny,
-            "Índices econômicos e de capacidade são simulação; linhas do mapa são arestas do grafo.",
-            (x, min(y, SIDE_RECT.bottom - 22)),
-            MUTED,
-        )
+        self._draw_text(surface, micro, "Mensagem:", (x, y), MUTED)
+        y += 15
+        for line in self._wrap(micro, self.message, SIDE_RECT.width - 34)[:2]:
+            self._draw_text(surface, micro, line, (x, y), INK)
+            y += 15
+
+        note_y = SIDE_RECT.bottom - 33
+        note = "Índices econômicos/capacidade são simulação; linhas do mapa são arestas do grafo."
+        for line in self._wrap(micro, note, SIDE_RECT.width - 34)[:2]:
+            self._draw_text(surface, micro, line, (x, note_y), MUTED)
+            note_y += 14
 
     def render(self, surface: pygame.Surface) -> None:
         self.targets = []
         surface.fill(BG)
         title = pygame.font.SysFont("serif", 30, bold=True)
-        body = pygame.font.SysFont("serif", 21, bold=True)
-        small = pygame.font.SysFont("sans", 16)
-        tiny = pygame.font.SysFont("monospace", 14)
+        body = pygame.font.SysFont("serif", 20, bold=True)
+        small = pygame.font.SysFont("sans", 15)
+        tiny = pygame.font.SysFont("monospace", 13)
+        micro = pygame.font.SysFont("monospace", 12)
         self._draw_header(surface, title, small)
         self._draw_map(surface, small)
-        self._draw_side_panel(surface, body, small, tiny)
+        self._draw_side_panel(surface, body, small, tiny, micro)
 
     def handle_click(self, pos: tuple[int, int]) -> None:
         for target in reversed(self.targets):
@@ -417,6 +482,10 @@ class PlayablePrototype:
                     self.buy_selected()
                 elif target.value == "sell":
                     self.sell_selected()
+                elif target.value == "provisions":
+                    self.reprovision()
+                elif target.value == "repair":
+                    self.repair()
                 elif target.value == "travel":
                     self.travel_selected()
             return
