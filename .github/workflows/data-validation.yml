@@ -43,6 +43,12 @@ jobs:
           python prototype/game.py --scenario TECHNICAL --output /tmp/quintoimperio-game-technical.png
           test -s /tmp/quintoimperio-game-historical.png
           test -s /tmp/quintoimperio-game-technical.png
+      - name: Smoke-test historical campaign interface
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          python prototype/historical_campaign.py --campaign-smoke --output /tmp/quintoimperio-campaign-calicut.png
+          test -s /tmp/quintoimperio-campaign-calicut.png
       - name: Publish playable interface screenshots
         uses: actions/upload-artifact@v4
         with:
@@ -50,6 +56,7 @@ jobs:
           path: |
             /tmp/quintoimperio-game-historical.png
             /tmp/quintoimperio-game-technical.png
+            /tmp/quintoimperio-campaign-calicut.png
           if-no-files-found: error
       - name: Smoke-test coordinate map
         env:
