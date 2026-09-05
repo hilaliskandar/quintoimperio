@@ -2,8 +2,8 @@
 """Primeira interface jogável Pygame para o núcleo integrado.
 
 A interface não cria regras econômicas, náuticas ou históricas. Ela apenas
-expõe ``GameSessionModel``. Valores de capital, capacidade, quantidade e preço
-são índices abstratos de simulação.
+expõe ``GameSessionModel``. Valores de capital, capacidade, quantidade, preço
+e eventos marítimos genéricos são parâmetros abstratos de simulação.
 
 Dois estados são oferecidos:
 
@@ -236,9 +236,19 @@ class PlayablePrototype:
         self.selected_good = None
         pilot = f"; piloto={plan.pilot_id}" if plan.pilot_id else ""
         basis = plan.navigation_basis.value if plan.navigation_basis else "SEM_BASE"
+        if plan.events:
+            event = plan.events[0]
+            event_note = (
+                f"; evento SIM={event.event_type.value} "
+                f"(+{event.extra_days}d, condição -{event.condition_loss:.1f})"
+            )
+        elif plan.events_suppressed_by_observation:
+            event_note = "; eventos aleatórios suprimidos por observação histórica"
+        else:
+            event_note = ""
         self.message = (
             f"Chegada a {plan.destination_node} em {plan.arrival_date}; "
-            f"{plan.travel_days} dias; base={basis}{pilot}."
+            f"{plan.travel_days} dias; base={basis}{pilot}{event_note}."
         )
 
     @staticmethod
@@ -378,6 +388,17 @@ class PlayablePrototype:
         else:
             self._draw_text(surface, micro, f"Cronologia: {self.state.chronology_mode.value}", (x, y), MUTED)
             y += 18
+
+        if self.state.voyage_event_history:
+            event = self.state.voyage_event_history[-1]
+            self._draw_text(
+                surface,
+                micro,
+                f"Último evento SIM: {event.event_type.value} (+{event.extra_days}d / -{event.condition_loss:.1f} condição)",
+                (x, y),
+                MUTED,
+            )
+            y += 17
 
         stop = self.session.active_stop(self.state)
         if stop is not None:
@@ -520,7 +541,7 @@ class PlayablePrototype:
             y += 15
 
         note_y = SIDE_RECT.bottom - 33
-        note = "Informação e índices econômicos são simulação; linhas do mapa são arestas do grafo."
+        note = "Informação, eventos e índices econômicos são simulação; linhas do mapa são arestas do grafo."
         for line in self._wrap(micro, note, SIDE_RECT.width - 34)[:2]:
             self._draw_text(surface, micro, line, (x, note_y), MUTED)
             note_y += 14
