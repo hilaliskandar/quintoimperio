@@ -14,6 +14,7 @@ from pathlib import Path
 
 from quintoimperio.data.loader import RepositoryData
 
+from .access import AccessModel, AccessStatus, AccessView
 from .calendar import GameClock
 from .expedition import ExpeditionModel
 from .information import InformationChannel, InformationModel, InformationOpportunity
@@ -39,17 +40,25 @@ class RouteKnowledgeRecord:
 
 
 @dataclass(frozen=True)
+class AccessRecord:
+    node_id: str
+    status: AccessStatus
+
+
+@dataclass(frozen=True)
 class MarketEntry:
     good_id: str
     buy_price_index: float
     sell_price_index: float
     bulk_per_unit: float
+    restricted: bool = False
 
 
 @dataclass(frozen=True)
 class MarketView:
     node_id: str
     knowledge_level: KnowledgeLevel
+    access_status: AccessStatus
     actionable: bool
     entries: tuple[MarketEntry, ...]
 
@@ -60,6 +69,7 @@ class GameSessionState:
     commerce: CommercialState
     node_knowledge: tuple[NodeKnowledgeRecord, ...]
     route_knowledge: tuple[RouteKnowledgeRecord, ...]
+    access_records: tuple[AccessRecord, ...] = ()
     active_expedition_id: str | None = None
     expedition_leg_sequence: int | None = None
     chronology_mode: ChronologyMode = ChronologyMode.COUNTERFACTUAL
@@ -104,14 +114,26 @@ class SessionInformationResult:
     opportunity: InformationOpportunity | None
 
 
+@dataclass(frozen=True)
+class SessionAccessResult:
+    executed: bool
+    reasons: tuple[str, ...]
+    days_spent: int
+    state_before: GameSessionState
+    state_after: GameSessionState
+    view_before: AccessView
+    view_after: AccessView
+
+
 class GameSessionModel:
-    """Compõe conhecimento, informação, comércio, serviços, eventos e viagem."""
+    """Compõe conhecimento, acesso, informação, comércio, serviços e viagem."""
 
     def __init__(self, root: Path | None = None) -> None:
         repository = RepositoryData(root)
         self.root = repository.root
         self.knowledge = KnowledgeModel(self.root)
         self.route_knowledge_model = RouteKnowledgeModel(self.root)
+        self.access = AccessModel(self.root)
         self.information = InformationModel(self.root)
         self.expedition = ExpeditionModel(self.root)
         self.stops = ExpeditionStopModel(self.root)
@@ -174,6 +196,10 @@ class GameSessionModel:
             )
             for route_id in sorted(self.route_knowledge_model.routes)
         )
+        access_records = tuple(
+            AccessRecord(node_id=node_id, status=self.access.initial_status(node_id))
+            for node_id in sorted(self.access.nodes)
+        )
         return GameSessionState(
             vessel=VesselState(
                 location_node=location_node,
@@ -187,6 +213,7 @@ class GameSessionModel:
             ),
             node_knowledge=node_records,
             route_knowledge=route_records,
+            access_records=access_records,
             active_expedition_id=active_expedition_id,
             expedition_leg_sequence=expedition_leg_sequence,
             chronology_mode=chronology,
@@ -200,11 +227,22 @@ class GameSessionModel:
     def _route_map(state: GameSessionState) -> dict[str, KnowledgeLevel]:
         return {record.route_id: record.nav for record in state.route_knowledge}
 
+    @staticmethod
+    def _access_map(state: GameSessionState) -> dict[str, AccessStatus]:
+        return {record.node_id: record.status for record in state.access_records}
+
     def node_state(self, state: GameSessionState, node_id: str) -> KnowledgeState:
         return self._node_map(state)[node_id]
 
     def route_nav(self, state: GameSessionState, route_id: str) -> KnowledgeLevel:
         return self._route_map(state)[route_id]
+
+    def access_status(self, state: GameSessionState, node_id: str) -> AccessStatus:
+        return self._access_map(state).get(node_id, self.access.initial_status(node_id))
+
+    def access_view(self, state: GameSessionState, node_id: str | None = None) -> AccessView:
+        target = node_id or state.vessel.location_node
+        return self.access.view(target, self.access_status(state, target))
 
     def active_stop(self, state: GameSessionState) -> ExpeditionStop | None:
         return self.stops.stop(state.active_stop_id)
@@ -228,6 +266,15 @@ class GameSessionModel:
         return replace(state, route_knowledge=tuple(records))
 
     @staticmethod
+    def _replace_access(
+        state: GameSessionState, node_id: str, status: AccessStatus
+    ) -> GameSessionState:
+        records = [record for record in state.access_records if record.node_id != node_id]
+        records.append(AccessRecord(node_id=node_id, status=status))
+        records.sort(key=lambda record: record.node_id)
+        return replace(state, access_records=tuple(records))
+
+    @staticmethod
     def _replace_vessel(state: GameSessionState, vessel: VesselState) -> GameSessionState:
         return replace(state, vessel=vessel)
 
@@ -243,9 +290,50 @@ class GameSessionModel:
         """Override explícito para cenário técnico; não altera regras históricas."""
         return self._replace_route_knowledge(state, route_id, nav)
 
+    def scenario_set_access(
+        self, state: GameSessionState, node_id: str, status: AccessStatus | str
+    ) -> GameSessionState:
+        """Override técnico explícito; não representa autorização histórica."""
+        return self._replace_access(state, node_id, AccessStatus(status))
+
     @staticmethod
     def _at_least(current: KnowledgeLevel, minimum: int | KnowledgeLevel) -> KnowledgeLevel:
         return KnowledgeLevel(max(int(current), int(minimum)))
+
+    def negotiate_access(self, state: GameSessionState) -> SessionAccessResult:
+        """Satisfaz o gate institucional genérico sem inventar taxa ou presente."""
+        node_id = state.vessel.location_node
+        before_view = self.access_view(state, node_id)
+        if not before_view.negotiable:
+            return SessionAccessResult(
+                executed=False,
+                reasons=("ACCESS_NEGOTIATION_NOT_AVAILABLE",),
+                days_spent=0,
+                state_before=state,
+                state_after=state,
+                view_before=before_view,
+                view_after=before_view,
+            )
+        new_status = self.access.negotiate(node_id, before_view.status)
+        after = self._replace_access(state, node_id, new_status)
+        if before_view.time_days:
+            after = self._replace_vessel(
+                after,
+                replace(
+                    after.vessel,
+                    clock=after.vessel.clock.advance(before_view.time_days),
+                ),
+            )
+        after_view = self.access_view(after, node_id)
+        return SessionAccessResult(
+            executed=True,
+            reasons=(),
+            days_spent=before_view.time_days,
+            state_before=state,
+            state_after=after,
+            view_before=before_view,
+            view_after=after_view,
+        )
 
     def _information_would_improve(
         self, state: GameSessionState, opportunity: InformationOpportunity
@@ -340,10 +428,12 @@ class GameSessionModel:
     def market_view(self, state: GameSessionState, seed: int = 0) -> MarketView:
         node_id = state.vessel.location_node
         knowledge = self.node_state(state, node_id).market
+        access = self.access_view(state, node_id)
         if knowledge < KnowledgeLevel.OPERATIONAL:
             return MarketView(
                 node_id=node_id,
                 knowledge_level=knowledge,
+                access_status=access.status,
                 actionable=False,
                 entries=(),
             )
@@ -362,12 +452,14 @@ class GameSessionModel:
                     buy_price_index=buy.unit_price_index,
                     sell_price_index=sell.unit_price_index,
                     bulk_per_unit=buy.bulk_per_unit,
+                    restricted=self.trade.good_restricted(node_id, good_id, year),
                 )
             )
         return MarketView(
             node_id=node_id,
             knowledge_level=knowledge,
-            actionable=True,
+            access_status=access.status,
+            actionable=access.commercial_access,
             entries=tuple(entries),
         )
 
@@ -460,6 +552,15 @@ class GameSessionModel:
             trade_result=None,
         )
 
+    @staticmethod
+    def _access_block_reason(status: AccessStatus) -> str:
+        return {
+            AccessStatus.NEGOTIATION_REQUIRED: "PORT_ACCESS_NEGOTIATION_REQUIRED",
+            AccessStatus.RESTRICTED: "PORT_ACCESS_RESTRICTED",
+            AccessStatus.NONCOMMERCIAL: "PORT_HAS_NO_COMMERCIAL_ACCESS",
+            AccessStatus.UNKNOWN: "PORT_ACCESS_UNKNOWN",
+        }.get(status, "PORT_ACCESS_NOT_GRANTED")
+
     def buy(
         self,
         state: GameSessionState,
@@ -470,6 +571,9 @@ class GameSessionModel:
     ) -> SessionTradeResult:
         if self.node_state(state, state.vessel.location_node).market < KnowledgeLevel.OPERATIONAL:
             return self._blocked_trade(state, "MARKET_KNOWLEDGE_NOT_OPERATIONAL")
+        access = self.access_view(state)
+        if not access.commercial_access:
+            return self._blocked_trade(state, self._access_block_reason(access.status))
         result = self.trade.buy(
             state.commerce,
             state.vessel.location_node,
@@ -497,6 +601,9 @@ class GameSessionModel:
     ) -> SessionTradeResult:
         if self.node_state(state, state.vessel.location_node).market < KnowledgeLevel.OPERATIONAL:
             return self._blocked_trade(state, "MARKET_KNOWLEDGE_NOT_OPERATIONAL")
+        access = self.access_view(state)
+        if not access.commercial_access:
+            return self._blocked_trade(state, self._access_block_reason(access.status))
         result = self.trade.sell(
             state.commerce,
             state.vessel.location_node,
