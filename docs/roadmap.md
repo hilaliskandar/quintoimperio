@@ -13,6 +13,7 @@ Entregas já existentes:
 - observações documentadas de viagem;
 - pilotos e competências por rota;
 - expedições/armadas, sequência de pernas e permanências logísticas;
+- atores/comunidades historicamente normalizados por nó e período;
 - proveniência, confiança e incerteza explícitas;
 - validação automática e testes de domínio.
 
@@ -80,10 +81,11 @@ Implementado:
 - mapa de runtime independente da lógica de domínio;
 - referência cartográfica programática com costa real e sem fronteiras políticas modernas;
 - visibilidade de nós/rotas condicionada ao conhecimento;
+- rótulos do mapa reposicionados apenas para legibilidade, sem deslocar coordenadas dos nós, com regressão automatizada contra sobreposição nos cenários padrão;
 - serviços portuários com `UNKNOWN` distinto de `NONE`;
 - estado comercial imutável;
 - compra/venda apenas em mercados documentados;
-- `GameSessionState` reunindo navio, comércio, conhecimento, acesso, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
+- `GameSessionState` reunindo navio, comércio, conhecimento, acesso, relações, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
 - mercado bloqueado até conhecimento operacional;
 - acesso comercial separado de conhecimento do mercado;
 - `FOREIGN_NEGOTIATED` exigindo negociação explícita antes de compra/venda;
@@ -94,9 +96,12 @@ Implementado:
 - oportunidades informativas limitadas à rede documentada e nunca derivadas por cópia do estado da Coroa;
 - canais limitados abaixo de `OPERATIONAL` para que rumor/consulta não substituam experiência efetiva;
 - cada oportunidade informativa utilizável uma vez por sessão e seleção determinística por semente;
+- relações por ator limitadas a `UNESTABLISHED` e `CONTACTED`;
+- contato com autoridade e comunidade mercantil registrado somente quando a base histórica possui associação não ambígua;
+- atores não contatados ocultos na interface;
 - eventos de viagem registrados no plano e no histórico da sessão para auditoria;
 - cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → negociação → venda`;
-- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, acesso, informação, mercado, armada ativa, escala, espera, rotas e último evento `SIM` quando houver;
+- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, acesso, informação, relações estabelecidas, mercado, armada ativa, escala, espera, rotas e último evento `SIM` quando houver;
 - botão de negociação exibido somente quando o gate institucional é negociável;
 - mercado conhecido pode ser consultado mesmo quando a operação está bloqueada por acesso;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497` e cronologia `GUIDED`;
@@ -111,14 +116,14 @@ Implementado:
 
 Próximos incrementos do loop:
 
-1. introduzir relações/reputação separadas por autoridade e comunidade mercantil;
-2. usar essas relações como modificadores de acesso/negociação sem reescrever fatos históricos;
+1. definir se relações precisam de mais estados categóricos antes de qualquer escore numérico;
+2. introduzir efeitos relacionais somente onde houver ator documentado e regra de simulação explícita;
 3. aprofundar intermediários e comunidades mercantis além do campo de disponibilidade;
 4. refinar a interface sem sacrificar a separação entre cartografia, conhecimento e instituições.
 
 ## Fase 4 — Portos, instituições e relações
 
-Status: **acesso institucional v0.1 implementado; relações/reputação são a próxima frente**.
+Status: **acesso institucional e relações por atores v0.1 implementados; efeitos relacionais são a próxima frente**.
 
 Já implementado:
 
@@ -138,11 +143,20 @@ Já implementado:
 - negociação genérica de `FOREIGN_NEGOTIATED` sem inventar taxas, presentes, diálogo ou probabilidade de êxito;
 - ancoradouros e marcos náuticos preservados como não comerciais;
 - monopólios régios preservados como restritos;
-- `node_goods.restricted=TRUE` como bloqueio independente de mercadoria.
+- `node_goods.restricted=TRUE` como bloqueio independente de mercadoria;
+- `actors.csv` e `node_actors.csv` com proveniência e limites temporais explícitos;
+- `RelationshipModel` sem ator genérico de preenchimento;
+- autoridade do Samudri Raja e comunidade mercantil muçulmana/pardesi de Calecute mantidas como atores distintos;
+- autoridade local de Melinde normalizada somente para 1498;
+- negociação em Calecute podendo registrar contato com a autoridade documentada;
+- `MERCHANT_CONTACT` podendo registrar contato com a comunidade mercantil documentada;
+- ausência de efeito relacional automático em portos sem ator normalizado;
+- interface mostrando somente relações já `CONTACTED`.
 
 Ainda por implementar:
 
-- relações/reputação com autoridades e grupos comerciais;
+- estados relacionais além de `CONTACTED`, caso sejam necessários;
+- efeitos de confiança, hostilidade ou reputação sem reduzi-los automaticamente a uma pontuação global;
 - intermediários e comunidades mercantis como agentes mais ricos que um simples campo de disponibilidade;
 - impostos, monopólios, privilégios e presentes diplomáticos somente quando historicamente sustentados ou explicitamente parametrizados como simulação;
 - contratos e crédito;
@@ -159,8 +173,9 @@ Recorte inicial:
 3. Moçambique, Mombaça e Melinde;
 4. chegada a Calecute;
 5. negociação de acesso separada do simples conhecimento do mercado;
-6. retorno e reconfiguração após a primeira viagem;
-7. expansão inicial até Cochim e primeiras estruturas portuguesas.
+6. contatos diferenciados com autoridade e comunidade mercantil quando documentados;
+7. retorno e reconfiguração após a primeira viagem;
+8. expansão inicial até Cochim e primeiras estruturas portuguesas.
 
 O jogo deve deixar clara a diferença entre a rede atlântica portuguesa já estabelecida e a rede índica preexistente.
 
@@ -183,7 +198,8 @@ Somente após estabilizar o núcleo:
 - dados históricos separados dos parâmetros de simulação;
 - preços históricos não são inventados;
 - linhas do mapa são arestas do grafo, não derrotas;
-- conhecimento de nó, conhecimento de rota, acesso institucional e comando de expedição são estados distintos;
+- coordenadas dos nós não são deslocadas para resolver colisões de rótulos;
+- conhecimento de nó, conhecimento de rota, acesso institucional, relação com ator e comando de expedição são estados distintos;
 - personagem e Coroa possuem estados de conhecimento separados;
 - aquisição de informação não copia silenciosamente o estado da Coroa;
 - rumor não produz conhecimento operacional;
@@ -195,6 +211,11 @@ Somente após estabilizar o núcleo:
 - `ROYAL_MONOPOLY` e `ROYAL_MONOPOLY_LEASED` não são abertos por negociação portuária genérica;
 - `ANCHORAGE_CONTACT` e `NAVIGATION_ONLY` não geram mercado;
 - restrição de mercadoria é independente do acesso ao porto;
+- relações v0.1 usam `UNESTABLISHED` e `CONTACTED`, não reputação global numérica;
+- ator não documentado não é criado apenas para completar uma ação ou tela;
+- autoridade e comunidade mercantil de Calecute não são comprimidas em uma única facção;
+- contato relacional não concede por si só acesso, preço, crédito ou bônus;
+- atores não contatados não são revelados pela interface;
 - piloto documentado não recebe bônus quantitativo não sustentado;
 - `FLEET_COMMAND` não aumenta conhecimento pessoal antes da viagem;
 - observação exata de viagem tem precedência sobre ruído/extrapolação e sobre evento aleatório em cronologia `GUIDED`;
@@ -218,7 +239,7 @@ Somente após estabilizar o núcleo:
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
-- desenho multidimensional de relações/reputação;
+- desenho multidimensional de relações/reputação além de `CONTACTED`;
 - doenças, perdas de carga/tripulação, encalhe, naufrágio e combate marítimo;
 - unidade monetária posterior ao protótipo;
 - cartas, contratos informacionais, espionagem e desinformação;
