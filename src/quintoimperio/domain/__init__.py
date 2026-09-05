@@ -19,6 +19,7 @@ from .session import (
     MarketView,
     NodeKnowledgeRecord,
     RouteKnowledgeRecord,
+    SessionPortServiceResult,
     SessionTradeResult,
 )
 from .trade import CargoHolding, CommercialState, TradeModel, TradeQuote, TradeResult, TradeSide
@@ -51,6 +52,7 @@ __all__ = [
     "RouteKnowledgeModel",
     "RouteKnowledgeRecord",
     "ServiceAvailability",
+    "SessionPortServiceResult",
     "SessionTradeResult",
     "TradeModel",
     "TradeQuote",
