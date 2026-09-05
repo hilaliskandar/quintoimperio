@@ -11,12 +11,12 @@ from quintoimperio.domain import (
 
 
 def expedition_command_demo(model: GameSessionModel) -> None:
-    print("A) Participação institucional: armada de Vasco da Gama, Lisboa -> Cabo")
+    print("A) Participação institucional: armada de Vasco da Gama, Lisboa -> São Thiago")
     state = model.initial_state(
         active_expedition_id="EXP_GAMA_1497",
         provision_days=90.0,
     )
-    before = model.route_nav(state, "R_LIS_CGH")
+    before = model.route_nav(state, "R_LIS_STG")
     print("  conhecimento pessoal da rota antes:", before.name)
     print(
         "  expedição ativa:",
@@ -24,14 +24,17 @@ def expedition_command_demo(model: GameSessionModel) -> None:
         "perna",
         state.expedition_leg_sequence,
     )
-    plan = model.plan_voyage(state, "R_LIS_CGH", seed=1497)
+    plan = model.plan_voyage(state, "R_LIS_STG", seed=1497)
     print("  viagem autorizada:", plan.feasible, plan.navigation_basis.value if plan.navigation_basis else None)
-    print("  conhecimento pessoal continua:", model.route_nav(state, "R_LIS_CGH").name)
+    print("  duração histórica observada:", plan.travel_days, "dias")
+    print("  conhecimento pessoal continua:", model.route_nav(state, "R_LIS_STG").name)
     if plan.feasible:
         arrived = model.execute_voyage(state, plan)
         print("  chegada:", arrived.vessel.location_node, arrived.vessel.clock.current_date)
-        print("  conhecimento após percorrer a rota:", model.route_nav(arrived, "R_LIS_CGH").name)
+        print("  conhecimento após percorrer a rota:", model.route_nav(arrived, "R_LIS_STG").name)
         print("  próxima perna institucional:", arrived.expedition_leg_sequence)
+    aggregate = model.plan_voyage(state, "R_LIS_CGH", seed=1497)
+    print("  Lisboa->Cabo agregado executável:", aggregate.feasible, aggregate.blockers)
     print()
 
 
