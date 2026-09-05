@@ -34,6 +34,7 @@ from .session import (
 from .stop import ChronologyMode, ExpeditionStop, ExpeditionStopModel
 from .trade import CargoHolding, CommercialState, TradeModel, TradeQuote, TradeResult, TradeSide
 from .travel import NavigationBasis, TravelModel, VesselState, VoyagePlan
+from .voyage_event import VoyageEvent, VoyageEventModel, VoyageEventRule, VoyageEventType
 from .world_map import MapEdge, MapExtent, MapPoint, WorldMapModel
 
 __all__ = [
@@ -81,6 +82,10 @@ __all__ = [
     "TradeSide",
     "TravelModel",
     "VesselState",
+    "VoyageEvent",
+    "VoyageEventModel",
+    "VoyageEventRule",
+    "VoyageEventType",
     "VoyagePlan",
     "WorldMapModel",
     "great_circle_nm",
