@@ -3,6 +3,12 @@
 from .calendar import GameClock, MonsoonPhase, monsoon_phase
 from .economy import EconomyModel
 from .expedition import ExpeditionLeg, ExpeditionModel
+from .information import (
+    InformationChannel,
+    InformationModel,
+    InformationOpportunity,
+    InformationRule,
+)
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .navigation import NavigationModel, great_circle_nm
 from .port import (
@@ -20,6 +26,7 @@ from .session import (
     MarketView,
     NodeKnowledgeRecord,
     RouteKnowledgeRecord,
+    SessionInformationResult,
     SessionPortServiceResult,
     SessionTradeResult,
     SessionWaitResult,
@@ -41,6 +48,10 @@ __all__ = [
     "GameClock",
     "GameSessionModel",
     "GameSessionState",
+    "InformationChannel",
+    "InformationModel",
+    "InformationOpportunity",
+    "InformationRule",
     "KnowledgeLevel",
     "KnowledgeModel",
     "KnowledgeState",
@@ -60,6 +71,7 @@ __all__ = [
     "RouteKnowledgeModel",
     "RouteKnowledgeRecord",
     "ServiceAvailability",
+    "SessionInformationResult",
     "SessionPortServiceResult",
     "SessionTradeResult",
     "SessionWaitResult",
