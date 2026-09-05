@@ -29,7 +29,7 @@ Conexoes navegaveis ou historicamente relevantes, sem pressupor que sejam conhec
 Fluxos de mercadorias associados a rotas.
 
 ### `voyage_observations.csv`
-Observacoes documentadas de viagens usadas como ancoras de calibracao. Datas observadas sao fatos de fonte; qualquer velocidade ou parametro derivado dessas datas pertence a camada de simulacao. A primeira ancora preserva separadamente as chegadas a Calecute em 20 e 21 de maio de 1498 registradas por Prakash e Subrahmanyam.
+Observacoes documentadas de viagens usadas como ancoras de calibracao. Datas observadas sao fatos de fonte; qualquer velocidade ou parametro derivado pertence a camada de simulacao. A base preserva as duas chegadas divergentes a Calecute em 20 e 21 de maio de 1498 registradas por Prakash e Subrahmanyam e inclui uma observacao agregada Lisboa-Cabo de 8 de julho a 19 de novembro de 1497. Observacao da mesma rota e data de partida tem precedencia sobre extrapolacao geodesica no prototipo.
 
 ### `pilots.csv`
 Pessoas ou registros historicos de pilotos que podem ser associados a um local e periodo. O primeiro registro e o piloto guzerate fornecido pelo governante de Melinde a armada de Vasco da Gama em abril de 1498. O corpus atual nao sustenta seu nome e registra explicitamente essa incerteza.
