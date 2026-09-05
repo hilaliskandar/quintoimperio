@@ -18,7 +18,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, a economia relativa e o núcleo de navegação/viagem v0.1 estão operacionais.
+A fundação histórica, a economia relativa, o núcleo de navegação/viagem e o primeiro mapa 2D v0.1 estão operacionais.
 
 A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 é preservada em linhas distintas.
 
@@ -34,11 +34,14 @@ O domínio já oferece:
 - bloqueio de rotas sem conhecimento náutico operacional ou piloto competente;
 - estado imutável do navio, dias-equivalentes de provisões e condição abstrata 0–100;
 - planejamento e execução de viagem com consumo de provisões e desgaste;
-- 33 testes automatizados no GitHub Actions.
+- mapa 2D equiretangular baseado exclusivamente nas coordenadas de `nodes.csv`;
+- filtragem do mapa pelo conhecimento geográfico do personagem/Coroa;
+- arestas visíveis de rota tratadas como relações do grafo, não como derrotas históricas;
+- 39 testes automatizados e smoke test do mapa no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: serviços portuários mínimos e primeiro mapa 2D baseado em coordenadas reais; a costa de fundo só será adicionada a partir de dados cartográficos reais.
+Próximo incremento: serviços portuários mínimos de reabastecimento e reparo, seguidos da ligação entre mapa, porto, mercado e viagem. Uma costa de fundo só será adicionada a partir de dados cartográficos reais, com fonte, versão e licença registradas.
 
 ## Estrutura
 
@@ -65,6 +68,7 @@ simulation/
 docs/
   historical-method.md
   navigation-method.md
+  map-method.md
   roadmap.md
   sources.md
   evidence/
@@ -80,17 +84,20 @@ src/quintoimperio/
     knowledge.py
     navigation.py
     travel.py
+    world_map.py
 
 prototype/
   economy.py
   navigation.py
   travel.py
+  map.py
 
 tests/
   test_economy.py
   test_knowledge.py
   test_navigation.py
   test_travel.py
+  test_world_map.py
 ```
 
 ## Desenvolvimento
@@ -101,7 +108,7 @@ Instalação do núcleo sem dependências gráficas:
 python -m pip install -e .
 ```
 
-Instalação com a futura camada de jogo em Pygame:
+Instalação com a camada de protótipo em Pygame:
 
 ```bash
 python -m pip install -e ".[game]"
@@ -115,6 +122,13 @@ python -m unittest discover -s tests -v
 python prototype/economy.py
 python prototype/navigation.py
 python prototype/travel.py
+python prototype/map.py
+```
+
+Também é possível renderizar o mapa sem janela interativa:
+
+```bash
+SDL_VIDEODRIVER=dummy python prototype/map.py --output /tmp/quintoimperio-map.png
 ```
 
 O GitHub Actions executa essas verificações automaticamente.
