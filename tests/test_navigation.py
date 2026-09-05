@@ -62,8 +62,15 @@ class NavigationTests(unittest.TestCase):
         )
         self.assertEqual(first, second)
 
-    def test_missing_coordinates_are_not_fabricated(self):
-        self.assertIsNone(self.model.route_geodesic_nm("R_SOF_KIL"))
+    def test_provisional_sofala_anchor_enables_approximate_geodesic(self):
+        distance = self.model.route_geodesic_nm("R_SOF_KIL")
+        self.assertIsNotNone(distance)
+        self.assertGreater(distance, 650.0)
+        self.assertLess(distance, 800.0)
+        self.assertEqual(self.model.route_coordinate_confidence("R_SOF_KIL"), "MEDIUM")
+
+    def test_reference_route_has_high_coordinate_confidence(self):
+        self.assertEqual(self.model.route_coordinate_confidence("R_MAL_CAL"), "HIGH")
 
     def test_general_monsoon_calendar(self):
         self.assertEqual(monsoon_phase(date(1498, 12, 1)), MonsoonPhase.NORTHEAST)
