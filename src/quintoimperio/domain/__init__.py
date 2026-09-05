@@ -19,6 +19,7 @@ from .port import (
     PortServiceResult,
     ServiceAvailability,
 )
+from .relationship import HistoricalActor, NodeActor, RelationshipModel, RelationshipStatus
 from .route_knowledge import RouteKnowledgeModel
 from .session import (
     AccessRecord,
@@ -57,6 +58,7 @@ __all__ = [
     "GameClock",
     "GameSessionModel",
     "GameSessionState",
+    "HistoricalActor",
     "InformationChannel",
     "InformationModel",
     "InformationOpportunity",
@@ -72,11 +74,14 @@ __all__ = [
     "MonsoonPhase",
     "NavigationBasis",
     "NavigationModel",
+    "NodeActor",
     "NodeKnowledgeRecord",
     "PortServiceKind",
     "PortServiceModel",
     "PortServiceQuote",
     "PortServiceResult",
+    "RelationshipModel",
+    "RelationshipStatus",
     "RouteKnowledgeModel",
     "RouteKnowledgeRecord",
     "ServiceAvailability",
