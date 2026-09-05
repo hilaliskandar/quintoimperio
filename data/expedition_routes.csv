@@ -1,0 +1,6 @@
+expedition_id,sequence,route_id,period_from,period_to,command_basis,evidence_grade,evidence_scope,source_id,notes
+EXP_GAMA_1497,1,R_LIS_CGH,1497,1497,FLEET_COMMAND,A,NODE_DIRECT,NEWITT_PEW|SUBRAHMANYAM_PEA,"Perna agregada Lisboa-Cabo: a armada saiu do Tejo em 8 de julho de 1497 e atingiu o Cabo em novembro. A aresta nao implica ausencia de escalas intermediarias."
+EXP_GAMA_1497,2,R_CGH_MOZ,1497,1498,FLEET_COMMAND,A,NODE_DIRECT,SUBRAHMANYAM_PEA,"Transicao agregada do Cabo para Mocambique, onde ocorreu o primeiro grande contato da armada com a rede comercial da Africa Oriental no inicio de marco de 1498."
+EXP_GAMA_1497,3,R_MOZ_MOM,1498,1498,FLEET_COMMAND,A,NODE_DIRECT,SUBRAHMANYAM_PEA,"A armada deixou Mocambique e, apos tentativa frustrada de atingir Kilwa, chegou a Mombaca em abril de 1498; a aresta e agregada."
+EXP_GAMA_1497,4,R_MOM_MAL,1498,1498,FLEET_COMMAND,A,NODE_DIRECT,SUBRAHMANYAM_PEA,"Passagem da armada de Mombaca para Melinde em abril de 1498."
+EXP_GAMA_1497,5,R_MAL_CAL,1498,1498,FLEET_COMMAND,A,NODE_DIRECT,SUBRAHMANYAM_PEA,"Travessia Melinde-Calecute iniciada em 24 de abril de 1498; a armada utilizou piloto guzerate, que continua modelado separadamente em pilots.csv."
