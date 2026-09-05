@@ -18,7 +18,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, a economia relativa, o núcleo de navegação/viagem e o primeiro mapa 2D v0.1 estão operacionais.
+A fundação histórica, a economia relativa, o núcleo de navegação/viagem, o primeiro mapa 2D e os serviços portuários mínimos v0.1 estão operacionais.
 
 A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 é preservada em linhas distintas.
 
@@ -34,14 +34,17 @@ O domínio já oferece:
 - bloqueio de rotas sem conhecimento náutico operacional ou piloto competente;
 - estado imutável do navio, dias-equivalentes de provisões e condição abstrata 0–100;
 - planejamento e execução de viagem com consumo de provisões e desgaste;
+- reabastecimento e reparo baseados nos campos históricos de `nodes.csv`;
+- distinção explícita entre serviço `UNKNOWN` e `NONE`;
+- capacidades e tempos de serviço isolados em `simulation/port_rules.csv`;
 - mapa 2D equiretangular baseado exclusivamente nas coordenadas de `nodes.csv`;
 - filtragem do mapa pelo conhecimento geográfico do personagem/Coroa;
 - arestas visíveis de rota tratadas como relações do grafo, não como derrotas históricas;
-- 39 testes automatizados e smoke test do mapa no GitHub Actions.
+- 51 testes automatizados e smoke test do mapa no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: serviços portuários mínimos de reabastecimento e reparo, seguidos da ligação entre mapa, porto, mercado e viagem. Uma costa de fundo só será adicionada a partir de dados cartográficos reais, com fonte, versão e licença registradas.
+Próximo incremento: estado comercial do jogador, inventário/capacidade abstrata e primeiras operações de compra e venda usando apenas os mercados já documentados. Uma costa de fundo só será adicionada a partir de dados cartográficos reais, com fonte, versão e licença registradas.
 
 ## Estrutura
 
@@ -64,11 +67,13 @@ simulation/
   navigation_rules.csv
   knowledge_rules.csv
   travel_rules.csv
+  port_rules.csv
 
 docs/
   historical-method.md
   navigation-method.md
   map-method.md
+  port-method.md
   roadmap.md
   sources.md
   evidence/
@@ -83,12 +88,14 @@ src/quintoimperio/
     economy.py
     knowledge.py
     navigation.py
+    port.py
     travel.py
     world_map.py
 
 prototype/
   economy.py
   navigation.py
+  port.py
   travel.py
   map.py
 
@@ -96,6 +103,8 @@ tests/
   test_economy.py
   test_knowledge.py
   test_navigation.py
+  test_port.py
+  test_port_data.py
   test_travel.py
   test_world_map.py
 ```
@@ -122,6 +131,7 @@ python -m unittest discover -s tests -v
 python prototype/economy.py
 python prototype/navigation.py
 python prototype/travel.py
+python prototype/port.py
 python prototype/map.py
 ```
 
