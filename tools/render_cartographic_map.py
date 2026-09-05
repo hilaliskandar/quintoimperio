@@ -25,25 +25,35 @@ from quintoimperio.domain import KnowledgeLevel, KnowledgeModel
 
 ROOT = Path(__file__).resolve().parents[1]
 
+OCEAN = "#c8d3cf"
+LAND = "#dcc59b"
+COAST = "#554b3d"
+GRID = "#8b775f"
+LABEL_BG = "#efe0bf"
+PORTUGUESE = "#8b2e2e"
+FOREIGN = "#24566b"
+NAVIGATION = "#3f3a34"
+PREEXISTING = "#6c7777"
+
 LABEL_OFFSETS = {
-    "LIS": (0.9, 1.2),
-    "CEU": (0.9, -1.2),
-    "FUN": (1.2, -0.5),
-    "ARG": (1.2, 0.2),
-    "RGR": (1.2, -0.7),
-    "ELM": (1.0, 1.0),
-    "STO": (1.0, -1.0),
-    "CGH": (1.0, -1.1),
-    "MOZ": (1.0, -0.7),
-    "MOM": (1.0, 1.0),
-    "MAL": (1.0, -0.8),
-    "KIL": (1.0, -0.9),
-    "CAL": (1.0, 0.9),
-    "ADE": (1.0, 1.0),
+    "LIS": (0.9, 1.5),
+    "CEU": (1.0, -1.7),
+    "FUN": (1.2, 0.2),
+    "ARG": (1.2, 0.5),
+    "RGR": (1.1, -0.5),
+    "ELM": (1.0, 1.3),
+    "STO": (1.0, -1.6),
+    "CGH": (1.0, -1.4),
+    "MOZ": (1.1, -1.0),
+    "MOM": (1.0, 1.4),
+    "MAL": (1.0, -1.6),
+    "KIL": (1.0, -1.4),
+    "CAL": (1.2, -1.3),
+    "ADE": (1.0, 1.1),
     "HUR": (1.0, 1.0),
-    "CAM": (1.0, -1.1),
-    "BHA": (1.0, -0.9),
-    "MLK": (1.0, -0.7),
+    "CAM": (1.0, 1.2),
+    "BHA": (1.0, 1.1),
+    "MLK": (1.0, -1.1),
 }
 
 
@@ -98,7 +108,6 @@ def render(output: Path, perspective: str) -> None:
 
     fig = plt.figure(figsize=(16, 9))
     ax = plt.gca()
-    ax.set_facecolor("#d9c8a8")
 
     m = Basemap(
         projection="cyl",
@@ -109,15 +118,15 @@ def render(output: Path, perspective: str) -> None:
         resolution="l",
         ax=ax,
     )
-    m.drawmapboundary(fill_color="#c8d2cf", linewidth=0.8)
-    m.fillcontinents(color="#d8c39b", lake_color="#c8d2cf")
-    m.drawcoastlines(color="#5d5142", linewidth=0.65)
+    m.drawmapboundary(fill_color=OCEAN, linewidth=0.8)
+    m.fillcontinents(color=LAND, lake_color=OCEAN)
+    m.drawcoastlines(color=COAST, linewidth=0.75)
     m.drawparallels(
         range(-40, 51, 10),
         labels=[1, 0, 0, 0],
         linewidth=0.25,
         dashes=[2, 4],
-        color="#8b775f",
+        color=GRID,
         fontsize=8,
     )
     m.drawmeridians(
@@ -125,7 +134,7 @@ def render(output: Path, perspective: str) -> None:
         labels=[0, 0, 0, 1],
         linewidth=0.25,
         dashes=[2, 4],
-        color="#8b775f",
+        color=GRID,
         fontsize=8,
     )
 
@@ -137,12 +146,25 @@ def render(output: Path, perspective: str) -> None:
         x = [float(origin["longitude"]), float(destination["longitude"])]
         y = [float(origin["latitude"]), float(destination["latitude"])]
         if route["route_origin"] == "PORTUGUESE_EXPLORATION":
-            ax.plot(x, y, linewidth=1.35, alpha=0.75, zorder=2)
+            ax.plot(x, y, color=PORTUGUESE, linewidth=1.5, alpha=0.82, zorder=2)
         else:
-            ax.plot(x, y, linewidth=0.8, alpha=0.30, linestyle="--", zorder=1)
+            ax.plot(
+                x,
+                y,
+                color=PREEXISTING,
+                linewidth=0.85,
+                alpha=0.40,
+                linestyle=(0, (4, 4)),
+                zorder=1,
+            )
 
     marker_by_group = {"portuguese": "o", "foreign": "s", "navigation": "D"}
-    size_by_group = {"portuguese": 36, "foreign": 32, "navigation": 38}
+    color_by_group = {
+        "portuguese": PORTUGUESE,
+        "foreign": FOREIGN,
+        "navigation": NAVIGATION,
+    }
+    size_by_group = {"portuguese": 38, "foreign": 34, "navigation": 42}
     for group in ("portuguese", "foreign", "navigation"):
         subset = [row for row in drawable if node_group(row) == group]
         if not subset:
@@ -152,24 +174,35 @@ def render(output: Path, perspective: str) -> None:
             [float(row["latitude"]) for row in subset],
             s=size_by_group[group],
             marker=marker_by_group[group],
+            c=color_by_group[group],
             zorder=4,
             edgecolors="black",
-            linewidths=0.5,
+            linewidths=0.55,
         )
 
     for row in drawable:
+        longitude = float(row["longitude"])
+        latitude = float(row["latitude"])
         dx, dy = LABEL_OFFSETS.get(row["node_id"], (1.0, 1.0))
-        ax.text(
-            float(row["longitude"]) + dx,
-            float(row["latitude"]) + dy,
+        ax.annotate(
             row["historical_name"],
-            fontsize=9.2,
-            zorder=5,
+            xy=(longitude, latitude),
+            xytext=(longitude + dx, latitude + dy),
+            fontsize=9.1,
+            zorder=6,
+            arrowprops={
+                "arrowstyle": "-",
+                "linewidth": 0.45,
+                "color": COAST,
+                "alpha": 0.55,
+                "shrinkA": 0,
+                "shrinkB": 4,
+            },
             bbox={
-                "boxstyle": "round,pad=0.15",
-                "facecolor": "#eadbbd",
+                "boxstyle": "round,pad=0.16",
+                "facecolor": LABEL_BG,
                 "edgecolor": "none",
-                "alpha": 0.72,
+                "alpha": 0.82,
             },
         )
 
@@ -179,32 +212,63 @@ def render(output: Path, perspective: str) -> None:
         "CROWN": "mundo inicialmente conhecido pela Coroa",
     }[perspective]
     ax.set_title(
-        "Quinto Império — mapa cartográfico de referência v0.2\n"
+        "Quinto Império — referência cartográfica programática v0.2\n"
         f"{subtitle}; costa real e sem fronteiras políticas modernas",
         fontsize=15,
     )
 
     handles = [
-        Line2D([0], [0], marker="o", linestyle="", markeredgecolor="black", label="presença portuguesa / atlântica"),
-        Line2D([0], [0], marker="s", linestyle="", markeredgecolor="black", label="porto ou entreposto estrangeiro"),
-        Line2D([0], [0], marker="D", linestyle="", markeredgecolor="black", label="marco náutico"),
-        Line2D([0], [0], linestyle="-", linewidth=1.35, label="eixo português de exploração"),
-        Line2D([0], [0], linestyle="--", linewidth=0.8, alpha=0.5, label="rede preexistente registrada"),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="none",
+            markerfacecolor=PORTUGUESE,
+            markeredgecolor="black",
+            label="presença portuguesa / atlântica",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="s",
+            color="none",
+            markerfacecolor=FOREIGN,
+            markeredgecolor="black",
+            label="porto ou entreposto estrangeiro",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="D",
+            color="none",
+            markerfacecolor=NAVIGATION,
+            markeredgecolor="black",
+            label="marco náutico",
+        ),
+        Line2D([0], [0], color=PORTUGUESE, linewidth=1.5, label="eixo português de exploração"),
+        Line2D(
+            [0],
+            [0],
+            color=PREEXISTING,
+            linestyle=(0, (4, 4)),
+            linewidth=0.9,
+            label="rede preexistente registrada",
+        ),
     ]
-    ax.legend(handles=handles, loc="lower right", framealpha=0.82, fontsize=9)
+    ax.legend(handles=handles, loc="lower right", framealpha=0.88, fontsize=9)
 
     ax.text(
         0.01,
         0.015,
-        "Nós sem coordenadas defensáveis permanecem fora. As linhas são arestas do grafo, não trajetos históricos exatos.",
+        "Nós sem coordenadas defensáveis permanecem fora. Arestas não representam trajetos marítimos exatos.",
         transform=ax.transAxes,
         fontsize=9,
         va="bottom",
         bbox={
             "boxstyle": "round,pad=0.25",
-            "facecolor": "#eadbbd",
+            "facecolor": LABEL_BG,
             "edgecolor": "none",
-            "alpha": 0.80,
+            "alpha": 0.85,
         },
     )
 
