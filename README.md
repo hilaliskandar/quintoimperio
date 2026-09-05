@@ -18,9 +18,13 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-Fase 0 — fundação histórica e arquitetura de dados.
+A fundação histórica v0.1 e o primeiro protótipo econômico estão operacionais.
 
-O corpus inicial cobre expansão atlântica portuguesa anterior a Vasco da Gama, costa suaíli, Malabar, Gujarat e redes do Índico. A programação do protótipo começa somente após estabilizar um subconjunto mínimo de nós, bens, rotas e regras de navegação.
+A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas e 15 fluxos de mercadorias. O protótipo econômico possui oito testes determinísticos e mantém parâmetros de balanceamento separados da evidência histórica.
+
+A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
+
+Próxima fase: navegação, calendário, monções e conhecimento do jogador, seguida por um mapa 2D mínimo construído a partir de coordenadas reais.
 
 ## Estrutura
 
@@ -33,17 +37,56 @@ data/
   routes.csv
   route_goods.csv
 
+simulation/
+  README.md
+  goods_params.csv
+  rules.csv
+
 docs/
   historical-method.md
   roadmap.md
+  sources.md
+  adr/
+    0001-runtime-and-engine.md
 
-src/
-  (reservado ao protótipo)
+src/quintoimperio/
+  data/
+  domain/
+
+prototype/
+  economy.py
+
+tests/
+  test_economy.py
 ```
+
+## Desenvolvimento
+
+Instalação do núcleo sem dependências gráficas:
+
+```bash
+python -m pip install -e .
+```
+
+Instalação com a futura camada de jogo em Pygame:
+
+```bash
+python -m pip install -e ".[game]"
+```
+
+Validação manual:
+
+```bash
+python scripts/validate_data.py
+python -m unittest discover -s tests -v
+python prototype/economy.py
+```
+
+O GitHub Actions executa essas verificações automaticamente.
 
 ## Fontes de dados
 
-As tabelas em `data/` devem manter campos de proveniência e grau de evidência. Nenhum valor de simulação deve ser apresentado como dado histórico sem fonte explícita.
+As tabelas em `data/` mantêm campos de proveniência e grau de evidência. Os números em `simulation/` são índices de balanceamento e não devem ser apresentados como dados históricos.
 
 ## Licença
 
