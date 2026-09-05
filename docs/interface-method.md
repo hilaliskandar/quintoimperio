@@ -14,9 +14,9 @@ A tela apresenta mapa conhecido, porto atual, data, condição e provisões do n
 
 O painel mostra a expedição e a perna corrente. Uma rota pode aparecer como disponível por `FLEET_COMMAND` mesmo quando o conhecimento pessoal ainda não é `OPERATIONAL`. O banner explicita: **comando institucional ≠ conhecimento pessoal**.
 
-A cronologia documentada tem precedência quando existe observação da mesma rota e data. Assim, `R_LIS_CGH` parte em 8 de julho e usa a duração agregada observada de 134 dias até 19 de novembro, não a antiga extrapolação de velocidade derivada do Índico.
+A primeira perna operacional é agora `R_LIS_STG`, Lisboa → São Thiago/baía de Santa Maria. A observação documentada da mesma rota e data produz a chegada em 27 de julho de 1497. A antiga aresta `R_LIS_CGH` permanece somente como conexão `STRATEGIC_AGGREGATE` e o domínio a bloqueia para execução.
 
-Essa primeira aresta continua inadequada como unidade final de provisões porque inclui escalas intermediárias. A interface preserva o eventual bloqueio por recursos em vez de inflar silenciosamente a capacidade do navio; o itinerário será segmentado em escalas documentadas.
+A segmentação prossegue por baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais e Moçambique antes da costa suaíli setentrional e da travessia Melinde–Calecute. Ancoradouros logísticos não são transformados em mercados para tornar o loop mais conveniente.
 
 ### TECHNICAL
 
@@ -28,7 +28,7 @@ Ele permite testar `mercado -> compra -> viagem -> chegada -> venda`. Um banner 
 
 O mapa usa as coordenadas de `nodes.csv`. Somente nós com conhecimento geográfico pelo menos `RUMORED` aparecem. Linhas representam arestas do grafo, não derrotas históricas, correntes ou trajetos efetivamente navegados.
 
-Uma rota pode ficar visível porque o personagem a conhece ou porque corresponde à perna corrente de uma expedição ativa. Isso não altera o estado de conhecimento pessoal.
+Uma rota pode ficar visível porque o personagem a conhece ou porque corresponde à perna corrente de uma expedição ativa. Isso não altera o estado de conhecimento pessoal. Conexões estratégicas agregadas podem continuar visíveis para leitura do grafo, mas o domínio não permite executá-las como viagem única.
 
 A costa real permanece na ferramenta cartográfica de referência separada em `tools/render_cartographic_map.py`.
 
@@ -39,13 +39,13 @@ O painel consulta `GameSessionModel.service_quote()` para provisões e reparo e 
 - `Reabastecer +30` solicita 30 dias-equivalentes;
 - `Reparar +20` solicita 20 pontos abstratos de condição.
 
-Esses números são parâmetros de simulação. Nenhum custo monetário histórico é inventado.
+Esses números são parâmetros de simulação. O limite abstrato de provisões foi ampliado para comportar a longa perna São Thiago–baía de Santa Helena; isso não é apresentado como tonelagem, ração ou capacidade histórica. Nenhum custo monetário histórico é inventado.
 
 ## Mercado
 
 O painel chama `GameSessionModel.market_view()`. Se `market_knowledge < OPERATIONAL`, nenhuma mercadoria acionável é mostrada. Compra e venda usam quantidade unitária abstrata e são delegadas ao domínio.
 
-Capital, quantidade, capacidade e preço continuam índices de simulação.
+Capital, quantidade, capacidade e preço continuam índices de simulação. Nós logísticos com `market_scale=NONE` não recebem mercadorias apenas por terem sido escalas da expedição.
 
 ## Viagem
 
@@ -58,7 +58,7 @@ Cada rota de saída é planejada pelo domínio. O painel exibe a base disponíve
 
 Quando existe piloto documentado para porto, período e rota, a interface o fornece ao plano antes de recorrer ao comando institucional. Isso preserva o caso Melinde–Calecute de 1498.
 
-A execução de uma viagem atualiza calendário, provisões, condição, aprendizagem e, quando aplicável, avança a expedição para a próxima perna.
+A execução de uma viagem atualiza calendário, provisões, condição, aprendizagem e, quando aplicável, avança a expedição para a próxima perna. As permanências documentadas em `expedition_stops.csv` ainda não são executadas automaticamente; sua integração ao calendário jogável é o próximo incremento.
 
 ## Interação
 
