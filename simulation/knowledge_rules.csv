@@ -1,0 +1,10 @@
+perspective,source_value,geo,nav,market,political,notes
+PLAYER,HIGH,4,3,3,3,"Conhecimento inicial elevado do personagem; índices de simulação, não medição histórica."
+PLAYER,MEDIUM,3,2,2,2,"Conhecimento parcial mas operacional em parte."
+PLAYER,INDIRECT,2,1,1,1,"Lugar conhecido por informação indireta, sem domínio da navegação ou do mercado."
+PLAYER,UNKNOWN,0,0,0,0,"Sem conhecimento inicial utilizável."
+CROWN,KNOWN,4,3,3,3,"Conhecimento institucional elevado na escala v0.1."
+CROWN,INDIRECT_AT_BEST,1,1,1,1,"Conhecimento institucional apenas tênue/indireto."
+CROWN,INDIRECT,2,1,1,1,"Conhecimento institucional indireto."
+CROWN,STRATEGIC_INDIRECT,2,1,2,1,"Conhecimento estratégico da importância do lugar sem conhecimento operacional equivalente."
+CROWN,UNKNOWN,0,0,0,0,"Sem conhecimento institucional representado na base inicial."

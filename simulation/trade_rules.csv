@@ -1,0 +1,3 @@
+rule_type,key,value,notes
+MARKET,BUY_MULTIPLIER,1.05,"Multiplicador de simulação aplicado ao índice-preço para compra; não representa margem ou taxa histórica."
+MARKET,SELL_MULTIPLIER,0.95,"Multiplicador de simulação aplicado ao índice-preço para venda; cria spread mínimo e não representa margem histórica."

@@ -1,0 +1,6 @@
+rule_type,key,value,notes
+ARRIVAL,GEO_MIN,4,"Após chegar fisicamente ao nó, sua localização geográfica torna-se confirmada na escala de simulação."
+ARRIVAL,NAV_MIN,2,"A chegada produz conhecimento náutico parcial do nó, sem equivaler a domínio de todas as rotas associadas."
+ARRIVAL,MARKET_MIN,3,"A presença no porto torna o mercado operacional para o loop mínimo; regra de simulação, não medida histórica."
+ARRIVAL,POLITICAL_MIN,2,"A presença local produz conhecimento político parcial na primeira versão."
+ROUTE_COMPLETION,NAV_MIN,3,"Completar uma rota eleva seu conhecimento náutico ao nível operacional; não implica conhecimento confirmado ou universal."

@@ -1,0 +1,6 @@
+rule_type,key,value,notes
+PROVISIONS,DAY_EQUIVALENT_PER_TRAVEL_DAY,1.0,"Unidade abstrata: um dia de viagem consome um dia-equivalente de provisoes. Nao representa racao, barril ou quantidade historica."
+WEAR,OCEANIC_PER_DAY,0.20,"Pontos de condicao por dia na escala abstrata 0-100; parametro de balanceamento, nao taxa historica."
+WEAR,COASTAL_OCEANIC_PER_DAY,0.15,"Pontos de condicao por dia na escala abstrata 0-100; parametro de balanceamento, nao taxa historica."
+WEAR,DEFAULT_PER_DAY,0.18,"Fallback de simulacao para tipos de rota ainda sem regra especifica."
+DEPARTURE,MIN_CONDITION,20.0,"Condicao minima abstrata para autorizar partida no prototipo."

@@ -1,0 +1,9 @@
+rule_type,key,value,notes
+REFERENCE_ROUTE,R_MAL_CAL,1,"A travessia Melinde–Calecute de 1498 é a primeira âncora de calibração. O progresso diário de referência é derivado das observações históricas e da distância geodésica, não tratado como velocidade histórica universal."
+DURATION_NOISE_FRACTION,DEFAULT,0.08,"Variação determinística de ±8% em torno da duração-base. Parâmetro de simulação."
+JUNE_JULY_MULTIPLIER,HIGH,1.75,"Penalidade v0.1 para rotas de alta dependência monçônica em junho/julho, quando Alpers registra forte interrupção da navegação de dhows. Não é uma razão histórica medida."
+JUNE_JULY_MULTIPLIER,MEDIUM,1.25,"Penalidade intermediária de simulação para rotas de dependência média."
+JUNE_JULY_MULTIPLIER,NONE,1.00,"Sem penalidade monçônica específica nesta regra."
+OTHER_MONTH_MULTIPLIER,HIGH,1.00,"A v0.1 não infere automaticamente vantagem direcional da monção para cada rota; isso exigirá evidência específica por trecho."
+OTHER_MONTH_MULTIPLIER,MEDIUM,1.00,"Sem ajuste fora de junho/julho na calibração inicial."
+OTHER_MONTH_MULTIPLIER,NONE,1.00,"Sem ajuste."

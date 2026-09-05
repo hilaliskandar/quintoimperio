@@ -1,0 +1,248 @@
+# Roteiro de produção
+
+## Fase 0 — Fundação histórica e de dados
+
+Status: **v0.1 concluída; aprofundamento histórico contínuo**.
+
+Objetivo: estabilizar a primeira representação do mundo de 1497–1500 antes de programar mecânicas definitivas.
+
+Entregas já existentes:
+
+- nós atlânticos e primeiros nós do Índico;
+- mercadorias, relações nó–mercadoria, rotas e fluxos;
+- observações documentadas de viagem;
+- pilotos e competências por rota;
+- expedições/armadas, sequência de pernas e permanências logísticas;
+- atores/comunidades historicamente normalizados por nó e período;
+- proveniência, confiança e incerteza explícitas;
+- validação automática e testes de domínio.
+
+A pesquisa continua refinando relações e cronologias sem bloquear o protótipo.
+
+## Fase 1 — Protótipo econômico sem interface final
+
+Status: **v0.1 concluída**.
+
+Implementado:
+
+- oferta/demanda relativas derivadas do papel comercial documentado;
+- volume, valor e função de troca separados em `simulation/`;
+- custos relativos de provisões, frete, acesso/tributação e intermediação;
+- estoques estruturais e dependentes de trânsito;
+- choques determinísticos por semente;
+- restrições específicas de mercadoria separadas do acesso portuário genérico;
+- testes automatizados.
+
+Nenhum índice é tratado como preço ou quantidade histórica.
+
+## Fase 2 — Navegação, calendário, conhecimento e viagem
+
+Status: **núcleo v0.1 concluído; calibração histórica contínua**.
+
+Implementado:
+
+- calendário e fases gerais da monção;
+- distância geodésica de referência e confiança espacial da rota;
+- observações documentadas de viagem e divergências entre fontes;
+- precedência de observação da mesma rota/data sobre extrapolação geodésica;
+- Melinde–Calecute 1498 preservada em 26/27 dias;
+- itinerário inicial de Gama segmentado em pernas operacionais entre Lisboa, São Thiago, baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais, Moçambique, Mombaça, Melinde e Calecute;
+- conexões Lisboa–Cabo e Cabo–Moçambique mantidas apenas como `STRATEGIC_AGGREGATE`, bloqueadas para execução;
+- permanências logísticas registradas separadamente do tempo de navegação;
+- `ChronologyMode.GUIDED` e `COUNTERFACTUAL` para separar reprodução temporal da campanha de trajetórias divergentes;
+- bloqueio de partida antes da data documentada numa escala guiada;
+- espera explícita até a partida sem efeitos materiais automáticos;
+- serviços, informação e negociação consumindo o mesmo calendário;
+- ruído determinístico somente quando não há observação exata da partida;
+- eventos marítimos genéricos determinísticos por semente, limitados a atraso e perda abstrata de condição;
+- observação histórica exata suprimindo eventos aleatórios em cronologia `GUIDED`;
+- possibilidade de a mesma rota/data receber evento em cronologia `COUNTERFACTUAL`;
+- quatro dimensões de conhecimento por nó;
+- conhecimento náutico de rota separado de conhecimento de nó;
+- estados separados para personagem e Coroa;
+- piloto guzerate de Melinde associado somente à rota documentada;
+- bases `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND`;
+- provisões e condição abstratas;
+- planejamento/execução de viagem e bloqueios explícitos.
+
+Próximos aprofundamentos:
+
+1. perfis direcionais de vento apenas quando documentados por trecho;
+2. substituir escalas abstratas somente quando houver evidência suficiente;
+3. refinar cronologias editoriais do `Roteiro` quando novas edições/fontes permitirem;
+4. somente depois avaliar doença, perdas materiais, encalhe/naufrágio e outros riscos com modelos próprios.
+
+## Fase 3 — Primeiro mapa e loop jogável
+
+Status: **interface jogável v0.1 concluída; campanha histórica em refinamento**.
+
+Implementado:
+
+- mapa de runtime independente da lógica de domínio;
+- referência cartográfica programática com costa real e sem fronteiras políticas modernas;
+- visibilidade de nós/rotas condicionada ao conhecimento;
+- rótulos do mapa reposicionados apenas para legibilidade, sem deslocar coordenadas dos nós, com regressão automatizada contra sobreposição nos cenários padrão;
+- serviços portuários com `UNKNOWN` distinto de `NONE`;
+- estado comercial imutável;
+- compra/venda apenas em mercados documentados;
+- `GameSessionState` reunindo navio, comércio, conhecimento, acesso, relações, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
+- mercado bloqueado até conhecimento operacional;
+- acesso comercial separado de conhecimento do mercado;
+- `FOREIGN_NEGOTIATED` exigindo negociação explícita antes de compra/venda;
+- monopólios e mercadorias restritas não desbloqueados pela negociação genérica;
+- reabastecimento/reparo integrados à sessão;
+- aprendizagem por chegada e conclusão de rota;
+- aquisição ativa de informação por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`;
+- oportunidades informativas limitadas à rede documentada e nunca derivadas por cópia do estado da Coroa;
+- canais limitados abaixo de `OPERATIONAL` para que rumor/consulta não substituam experiência efetiva;
+- cada oportunidade informativa utilizável uma vez por sessão e seleção determinística por semente;
+- relações por ator limitadas a `UNESTABLISHED` e `CONTACTED`;
+- contato com autoridade e comunidade mercantil registrado somente quando a base histórica possui associação não ambígua;
+- atores não contatados ocultos na interface;
+- eventos de viagem registrados no plano e no histórico da sessão para auditoria;
+- cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → negociação → venda`;
+- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, acesso, informação, relações estabelecidas, mercado, armada ativa, escala, espera, rotas e último evento `SIM` quando houver;
+- botão de negociação exibido somente quando o gate institucional é negociável;
+- mercado conhecido pode ser consultado mesmo quando a operação está bloqueada por acesso;
+- modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497` e cronologia `GUIDED`;
+- modo `TECHNICAL` claramente identificado como não histórico e `COUNTERFACTUAL`;
+- `FLEET_COMMAND` visível sem elevar conhecimento pessoal;
+- piloto documentado preservado como base específica quando aplicável;
+- primeira perna histórica executável Lisboa → São Thiago;
+- rotas estratégicas agregadas bloqueadas no domínio;
+- escalas guiadas impedindo partida precoce e oferecendo espera apenas pelo tempo restante;
+- mudança para cronologia contrafactual quando o jogador ultrapassa a partida histórica e prossegue;
+- smoke tests e capturas no GitHub Actions.
+
+Próximos incrementos do loop:
+
+1. definir se relações precisam de mais estados categóricos antes de qualquer escore numérico;
+2. introduzir efeitos relacionais somente onde houver ator documentado e regra de simulação explícita;
+3. aprofundar intermediários e comunidades mercantis além do campo de disponibilidade;
+4. refinar a interface sem sacrificar a separação entre cartografia, conhecimento e instituições.
+
+## Fase 4 — Portos, instituições e relações
+
+Status: **acesso institucional e relações por atores v0.1 implementados; efeitos relacionais são a próxima frente**.
+
+Já implementado:
+
+- participação em expedição/armada separada do conhecimento individual;
+- sequência de pernas por expedição;
+- permanências logísticas documentadas separadas de mercados;
+- comando institucional como base de viagem específica;
+- piloto como competência distinta do comando;
+- serviços portuários mínimos;
+- permanência histórica sem efeitos materiais automáticos;
+- rumor como canal de conhecimento não operacional;
+- contato mercantil condicionado à disponibilidade de intermediários;
+- consulta a piloto condicionada a competência histórica de rota;
+- histórico de oportunidades informativas usadas por sessão;
+- risco marítimo genérico separado de incidentes históricos documentados;
+- `AccessModel` com estados `OPEN`, `NEGOTIATION_REQUIRED`, `NEGOTIATED`, `RESTRICTED`, `NONCOMMERCIAL` e `UNKNOWN`;
+- negociação genérica de `FOREIGN_NEGOTIATED` sem inventar taxas, presentes, diálogo ou probabilidade de êxito;
+- ancoradouros e marcos náuticos preservados como não comerciais;
+- monopólios régios preservados como restritos;
+- `node_goods.restricted=TRUE` como bloqueio independente de mercadoria;
+- `actors.csv` e `node_actors.csv` com proveniência e limites temporais explícitos;
+- `RelationshipModel` sem ator genérico de preenchimento;
+- autoridade do Samudri Raja e comunidade mercantil muçulmana/pardesi de Calecute mantidas como atores distintos;
+- autoridade local de Melinde normalizada somente para 1498;
+- negociação em Calecute podendo registrar contato com a autoridade documentada;
+- `MERCHANT_CONTACT` podendo registrar contato com a comunidade mercantil documentada;
+- ausência de efeito relacional automático em portos sem ator normalizado;
+- interface mostrando somente relações já `CONTACTED`.
+
+Ainda por implementar:
+
+- estados relacionais além de `CONTACTED`, caso sejam necessários;
+- efeitos de confiança, hostilidade ou reputação sem reduzi-los automaticamente a uma pontuação global;
+- intermediários e comunidades mercantis como agentes mais ricos que um simples campo de disponibilidade;
+- impostos, monopólios, privilégios e presentes diplomáticos somente quando historicamente sustentados ou explicitamente parametrizados como simulação;
+- contratos e crédito;
+- cartas persistentes, mensagens e redes pessoais de informação;
+- desinformação/qualidade de informantes somente se necessária ao jogo;
+- hierarquia mais detalhada de capitães, mestres, pilotos, escrivães, marinheiros e soldados, apenas se necessária ao jogo e sustentada pela documentação.
+
+## Fase 5 — Campanha 1497–1505
+
+Recorte inicial:
+
+1. Lisboa e rede atlântica conhecida;
+2. viagem de 1497 com escalas, permanências e aprendizagem progressiva;
+3. Moçambique, Mombaça e Melinde;
+4. chegada a Calecute;
+5. negociação de acesso separada do simples conhecimento do mercado;
+6. contatos diferenciados com autoridade e comunidade mercantil quando documentados;
+7. retorno e reconfiguração após a primeira viagem;
+8. expansão inicial até Cochim e primeiras estruturas portuguesas.
+
+O jogo deve deixar clara a diferença entre a rede atlântica portuguesa já estabelecida e a rede índica preexistente.
+
+## Fase 6 — Expansão 1505–1540
+
+Somente após estabilizar o núcleo:
+
+- Goa;
+- Ormuz;
+- Malaca;
+- carreiras intra-asiáticas;
+- cartaz;
+- comércio privado e casados;
+- Coromandel, Bengala e Sudeste Asiático.
+
+## Decisões resolvidas
+
+- Python 3.12 + pygame-ce no primeiro jogável;
+- domínio independente da interface;
+- dados históricos separados dos parâmetros de simulação;
+- preços históricos não são inventados;
+- linhas do mapa são arestas do grafo, não derrotas;
+- coordenadas dos nós não são deslocadas para resolver colisões de rótulos;
+- conhecimento de nó, conhecimento de rota, acesso institucional, relação com ator e comando de expedição são estados distintos;
+- personagem e Coroa possuem estados de conhecimento separados;
+- aquisição de informação não copia silenciosamente o estado da Coroa;
+- rumor não produz conhecimento operacional;
+- contato mercantil melhora conhecimento comercial/geográfico sem conferir navegação operacional;
+- consulta a piloto fica limitada a `PARTIAL` e não substitui pilotagem/experiência;
+- alvos informativos provêm apenas de rotas/nós documentados e excluem `STRATEGIC_AGGREGATE`;
+- `FOREIGN_NEGOTIATED` exige negociação explícita na v0.1;
+- negociação genérica não cobra dinheiro, não quantifica presentes e não sorteia êxito diplomático;
+- `ROYAL_MONOPOLY` e `ROYAL_MONOPOLY_LEASED` não são abertos por negociação portuária genérica;
+- `ANCHORAGE_CONTACT` e `NAVIGATION_ONLY` não geram mercado;
+- restrição de mercadoria é independente do acesso ao porto;
+- relações v0.1 usam `UNESTABLISHED` e `CONTACTED`, não reputação global numérica;
+- ator não documentado não é criado apenas para completar uma ação ou tela;
+- autoridade e comunidade mercantil de Calecute não são comprimidas em uma única facção;
+- contato relacional não concede por si só acesso, preço, crédito ou bônus;
+- atores não contatados não são revelados pela interface;
+- piloto documentado não recebe bônus quantitativo não sustentado;
+- `FLEET_COMMAND` não aumenta conhecimento pessoal antes da viagem;
+- observação exata de viagem tem precedência sobre ruído/extrapolação e sobre evento aleatório em cronologia `GUIDED`;
+- eventos marítimos v0.1 são `SIMULATION`, no máximo um por viagem e limitados a tempo/provisões/condição;
+- evento genérico não representa calmaria, tempestade ou avaria histórica específica;
+- em `COUNTERFACTUAL`, uma rota/data historicamente observada pode receber evento de simulação;
+- itinerário Lisboa–Moçambique é segmentado para execução e as conexões agregadas ficam apenas como camada estratégica;
+- ancoradouro logístico não é convertido automaticamente em mercado;
+- datas editoriais do `Roteiro` são marcadas como reconstruções;
+- `observed_stay_days` permanece distinto da diferença aritmética entre datas editoriais;
+- espera histórica avança apenas o relógio e não concede recursos automaticamente;
+- atraso além da partida documentada converte a sessão em cronologia contrafactual em vez de forçar datas históricas;
+- limite de provisões continua parâmetro abstrato mesmo quando calibrado para acomodar uma perna histórica longa;
+- serviço desconhecido não é tratado como ausente nem disponível;
+- cenários técnicos permanecem explicitamente separados do estado histórico;
+- identidade/profissão do protagonista continua não fixada.
+
+## Decisões ainda abertas
+
+- unidade física/abstrata de carga definitiva;
+- classes de navio e velocidades relativas;
+- grau de controle direto do jogador sobre navio e tripulação;
+- protagonista e enquadramento exato da campanha;
+- desenho multidimensional de relações/reputação além de `CONTACTED`;
+- doenças, perdas de carga/tripulação, encalhe, naufrágio e combate marítimo;
+- unidade monetária posterior ao protótipo;
+- cartas, contratos informacionais, espionagem e desinformação;
+- desenho visual definitivo da interface.
+
+Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.

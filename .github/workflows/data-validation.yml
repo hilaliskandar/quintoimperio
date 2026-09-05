@@ -1,0 +1,65 @@
+name: Validate historical data and simulation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project package
+        run: python -m pip install -e ".[game,cartography]"
+      - name: Validate CSV data
+        run: python scripts/validate_data.py
+      - name: Run domain tests
+        run: python -m unittest discover -s tests -v
+      - name: Render economy prototype report
+        run: python prototype/economy.py
+      - name: Render navigation prototype report
+        run: python prototype/navigation.py
+      - name: Render travel prototype report
+        run: python prototype/travel.py
+      - name: Render port service prototype report
+        run: python prototype/port.py
+      - name: Render trade prototype report
+        run: python prototype/trade.py
+      - name: Run integrated session prototype
+        run: python prototype/session.py
+      - name: Smoke-test playable interface
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          python prototype/game.py --scenario HISTORICAL --output /tmp/quintoimperio-game-historical.png
+          python prototype/game.py --scenario TECHNICAL --output /tmp/quintoimperio-game-technical.png
+          test -s /tmp/quintoimperio-game-historical.png
+          test -s /tmp/quintoimperio-game-technical.png
+      - name: Publish playable interface screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: playable-interface-screenshots
+          path: |
+            /tmp/quintoimperio-game-historical.png
+            /tmp/quintoimperio-game-technical.png
+          if-no-files-found: error
+      - name: Smoke-test coordinate map
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          python prototype/map.py --output /tmp/quintoimperio-map.png
+          test -s /tmp/quintoimperio-map.png
+      - name: Smoke-test cartographic reference map
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python tools/render_cartographic_map.py --perspective REFERENCE --output /tmp/quintoimperio-cartographic-map.png
+          test -s /tmp/quintoimperio-cartographic-map.png

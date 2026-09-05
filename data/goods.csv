@@ -1,0 +1,15 @@
+good_id,historical_name,category,bulk_class,unit_value_class,strategic_value,perishability,exchange_function,simulation_only,notes,evidence_grade,source_id
+SUGAR,Açúcar,PROCESSED_AGRICULTURAL,,,,,,FALSE,"Bem estrutural da economia insular atlântica; produção consolidada na Madeira no final do século XV e ainda emergente em São Tomé em 1497.",A,NEWITT_PEW
+GOLD,Ouro,PRECIOUS_METAL,,,,,,FALSE,"Metal central nos circuitos da África Ocidental e Oriental e importante meio de aquisição de mercadorias asiáticas.",A,NEWITT_PEW|SUBRAHMANYAM_PEA|ALPERS_IOWH
+SILVER,Prata,PRECIOUS_METAL,,,,,,FALSE,"Metal de circulação e pagamento amplamente documentado nas redes do Índico; observado em Moçambique em 1498 e importado no Malabar a partir do oeste.",A,SUBRAHMANYAM_PEA|PRAKASH_ECE
+METALWARE,Artigos metálicos,MANUFACTURE,,,,,,FALSE,"Categoria agregada para objetos metálicos usados como bens de troca no comércio atlântico inicial; deve ser desagregada apenas quando houver evidência suficiente.",B,NEWITT_PEW|NEWITT_WA
+TEXTILE_EUR,Tecidos europeus,TEXTILE,,,,,,FALSE,"Categoria agregada para tecidos de origem europeia transportados pelos portugueses; variedades e aceitação por mercado ainda requerem documentação específica.",B,NEWITT_PEW|SUBRAHMANYAM_PEA
+TEXTILE_IND,Tecidos indianos de algodão,TEXTILE,,,,,,FALSE,"Mercadoria estrutural do comércio intra-asiático; Gujarat, Coromandel e outras regiões indianas abasteciam redes que alcançavam África Oriental e Sudeste Asiático.",A,PRAKASH_ECE|SUBRAHMANYAM_PEA
+HORSE,Cavalos,LIVE_CARGO,,,,,,FALSE,"Bem estratégico importado da Ásia Ocidental para a costa indiana; não deve ser modelado como carga ordinária indiferenciada.",A,PRAKASH_ECE
+PEPPER,Pimenta,SPICE,,,,,,FALSE,"Principal especiaria do Malabar e mercadoria dominante em peso nas primeiras cargas portuguesas de retorno.",A,PRAKASH_ECE|SUBRAHMANYAM_PEA
+GINGER,Gengibre,SPICE,,,,,,FALSE,"Exportação importante do Malabar e mercadoria observada em circulação na Ilha de Moçambique em 1498.",A,PRAKASH_ECE|SUBRAHMANYAM_PEA
+CARDAMOM,Cardamomo,SPICE,,,,,,FALSE,"Especiaria exportada pela costa do Malabar; presença quantitativa menor que a pimenta nas primeiras cargas portuguesas conhecidas.",A,PRAKASH_ECE|SUBRAHMANYAM_PEA
+CLOVE,Cravo,SPICE,,,,,,FALSE,"Especiaria originária do Sudeste Asiático já observada em circulação na África Oriental em 1498, demonstrando a extensão das redes pré-portuguesas.",A,SUBRAHMANYAM_PEA|PRAKASH_ECE
+RICE,Arroz,PROVISION_GRAIN,,,,,,FALSE,"Bem de abastecimento e comércio regional de grande importância nas redes asiáticas; entra na cesta antes de sua parametrização quantitativa.",B,PRAKASH_ECE
+COCONUT,Coco e derivados,REGIONAL_AGRICULTURAL,,,,,,FALSE,"Produto regional documentado entre as principais exportações da costa do Malabar.",A,PRAKASH_ECE
+AROMATICS,Aromáticos,AROMATIC_LUXURY,,,,,,FALSE,"Categoria agregada para aromáticos orientais importados no Malabar; desagregação posterior depende de evidência específica por produto.",A,PRAKASH_ECE

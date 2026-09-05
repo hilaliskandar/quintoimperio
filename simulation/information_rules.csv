@@ -1,0 +1,4 @@
+channel,time_days,geo_min,route_nav_min,market_min,political_min,notes
+RUMOR,1,1,1,0,0,"Rumor pode tornar conhecido que um lugar/conexão existe, mas não produz conhecimento operacional; valores são parâmetros de simulação."
+MERCHANT_CONTACT,1,2,1,2,1,"Contato mercantil pode melhorar conhecimento geográfico, comercial e político elementar; não produz domínio náutico operacional."
+PILOT_CONSULTATION,1,2,2,0,0,"Consulta a piloto documentado pode elevar conhecimento da rota apenas até PARTIAL; não substitui experiência própria nem concede bônus de viagem."

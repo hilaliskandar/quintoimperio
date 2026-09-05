@@ -1,0 +1,10 @@
+rule_type,key,value,notes
+PROVISION_CAPACITY_PER_VISIT,LOW,10,"Dias-equivalentes que um serviço classificado LOW pode acrescentar em uma ação; parâmetro de balanceamento, não quantidade histórica."
+PROVISION_CAPACITY_PER_VISIT,MEDIUM,25,"Dias-equivalentes que um serviço classificado MEDIUM pode acrescentar em uma ação; parâmetro de balanceamento."
+PROVISION_CAPACITY_PER_VISIT,HIGH,50,"Dias-equivalentes que um serviço classificado HIGH pode acrescentar em uma ação; parâmetro de balanceamento."
+PROVISION_MAX_ONBOARD,DEFAULT,120,"Limite abstrato de provisões embarcadas na v0.1. Elevado para comportar a perna observada São Thiago–baía de Santa Helena; não representa capacidade histórica, tonelagem ou ração documentada."
+PROVISION_SERVICE_DAYS,DEFAULT,1,"Tempo abstrato de uma ação de reabastecimento na v0.1."
+REPAIR_POINTS_PER_DAY,LOW,2,"Pontos abstratos de condição restaurados por dia de serviço LOW; não é taxa histórica de reparo."
+REPAIR_POINTS_PER_DAY,MEDIUM,5,"Pontos abstratos de condição restaurados por dia de serviço MEDIUM."
+REPAIR_POINTS_PER_DAY,HIGH,10,"Pontos abstratos de condição restaurados por dia de serviço HIGH."
+REPAIR_MAX_DAYS_PER_ACTION,DEFAULT,5,"Limite de dias de uma ação de reparo antes de nova decisão do jogador."

@@ -1,0 +1,9 @@
+access_regime,initial_status,negotiable,time_days,notes
+OPEN_MARKET,OPEN,FALSE,0,"Mercado aberto na classificação do projeto; não implica ausência histórica de taxas ou controles."
+CAPTAINCY,OPEN,FALSE,0,"Acesso inicial aberto para o personagem na infraestrutura portuguesa do protótipo; não equivale a liberdade comercial irrestrita."
+FOREIGN_NEGOTIATED,NEGOTIATION_REQUIRED,TRUE,1,"Exige ação institucional explícita; um dia é parâmetro de jogabilidade e não duração histórica de audiência ou negociação."
+ROYAL_MONOPOLY,RESTRICTED,FALSE,0,"Monopólio régio não é desbloqueado por negociação portuária genérica."
+ROYAL_MONOPOLY_LEASED,RESTRICTED,FALSE,0,"Monopólio/concessão não é desbloqueado por negociação portuária genérica."
+MILITARY_POST,RESTRICTED,FALSE,0,"Praça prioritariamente militar; nenhuma abertura comercial genérica é inferida."
+ANCHORAGE_CONTACT,NONCOMMERCIAL,FALSE,0,"Contato em ancoradouro não cria mercado permanente."
+NAVIGATION_ONLY,NONCOMMERCIAL,FALSE,0,"Marco náutico sem mercado."

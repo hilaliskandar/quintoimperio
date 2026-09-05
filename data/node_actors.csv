@@ -1,0 +1,4 @@
+node_id,actor_id,role,period_from,period_to,notes,evidence_grade,evidence_scope,source_id
+CAL,ACT_CAL_SAMUDRI_AUTH,AUTHORITY,1498,1501,"Autoridade régia relevante ao acesso político/comercial em Calecute; não implica que toda operação mercantil dependesse de audiência direta com o governante.",A,NODE_DIRECT,ALPERS_IOWH|PRAKASH_ECE
+CAL,ACT_CAL_MUSLIM_MERCHANTS,MERCHANT_COMMUNITY,1498,1501,"Comunidade mercantil muçulmana/pardesi documentada no porto; não é tratada como bloco político homogêneo nem como sinônimo de todos os intermediários locais.",B,NODE_DIRECT,ALPERS_IOWH|PRAKASH_ECE
+MAL,ACT_MAL_RULER_1498,AUTHORITY,1498,1498,"Autoridade local de Melinde que enviou o piloto guzerate à armada em 1498.",A,NODE_DIRECT,SUBRAHMANYAM_PEA
