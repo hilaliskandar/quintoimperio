@@ -27,3 +27,5 @@ jobs:
         run: python prototype/economy.py
       - name: Render navigation prototype report
         run: python prototype/navigation.py
+      - name: Render travel prototype report
+        run: python prototype/travel.py
