@@ -22,17 +22,22 @@ from .session import (
     RouteKnowledgeRecord,
     SessionPortServiceResult,
     SessionTradeResult,
+    SessionWaitResult,
 )
+from .stop import ChronologyMode, ExpeditionStop, ExpeditionStopModel
 from .trade import CargoHolding, CommercialState, TradeModel, TradeQuote, TradeResult, TradeSide
 from .travel import NavigationBasis, TravelModel, VesselState, VoyagePlan
 from .world_map import MapEdge, MapExtent, MapPoint, WorldMapModel
 
 __all__ = [
     "CargoHolding",
+    "ChronologyMode",
     "CommercialState",
     "EconomyModel",
     "ExpeditionLeg",
     "ExpeditionModel",
+    "ExpeditionStop",
+    "ExpeditionStopModel",
     "GameClock",
     "GameSessionModel",
     "GameSessionState",
@@ -57,6 +62,7 @@ __all__ = [
     "ServiceAvailability",
     "SessionPortServiceResult",
     "SessionTradeResult",
+    "SessionWaitResult",
     "TradeModel",
     "TradeQuote",
     "TradeResult",
