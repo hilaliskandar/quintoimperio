@@ -8,6 +8,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 
 | source_id | Referência curta | Uso principal |
 |---|---|---|
+| `ROTEIRO_GAMA_1497` | *Roteiro da primeira viagem de Vasco da Gama à Índia*, relato de participante da expedição; edição/tradução de E. G. Ravenstein, Hakluyt Society, 1898 | itinerário 1497–1499, escalas, abastecimento, reparos, encontros e cronologia fina |
 | `NEWITT_PEW` | Malyn Newitt, *Portugal in European and World History* | expansão atlântica, ilhas, África Ocidental, Mina, Kongo e Cabo |
 | `NEWITT_WA` | Malyn Newitt, *The Portuguese in West Africa, 1415–1670: A Documentary History* | África Ocidental e fontes documentais |
 | `VILASANTA_KE` | Nuno Vila-Santa, *Knowledge Exchanges Between Portugal and Europe* | pilotos, cartografia, circulação e proteção do conhecimento náutico |
@@ -19,6 +20,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 
 ## Expansão atlântica portuguesa
 
+- *Roteiro da primeira viagem de Vasco da Gama à Índia* — fonte primária para o itinerário de 1497–1499; a edição Ravenstein explicita que palavras e datas ausentes do manuscrito foram colocadas entre colchetes, distinção que deve ser preservada nas notas de evidência.
 - Malyn Newitt, *Portugal in European and World History*.
 - Malyn Newitt, *The Portuguese in West Africa, 1415–1670: A Documentary History*.
 - Nuno Vila-Santa, *Knowledge Exchanges Between Portugal and Europe*.
@@ -38,6 +40,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 3. Divergências cronológicas entre autores devem ser registradas em vez de harmonizadas silenciosamente.
 4. Toda associação entre porto e mercadoria deve distinguir produção de simples circulação.
 5. Coordenadas em `nodes.csv` são âncoras cartográficas modernas. Elas não afirmam a posição exata do cais ou assentamento no século XV.
+6. Datas entre colchetes na edição Ravenstein do `Roteiro` são reconstruções editoriais e devem ser identificadas como tal; não recebem automaticamente o mesmo grau de evidência de uma data explícita no manuscrito.
 
 ## Lacunas prioritárias
 
@@ -46,5 +49,5 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 - cesta comercial de Mombasa e Malindi no final do século XV;
 - documentação fina de Arguim e das redes saarianas;
 - cronologia e situação de São Tomé entre 1493 e 1500;
-- monções, duração de viagens e escalas por trecho para o primeiro protótipo;
+- refinamento espacial do Rio do Cobre/Terra da Boa Gente, cuja identificação moderna permanece discutida;
 - preços e unidades históricas: somente após consolidar circuitos e conversões documentais.
