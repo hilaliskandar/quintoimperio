@@ -11,10 +11,13 @@ from .port import (
     PortServiceResult,
     ServiceAvailability,
 )
+from .trade import CargoHolding, CommercialState, TradeModel, TradeQuote, TradeResult, TradeSide
 from .travel import NavigationBasis, TravelModel, VesselState, VoyagePlan
 from .world_map import MapEdge, MapExtent, MapPoint, WorldMapModel
 
 __all__ = [
+    "CargoHolding",
+    "CommercialState",
     "EconomyModel",
     "GameClock",
     "KnowledgeLevel",
@@ -31,6 +34,10 @@ __all__ = [
     "PortServiceQuote",
     "PortServiceResult",
     "ServiceAvailability",
+    "TradeModel",
+    "TradeQuote",
+    "TradeResult",
+    "TradeSide",
     "TravelModel",
     "VesselState",
     "VoyagePlan",
