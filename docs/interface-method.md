@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, informação, acesso institucional, serviços portuários, expedições, permanências, eventos marítimos ou viagem na camada gráfica.
+A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, informação, acesso institucional, relações, serviços portuários, expedições, permanências, eventos marítimos ou viagem na camada gráfica.
 
-A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, estado de acesso, serviços portuários, canais de informação, mercado, armada ativa quando houver, cronologia, escala histórica ativa, rotas de saída e o último evento `SIM` de viagem quando houver.
+A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, estado de acesso, serviços portuários, canais de informação, relações já estabelecidas, mercado, armada ativa quando houver, cronologia, escala histórica ativa, rotas de saída e o último evento `SIM` de viagem quando houver.
 
 ## Dois estados explicitamente distintos
 
@@ -38,6 +38,14 @@ A interface separa conhecimento e autorização. Quando o mercado é conhecido o
 
 Mercadorias marcadas `restricted=TRUE` aparecem com `*` quando conhecidas. Mesmo depois de acesso portuário, a tentativa de operação é rejeitada pelo domínio; a interface não possui atalho para contornar a restrição específica.
 
+## Relações
+
+A interface não enumera atores apenas porque eles existem em `actors.csv`. Ela chama `GameSessionModel.contacted_relationships()` e exibe a seção `Relações estabelecidas` somente quando existe pelo menos um ator em `CONTACTED`.
+
+Assim, um ator ainda `UNESTABLISHED` permanece invisível. Em Calecute, `MERCHANT_CONTACT` pode tornar visível a comunidade mercantil muçulmana/pardesi sem revelar automaticamente a autoridade do Samudri Raja. A negociação de acesso pode registrar contato com a autoridade sem tornar a comunidade mercantil conhecida por esse simples fato.
+
+A seção é informativa: mostrar um ator contatado não concede preço melhor, crédito, acesso adicional, influência, amizade ou hostilidade. Esses efeitos não fazem parte da v0.1.
+
 ## Informação
 
 O painel apresenta três botões compactos:
@@ -59,6 +67,8 @@ Cada interação custa um dia na v0.1 e usa o mesmo calendário de viagem, servi
 O mapa usa as coordenadas de `nodes.csv`. Somente nós com conhecimento geográfico pelo menos `RUMORED` aparecem. Linhas representam arestas do grafo, não derrotas históricas, correntes ou trajetos efetivamente navegados.
 
 Uma rota pode ficar visível porque o personagem a conhece ou porque corresponde à perna corrente de uma expedição ativa. Isso não altera o estado de conhecimento pessoal. Conexões estratégicas agregadas podem continuar visíveis para leitura do grafo, mas o domínio não permite executá-las como viagem única.
+
+A posição dos pontos nunca é deslocada para melhorar a legibilidade. Para evitar sobreposição textual em regiões de nós próximos, apenas os rótulos recebem deslocamentos de apresentação e, quando necessário, uma linha-guia discreta até a coordenada real do nó. Testes de regressão verificam que os rótulos dos cenários padrão `HISTORICAL` e `TECHNICAL` não se sobreponham.
 
 A costa real permanece na ferramenta cartográfica de referência separada em `tools/render_cartographic_map.py`.
 
@@ -86,6 +96,7 @@ A interface não apresenta calmaria, mau tempo ou avaria genérica como fato his
 
 - `Negociar acesso (Nd)` aparece somente onde o gate institucional é negociável;
 - `Ouvir rumor`, `Falar mercador` e `Consultar piloto` executam aquisição ativa de informação sem mostrar o alvo previamente;
+- relações já estabelecidas aparecem somente depois do contato correspondente;
 - `Reabastecer +30` e `Reparar +20` acionam serviços do porto atual;
 - `Esperar N dia(s)` avança somente o restante da permanência histórica guiada;
 - clique em mercadoria, depois `Comprar 1` ou `Vender 1` quando o mercado estiver acionável;
@@ -103,4 +114,4 @@ SDL_VIDEODRIVER=dummy python prototype/game.py --scenario HISTORICAL --output /t
 SDL_VIDEODRIVER=dummy python prototype/game.py --scenario TECHNICAL --output /tmp/game-technical.png
 ```
 
-O GitHub Actions executa os smoke tests e publica as capturas como artefato para inspeção visual.
+O GitHub Actions executa os smoke tests e publica as capturas como artefato para inspeção visual. Além disso, testes específicos verificam o não vazamento de atores `UNESTABLISHED` e a ausência de sobreposição entre rótulos cartográficos nos dois cenários padrão.
