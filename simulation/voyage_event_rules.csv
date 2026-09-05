@@ -1,0 +1,5 @@
+event_id,event_type,route_type,monsoon_dependence,months,probability,extra_days_min,extra_days_max,condition_loss_min,condition_loss_max,notes
+EV_CALM_DELAY,CALM_DELAY,ANY,ANY,,0.16,1,3,0,0,"Atraso genérico de simulação; não representa calmaria documentada em viagem específica."
+EV_ROUGH_WEATHER,ROUGH_WEATHER,ANY,ANY,,0.14,1,2,1,4,"Mau tempo genérico de simulação; não implica reconstrução meteorológica histórica."
+EV_MINOR_RIGGING,MINOR_RIGGING_DAMAGE,ANY,ANY,,0.10,0,1,2,5,"Avaria menor de aparelho como hipótese de simulação; sem perda de tripulação ou carga."
+EV_JUNE_JULY_DISRUPTION,JUNE_JULY_DISRUPTION,ANY,MEDIUM|HIGH,6|7,0.12,1,3,0,2,"Camada adicional apenas em rotas já classificadas com dependência de monção MEDIUM/HIGH nos meses de junho/julho; não infere direção de vento."
