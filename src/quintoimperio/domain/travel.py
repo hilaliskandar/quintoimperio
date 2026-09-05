@@ -71,6 +71,10 @@ class TravelModel:
     base institucional ``FLEET_COMMAND`` sem transformar o comando da armada em
     conhecimento pessoal do personagem. Nenhuma dessas bases concede bonus
     quantitativo de velocidade, consumo ou desgaste na v0.1.
+
+    Rotas com ``route_origin=STRATEGIC_AGGREGATE`` existem apenas para leitura
+    do grafo em escala estratégica. Elas nunca são executáveis como uma única
+    perna de viagem quando a base já possui a sequência histórica segmentada.
     """
 
     def __init__(self, root: Path | None = None) -> None:
@@ -178,6 +182,8 @@ class TravelModel:
         )
 
         blockers: list[str] = []
+        if route.get("route_origin") == "STRATEGIC_AGGREGATE":
+            blockers.append("STRATEGIC_AGGREGATE_NOT_EXECUTABLE")
         if basis is None:
             # Identificador preservado por compatibilidade com testes/telemetria v0.1.
             blockers.append("NAVIGATION_KNOWLEDGE_OR_PILOT_REQUIRED")
