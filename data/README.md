@@ -1,37 +1,43 @@
-# Dados históricos
+# Dados historicos
 
-Este diretório contém tabelas pequenas, versionadas e legíveis que registram a base histórica do projeto. Parâmetros de balanceamento ficam separadamente em `simulation/`.
+Este diretorio contem tabelas pequenas, versionadas e legiveis que registram a base historica do projeto. Parametros de balanceamento ficam separadamente em `simulation/`.
 
-## Convenções
+## Convencoes
 
-- IDs são estáveis, curtos e sem espaços.
-- Datas devem usar `YYYY-MM-DD` quando exatas ou apenas o ano quando a fonte não permite maior precisão.
-- Campos históricos e de simulação não devem ser misturados.
-- Toda linha historicamente relevante deve possuir proveniência mínima em `source_id` ou nota equivalente.
-- Valores ausentes permanecem vazios; não usar `0` para significar desconhecido.
-- Divergências entre fontes são preservadas em linhas distintas quando alteram um dado observável.
+- IDs sao estaveis, curtos e sem espacos.
+- Datas devem usar `YYYY-MM-DD` quando exatas ou apenas o ano quando a fonte nao permite maior precisao.
+- Campos historicos e de simulacao nao devem ser misturados.
+- Toda linha historicamente relevante deve possuir proveniencia minima em `source_id` ou nota equivalente.
+- Valores ausentes permanecem vazios; nao usar `0` para significar desconhecido.
+- Divergencias entre fontes sao preservadas em linhas distintas quando alteram um dado observavel.
 
 ## Arquivos
 
 ### `nodes.csv`
-Nós marítimos e portuários. Inclui portos, feitorias, praças militares, colônias insulares, mercados estrangeiros e pontos náuticos.
+Nos maritimos e portuarios. Inclui portos, feitorias, pracas militares, colonias insulares, mercados estrangeiros e pontos nauticos.
 
 ### `goods.csv`
-Bens comerciais ordinários. Pessoas escravizadas não entram nesta tabela.
+Bens comerciais ordinarios. Pessoas escravizadas nao entram nesta tabela.
 
 ### `node_goods.csv`
-Relações entre nós e mercadorias, distinguindo produção, hinterland, importação, exportação, trânsito e demanda.
+Relacoes entre nos e mercadorias, distinguindo producao, hinterland, importacao, exportacao, transito e demanda.
 
 ### `routes.csv`
-Conexões navegáveis ou historicamente relevantes, sem pressupor que sejam conhecidas pelo jogador.
+Conexoes navegaveis ou historicamente relevantes, sem pressupor que sejam conhecidas pelo jogador.
 
 ### `route_goods.csv`
 Fluxos de mercadorias associados a rotas.
 
 ### `voyage_observations.csv`
-Observações documentadas de viagens usadas como âncoras de calibração. Datas observadas são fatos de fonte; qualquer velocidade ou parâmetro derivado dessas datas pertence à camada de simulação. A primeira âncora preserva separadamente as chegadas a Calecute em 20 e 21 de maio de 1498 registradas por Prakash e Subrahmanyam.
+Observacoes documentadas de viagens usadas como ancoras de calibracao. Datas observadas sao fatos de fonte; qualquer velocidade ou parametro derivado dessas datas pertence a camada de simulacao. A primeira ancora preserva separadamente as chegadas a Calecute em 20 e 21 de maio de 1498 registradas por Prakash e Subrahmanyam.
 
-## Campos de evidência
+### `pilots.csv`
+Pessoas ou registros historicos de pilotos que podem ser associados a um local e periodo. O primeiro registro e o piloto guzerate fornecido pelo governante de Melinde a armada de Vasco da Gama em abril de 1498. O corpus atual nao sustenta seu nome e registra explicitamente essa incerteza.
+
+### `pilot_routes.csv`
+Competencias de piloto documentadas por rota e periodo. Esta tabela nao atribui bonus de velocidade ou consumo: apenas registra que a fonte sustenta capacidade de guia em determinada conexao.
+
+## Campos de evidencia
 
 `evidence_grade` usa `A`, `B`, `C` ou `D`, conforme `docs/historical-method.md`.
 
@@ -44,4 +50,4 @@ Observações documentadas de viagens usadas como âncoras de calibração. Data
 
 ## Regra para coordenadas
 
-Coordenadas representam uma âncora cartográfica do nó e não necessariamente a posição exata do cais no século XV. O campo `coordinate_confidence` registra essa incerteza. Distâncias calculadas a partir dessas coordenadas são distâncias geodésicas de referência, não a reconstrução automática do caminho histórico navegado.
+Coordenadas representam uma ancora cartografica do no e nao necessariamente a posicao exata do cais no seculo XV. O campo `coordinate_confidence` registra essa incerteza. Distancias calculadas a partir dessas coordenadas sao distancias geodesicas de referencia, nao a reconstrucao automatica do caminho historico navegado.
