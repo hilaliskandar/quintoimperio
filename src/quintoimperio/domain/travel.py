@@ -1,4 +1,4 @@
-"""Estado de viagem, provisoes abstratas, desgaste, pilotos e comando v0.1."""
+"""Estado de viagem, provisoes abstratas, desgaste, pilotos, comando e eventos v0.1."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from quintoimperio.data.loader import RepositoryData
 from .calendar import GameClock
 from .knowledge import KnowledgeLevel
 from .navigation import NavigationModel
+from .voyage_event import VoyageEvent, VoyageEventModel
 
 
 class NavigationBasis(str, Enum):
@@ -51,6 +52,7 @@ class VoyagePlan:
     destination_node: str
     departure_date: date
     arrival_date: date
+    base_estimated_duration_days: float
     estimated_duration_days: float
     travel_days: int
     provision_days_required: float
@@ -59,18 +61,24 @@ class VoyagePlan:
     condition_after: float
     pilot_id: str | None
     navigation_basis: NavigationBasis | None
+    events: tuple[VoyageEvent, ...]
+    events_suppressed_by_observation: bool
     feasible: bool
     blockers: tuple[str, ...]
 
 
 class TravelModel:
-    """Orquestra navegacao, recursos abstratos e bases de participacao na rota.
+    """Orquestra navegacao, recursos abstratos, bases de viagem e eventos.
 
     Pilotos historicos podem habilitar uma rota quando o conhecimento nautico
     do personagem ainda nao e operacional. Uma expedicao ativa pode fornecer a
     base institucional ``FLEET_COMMAND`` sem transformar o comando da armada em
     conhecimento pessoal do personagem. Nenhuma dessas bases concede bonus
     quantitativo de velocidade, consumo ou desgaste na v0.1.
+
+    Eventos marítimos são hipóteses explícitas de simulação. Quando
+    ``preserve_observed_timing`` é verdadeiro e a rota/data possui observação
+    histórica exata, nenhum evento aleatório altera duração ou chegada.
 
     Rotas com ``route_origin=STRATEGIC_AGGREGATE`` existem apenas para leitura
     do grafo em escala estratégica. Elas nunca são executáveis como uma única
@@ -81,6 +89,7 @@ class TravelModel:
         repository = RepositoryData(root)
         self.root = repository.root
         self.navigation = NavigationModel(self.root)
+        self.events = VoyageEventModel(self.root)
         self.routes = self.navigation.routes
         self.pilots = {
             row["pilot_id"]: row for row in repository.historical("pilots.csv")
@@ -150,6 +159,7 @@ class TravelModel:
         pilot_id: str | None = None,
         fleet_command: bool = False,
         seed: int = 0,
+        preserve_observed_timing: bool = True,
     ) -> VoyagePlan:
         route = self.routes[route_id]
         if state.location_node != route["origin_node"]:
@@ -165,13 +175,26 @@ class TravelModel:
                 f"Rota {route_id} nao possui coordenadas suficientes para estimar duracao"
             )
 
-        travel_days = max(1, ceil(duration))
+        exact_observation = bool(
+            self.navigation.observed_days_for_departure(route_id, state.clock.current_date)
+        )
+        suppress_events = preserve_observed_timing and exact_observation
+        events = () if suppress_events else self.events.select(
+            route_id, state.clock.current_date, seed=seed
+        )
+        extra_days = sum(event.extra_days for event in events)
+        event_condition_loss = sum(event.condition_loss for event in events)
+
+        base_travel_days = max(1, ceil(duration))
+        travel_days = base_travel_days + extra_days
         provision_rate = float(
             self.rules[("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY")]
         )
         provisions_required = travel_days * provision_rate
-        wear = travel_days * self.wear_per_day(route_id)
-        condition_after = max(0.0, state.condition - wear)
+        normal_wear = base_travel_days * self.wear_per_day(route_id)
+        condition_after = max(
+            0.0, state.condition - normal_wear - event_condition_loss
+        )
         basis = self.navigation_basis(
             route_id,
             nav_knowledge,
@@ -200,7 +223,8 @@ class TravelModel:
             destination_node=route["destination_node"],
             departure_date=state.clock.current_date,
             arrival_date=arrival,
-            estimated_duration_days=duration,
+            base_estimated_duration_days=duration,
+            estimated_duration_days=duration + extra_days,
             travel_days=travel_days,
             provision_days_required=provisions_required,
             provision_days_after=max(0.0, state.provision_days - provisions_required),
@@ -208,6 +232,8 @@ class TravelModel:
             condition_after=condition_after,
             pilot_id=pilot_id,
             navigation_basis=basis,
+            events=events,
+            events_suppressed_by_observation=suppress_events,
             feasible=not blockers,
             blockers=tuple(blockers),
         )
