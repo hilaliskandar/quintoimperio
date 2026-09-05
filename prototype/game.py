@@ -7,10 +7,12 @@ são índices abstratos de simulação.
 
 Dois estados são oferecidos:
 
-- ``HISTORICAL``: estado inicial de 8 de julho de 1497 em Lisboa, sem elevar
-  artificialmente conhecimento para permitir uma partida;
+- ``HISTORICAL``: 8 de julho de 1497 em Lisboa, com participação institucional
+  na armada de Vasco da Gama registrada separadamente do conhecimento pessoal;
 - ``TECHNICAL``: cenário explícito de integração Calecute -> Aden já usado nos
   testes do domínio. Não representa o estado histórico inicial do personagem.
+
+A participação na armada não fixa identidade ou profissão do protagonista.
 """
 
 from __future__ import annotations
@@ -74,7 +76,7 @@ class PlayablePrototype:
 
     def _make_state(self, scenario: str) -> GameSessionState:
         if scenario == "HISTORICAL":
-            return self.session.initial_state()
+            return self.session.initial_state(active_expedition_id="EXP_GAMA_1497")
         if scenario != "TECHNICAL":
             raise ValueError("scenario deve ser HISTORICAL ou TECHNICAL")
 
@@ -144,15 +146,17 @@ class PlayablePrototype:
         return None
 
     def plan_for_route(self, route_id: str):
-        plan = self.session.plan_voyage(self.state, route_id, seed=SEED)
-        if plan.feasible:
-            return plan
+        # Se há piloto documentado, tente primeiro preservá-lo como base histórica
+        # específica; TravelModel ainda prioriza conhecimento próprio quando já é
+        # operacional. O comando da armada entra somente depois do piloto.
         pilot_id = self._pilot_for_route(route_id)
         if pilot_id:
-            return self.session.plan_voyage(
+            with_pilot = self.session.plan_voyage(
                 self.state, route_id, pilot_id=pilot_id, seed=SEED
             )
-        return plan
+            if with_pilot.feasible:
+                return with_pilot
+        return self.session.plan_voyage(self.state, route_id, seed=SEED)
 
     def buy_selected(self) -> None:
         if not self.selected_good:
@@ -210,9 +214,10 @@ class PlayablePrototype:
         self.selected_route = None
         self.selected_good = None
         pilot = f"; piloto={plan.pilot_id}" if plan.pilot_id else ""
+        basis = plan.navigation_basis.value if plan.navigation_basis else "SEM_BASE"
         self.message = (
             f"Chegada a {plan.destination_node} em {plan.arrival_date}; "
-            f"{plan.travel_days} dias{pilot}."
+            f"{plan.travel_days} dias; base={basis}{pilot}."
         )
 
     @staticmethod
@@ -263,7 +268,10 @@ class PlayablePrototype:
             record.route_id: record.nav for record in self.state.route_knowledge
         }
         for route_id, level in route_levels.items():
-            if level <= KnowledgeLevel.UNKNOWN:
+            # Uma rota pode estar visível por conhecimento pessoal ou por ser a
+            # perna corrente de uma expedição institucional ativa.
+            institutionally_visible = self.session.expedition_authorizes(self.state, route_id)
+            if level <= KnowledgeLevel.UNKNOWN and not institutionally_visible:
                 continue
             route = self.session.routes[route_id]
             if route["origin_node"] not in visible_ids or route["destination_node"] not in visible_ids:
@@ -300,7 +308,7 @@ class PlayablePrototype:
     ) -> None:
         self._draw_text(surface, title, "Quinto Império — protótipo jogável v0.1", (20, 18))
         banner = (
-            "ESTADO HISTÓRICO INICIAL — bloqueios são preservados"
+            "ARMADA DE 1497 — comando institucional ≠ conhecimento pessoal"
             if self.scenario == "HISTORICAL"
             else "CENÁRIO TÉCNICO — NÃO REPRESENTA O ESTADO HISTÓRICO INICIAL"
         )
@@ -339,7 +347,18 @@ class PlayablePrototype:
             f"Capital índice: {self.state.commerce.capital_index:.2f} | carga {used:.1f}/{self.state.commerce.capacity_total:.1f}",
             (x, y),
         )
-        y += 25
+        y += 20
+        if self.state.active_expedition_id:
+            self._draw_text(
+                surface,
+                micro,
+                f"Armada: {self.state.active_expedition_id} | perna {self.state.expedition_leg_sequence}",
+                (x, y),
+                MUTED,
+            )
+            y += 18
+        else:
+            y += 5
 
         provisions = self.session.service_quote(self.state, PortServiceKind.PROVISIONS)
         repair = self.session.service_quote(self.state, PortServiceKind.REPAIR)
@@ -419,13 +438,14 @@ class PlayablePrototype:
             plan = self.plan_for_route(route_id)
             status = "OK" if plan.feasible else "BLOQ"
             status_color = GOOD if plan.feasible else BAD
+            basis = plan.navigation_basis.value if plan.navigation_basis else "-"
             rect = pygame.Rect(x + 3, y - 2, 460, 19)
             if route_id == self.selected_route:
                 pygame.draw.rect(surface, SELECTED, rect, border_radius=2)
             self._draw_text(
                 surface,
                 micro,
-                f"{route_id} -> {route['destination_node']}  {status}  {plan.travel_days} d",
+                f"{route_id} -> {route['destination_node']} {status} {plan.travel_days}d {basis}",
                 (x + 8, y),
                 status_color,
             )
@@ -472,11 +492,11 @@ class PlayablePrototype:
             elif target.kind == "route":
                 self.selected_route = target.value
                 plan = self.plan_for_route(target.value)
-                self.message = (
-                    f"Rota {target.value}: disponível."
-                    if plan.feasible
-                    else f"Rota {target.value}: " + ", ".join(plan.blockers)
-                )
+                if plan.feasible:
+                    basis = plan.navigation_basis.value if plan.navigation_basis else "SEM_BASE"
+                    self.message = f"Rota {target.value}: disponível por {basis}."
+                else:
+                    self.message = f"Rota {target.value}: " + ", ".join(plan.blockers)
             elif target.kind == "action":
                 if target.value == "buy":
                     self.buy_selected()
