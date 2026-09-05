@@ -5,6 +5,7 @@ from .economy import EconomyModel
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .navigation import NavigationModel, great_circle_nm
 from .travel import NavigationBasis, TravelModel, VesselState, VoyagePlan
+from .world_map import MapEdge, MapExtent, MapPoint, WorldMapModel
 
 __all__ = [
     "EconomyModel",
@@ -12,12 +13,16 @@ __all__ = [
     "KnowledgeLevel",
     "KnowledgeModel",
     "KnowledgeState",
+    "MapEdge",
+    "MapExtent",
+    "MapPoint",
     "MonsoonPhase",
     "NavigationBasis",
     "NavigationModel",
     "TravelModel",
     "VesselState",
     "VoyagePlan",
+    "WorldMapModel",
     "great_circle_nm",
     "monsoon_phase",
 ]
