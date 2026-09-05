@@ -35,6 +35,14 @@ jobs:
         run: python prototype/trade.py
       - name: Run integrated session prototype
         run: python prototype/session.py
+      - name: Smoke-test playable interface
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          python prototype/game.py --scenario HISTORICAL --output /tmp/quintoimperio-game-historical.png
+          python prototype/game.py --scenario TECHNICAL --output /tmp/quintoimperio-game-technical.png
+          test -s /tmp/quintoimperio-game-historical.png
+          test -s /tmp/quintoimperio-game-technical.png
       - name: Smoke-test coordinate map
         env:
           SDL_VIDEODRIVER: dummy
