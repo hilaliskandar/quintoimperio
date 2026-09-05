@@ -18,7 +18,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, a economia relativa, o núcleo de navegação/viagem, o primeiro mapa 2D, os serviços portuários mínimos e a referência cartográfica programática estão operacionais.
+A fundação histórica, a economia relativa, o núcleo de navegação/viagem, o primeiro mapa 2D, os serviços portuários mínimos, o estado comercial v0.1 e a referência cartográfica programática estão operacionais.
 
 A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. Todos os 20 nós possuem agora uma âncora cartográfica explícita. **Mpinda/Soyo** e **Sofala** permanecem marcados como coordenadas provisórias de confiança `MEDIUM`, sem pretensão de localizar exatamente o cais medieval. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada em linhas distintas.
 
@@ -37,16 +37,19 @@ O domínio já oferece:
 - reabastecimento e reparo baseados nos campos históricos de `nodes.csv`;
 - distinção explícita entre serviço `UNKNOWN` e `NONE`;
 - capacidades e tempos de serviço isolados em `simulation/port_rules.csv`;
+- capital, capacidade de carga e inventário em escalas abstratas de simulação;
+- compra e venda bloqueadas quando a relação porto–mercadoria não está documentada em `node_goods.csv`;
+- spread de compra/venda isolado em `simulation/trade_rules.csv`, sem pretensão de representar margem histórica;
 - mapa 2D de runtime filtrado pelo conhecimento geográfico do personagem/Coroa;
 - referência cartográfica programática com costa real e sem fronteiras políticas modernas;
 - estética náutica procedural — paleta de pergaminho, linhas de rumo e rosa-dos-ventos — sem alterar a geometria real;
 - identificação gráfica de âncoras espaciais provisórias;
 - arestas de rota tratadas como relações do grafo, não como derrotas históricas;
-- testes automatizados e smoke tests dos mapas no GitHub Actions.
+- testes automatizados e smoke tests dos protótipos no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: estado comercial do jogador, inventário/capacidade abstrata e primeiras operações de compra e venda usando apenas os mercados já documentados.
+Próximo incremento: ligar mapa, porto, mercado, inventário e viagem em uma primeira sessão jogável contínua, mantendo a interface ainda mínima.
 
 ## Estrutura
 
@@ -70,12 +73,14 @@ simulation/
   knowledge_rules.csv
   travel_rules.csv
   port_rules.csv
+  trade_rules.csv
 
 docs/
   historical-method.md
   navigation-method.md
   map-method.md
   port-method.md
+  trade-method.md
   roadmap.md
   sources.md
   evidence/
@@ -92,6 +97,7 @@ src/quintoimperio/
     knowledge.py
     navigation.py
     port.py
+    trade.py
     travel.py
     world_map.py
 
@@ -99,6 +105,7 @@ prototype/
   economy.py
   navigation.py
   port.py
+  trade.py
   travel.py
   map.py
 
@@ -111,6 +118,7 @@ tests/
   test_navigation.py
   test_port.py
   test_port_data.py
+  test_trade.py
   test_travel.py
   test_world_map.py
 ```
@@ -144,6 +152,7 @@ python prototype/economy.py
 python prototype/navigation.py
 python prototype/travel.py
 python prototype/port.py
+python prototype/trade.py
 python prototype/map.py
 ```
 
