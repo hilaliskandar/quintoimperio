@@ -1,0 +1,205 @@
+"""Orquestração mínima da campanha histórica Lisboa–Calecute.
+
+Esta camada compõe ``GameSessionModel`` sem alterar dados históricos. Ela usa as
+datas de partida já registradas em ``voyage_observations.csv`` como referência
+de cronologia quando a sessão está em ``ChronologyMode.GUIDED``.
+
+Uma espera guiada fora de ``expedition_stops.csv`` apenas sincroniza o relógio
+com a próxima partida observada. Ela não cria uma nova permanência histórica,
+não atribui atividades e não concede recursos automaticamente.
+"""
+
+from __future__ import annotations
+
+from dataclasses import replace
+from datetime import date
+from pathlib import Path
+
+from .expedition import ExpeditionLeg
+from .session import GameSessionModel, GameSessionState, SessionWaitResult
+from .stop import ChronologyMode
+from .travel import VoyagePlan
+
+
+class HistoricalCampaignModel:
+    """Fachada da sessão para a vertical slice histórica de 1497–1498."""
+
+    def __init__(self, root: Path | None = None) -> None:
+        self.session = GameSessionModel(root)
+
+    def __getattr__(self, name: str):
+        """Delega os demais sistemas ao ``GameSessionModel`` composto."""
+        return getattr(self.session, name)
+
+    def current_leg(self, state: GameSessionState) -> ExpeditionLeg | None:
+        if state.active_expedition_id is None or state.expedition_leg_sequence is None:
+            return None
+        return self.session.expedition.leg(
+            state.active_expedition_id,
+            state.expedition_leg_sequence,
+        )
+
+    def guided_departure_date(self, state: GameSessionState) -> date | None:
+        """Retorna a data observada da partida da perna ativa, quando inequívoca."""
+        if state.chronology_mode is not ChronologyMode.GUIDED:
+            return None
+        leg = self.current_leg(state)
+        if leg is None:
+            return None
+        route = self.session.routes[leg.route_id]
+        if route["origin_node"] != state.vessel.location_node:
+            return None
+
+        dates = {
+            date.fromisoformat(row["departure_date"])
+            for row in self.session.travel.navigation.observations
+            if row["route_id"] == leg.route_id
+            and row.get("departure_date")
+            and row.get("departure_node") == state.vessel.location_node
+        }
+        if not dates:
+            return None
+        if len(dates) > 1:
+            raise ValueError(
+                f"Perna guiada {leg.route_id} possui datas de partida conflitantes: "
+                + ", ".join(sorted(item.isoformat() for item in dates))
+            )
+        return next(iter(dates))
+
+    def wait_for_guided_departure(self, state: GameSessionState) -> SessionWaitResult:
+        """Avança somente o relógio até a próxima partida histórica observada.
+
+        Se a perna atual possui uma escala normalizada em ``expedition_stops.csv``,
+        preserva-se a semântica existente de ``wait_for_stop_release``. Nos nós
+        sem uma permanência normalizada, a espera representa apenas alinhamento
+        cronológico com a data de partida observada da próxima perna.
+        """
+        stop = self.session.active_stop(state)
+        if stop is not None:
+            return self.session.wait_for_stop_release(state)
+        if state.chronology_mode is not ChronologyMode.GUIDED:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("COUNTERFACTUAL_CHRONOLOGY_NO_FORCED_WAIT",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+
+        expected = self.guided_departure_date(state)
+        if expected is None:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("NO_GUIDED_DEPARTURE_DATE",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        current = state.vessel.clock.current_date
+        if current == expected:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("GUIDED_DEPARTURE_REACHED",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        if current > expected:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("GUIDED_DEPARTURE_ALREADY_PASSED",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+
+        days = (expected - current).days
+        vessel = replace(state.vessel, clock=state.vessel.clock.advance(days))
+        after = replace(state, vessel=vessel)
+        return SessionWaitResult(
+            executed=True,
+            reasons=(),
+            days_waited=days,
+            state_before=state,
+            state_after=after,
+        )
+
+    def recommended_pilot_id(
+        self, state: GameSessionState, route_id: str
+    ) -> str | None:
+        """Retorna piloto documentado elegível, sem criar bônus quantitativo."""
+        origin = state.vessel.location_node
+        on_date = state.vessel.clock.current_date
+        for pilot_id in sorted(self.session.travel.pilots):
+            if self.session.travel.pilot_can_guide(
+                pilot_id, route_id, on_date, origin
+            ):
+                return pilot_id
+        return None
+
+    def plan_voyage(
+        self,
+        state: GameSessionState,
+        route_id: str,
+        *,
+        pilot_id: str | None = None,
+        seed: int = 0,
+    ) -> VoyagePlan:
+        """Planeja viagem e impede partida precoce na perna guiada ativa."""
+        plan = self.session.plan_voyage(
+            state,
+            route_id,
+            pilot_id=pilot_id,
+            seed=seed,
+        )
+        leg = self.current_leg(state)
+        if (
+            state.chronology_mode is ChronologyMode.GUIDED
+            and leg is not None
+            and leg.route_id == route_id
+        ):
+            expected = self.guided_departure_date(state)
+            if expected is not None and state.vessel.clock.current_date < expected:
+                blockers = tuple(
+                    dict.fromkeys((*plan.blockers, "HISTORICAL_DEPARTURE_NOT_REACHED"))
+                )
+                return replace(plan, feasible=False, blockers=blockers)
+        return plan
+
+    def plan_current_leg(self, state: GameSessionState, *, seed: int = 0) -> VoyagePlan:
+        """Planeja a perna ativa, usando piloto documentado quando disponível."""
+        leg = self.current_leg(state)
+        if leg is None:
+            raise ValueError("Nenhuma perna de expedição ativa")
+        pilot_id = self.recommended_pilot_id(state, leg.route_id)
+        return self.plan_voyage(
+            state,
+            leg.route_id,
+            pilot_id=pilot_id,
+            seed=seed,
+        )
+
+    def execute_voyage(
+        self, state: GameSessionState, plan: VoyagePlan
+    ) -> GameSessionState:
+        """Executa a viagem e torna atraso guiado explicitamente contrafactual."""
+        leg = self.current_leg(state)
+        expected = None
+        if (
+            state.chronology_mode is ChronologyMode.GUIDED
+            and leg is not None
+            and leg.route_id == plan.route_id
+        ):
+            expected = self.guided_departure_date(state)
+            if expected is not None and plan.departure_date < expected:
+                raise ValueError("Partida anterior à data histórica guiada")
+
+        after = self.session.execute_voyage(state, plan)
+        if (
+            state.chronology_mode is ChronologyMode.GUIDED
+            and expected is not None
+            and plan.departure_date > expected
+            and after.chronology_mode is ChronologyMode.GUIDED
+        ):
+            after = replace(after, chronology_mode=ChronologyMode.COUNTERFACTUAL)
+        return after

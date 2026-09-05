@@ -2,6 +2,7 @@
 
 from .access import AccessModel, AccessRule, AccessStatus, AccessView
 from .calendar import GameClock, MonsoonPhase, monsoon_phase
+from .campaign import HistoricalCampaignModel
 from .economy import EconomyModel
 from .expedition import ExpeditionLeg, ExpeditionModel
 from .information import (
@@ -60,6 +61,7 @@ __all__ = [
     "GameSessionModel",
     "GameSessionState",
     "HistoricalActor",
+    "HistoricalCampaignModel",
     "InformationChannel",
     "InformationModel",
     "InformationOpportunity",
