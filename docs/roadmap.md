@@ -219,7 +219,7 @@ A pesquisa permanece ativa sem bloquear o MVP quando a lacuna não impede o loop
 - domínio independente da interface;
 - dados históricos separados dos parâmetros de simulação;
 - preços históricos não são inventados;
-- linhas do mapa são arestas do grafo, não derrotas navegadas;
+- linhas do mapa são arestas do grafo, não rotas navegadas;
 - coordenadas dos nós não são deslocadas para resolver colisões de rótulos;
 - conhecimento de nó, conhecimento de rota, acesso institucional, relação com ator e comando de expedição são estados distintos;
 - personagem e Coroa possuem estados de conhecimento separados;
