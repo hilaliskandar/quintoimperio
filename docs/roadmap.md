@@ -19,7 +19,7 @@ Entregas já existentes:
 - validação automática dos CSVs;
 - lista explícita de lacunas bibliográficas.
 
-Todos os 20 nós da base inicial possuem agora uma âncora cartográfica explícita. Mpinda/Soyo e Sofala usam coordenadas provisórias de confiança `MEDIUM`, documentadas separadamente para não serem confundidas com localização arqueológica exata.
+Todos os 20 nós da base inicial possuem uma âncora cartográfica explícita. Mpinda/Soyo e Sofala usam coordenadas provisórias de confiança `MEDIUM`, documentadas separadamente para não serem confundidas com localização arqueológica exata.
 
 A pesquisa continua refinando relações e cronologias sem bloquear o protótipo.
 
@@ -55,13 +55,14 @@ Implementado:
 - calendário do jogo;
 - fases gerais da monção de nordeste, sudoeste e transições;
 - distância geodésica entre nós com coordenadas disponíveis;
-- propagação da confiança espacial mínima da rota para distinguir âncoras `HIGH`, `MEDIUM` e `LOW`;
+- propagação da confiança espacial mínima da rota;
 - preservação de observações documentadas de viagem e divergências entre fontes;
 - primeira calibração de duração com Melinde–Calecute em 1498;
 - ruído determinístico de duração;
-- penalidade explícita de junho/julho para rotas com dependência monçônica, tratada como parâmetro de simulação;
+- penalidade explícita de junho/julho para rotas com dependência monçônica;
 - `geo_knowledge`, `nav_knowledge`, `market_knowledge` e `political_knowledge`;
 - estados separados para personagem e Coroa;
+- conhecimento náutico de rota separado do conhecimento de nó;
 - piloto histórico guzerate de Melinde associado somente à rota documentada até Calecute;
 - habilitação de rota por conhecimento náutico próprio ou piloto competente;
 - estado imutável do navio;
@@ -74,46 +75,46 @@ Implementado:
 Próximos aprofundamentos, sem bloquear a interface:
 
 - eventos de risco marítimo;
-- regras para transformar conhecimento parcial em rotas rumoreadas, localizadas e navegáveis;
+- aquisição de rumores e informação comercial por interação;
 - perfis direcionais de vento apenas quando documentados por trecho;
 - substituição progressiva das escalas abstratas por parâmetros históricos quando houver evidência suficiente.
 
-A implementação continua independente de Pygame.
-
 ## Fase 3 — Primeiro mapa e loop jogável
 
-Status: **mapa, cartografia, serviços portuários e comércio v0.1 implementados; integração do loop em construção**.
+Status: **núcleo integrado v0.1 concluído; interface jogável mínima é o próximo incremento**.
 
 Implementado:
 
 - `WorldMapModel` independente de Pygame;
-- projeção equiretangular simples de coordenadas de `nodes.csv`;
-- visibilidade de nós condicionada ao conhecimento geográfico do personagem/Coroa;
-- visibilidade de rotas sem revelar conexões classificadas como `UNKNOWN`;
-- linhas de rota tratadas como arestas do grafo, não como reconstrução do percurso navegado;
-- protótipo Pygame capaz de abrir janela ou renderizar PNG em modo headless;
+- projeção equiretangular de runtime;
 - referência cartográfica programática com costa real e sem fronteiras políticas modernas;
-- estética náutica procedural sobre a geometria real: paleta de pergaminho, linhas de rumo e rosa-dos-ventos;
-- âncoras provisórias de Mpinda/Soyo e Sofala identificadas graficamente e documentadas;
-- serviços mínimos de reabastecimento e reparo a partir de `provisions` e `repair` de `nodes.csv`;
-- distinção operacional entre serviço desconhecido (`UNKNOWN`) e explicitamente ausente (`NONE`);
-- capacidades, limites e duração de serviços isolados em `simulation/port_rules.csv`;
-- serviços aplicados ao `VesselState` com avanço do calendário;
+- estética náutica procedural sobre a geometria real;
+- âncoras provisórias de Mpinda/Soyo e Sofala identificadas e documentadas;
+- visibilidade de nós e rotas condicionada ao conhecimento;
+- serviços mínimos de reabastecimento e reparo;
+- distinção operacional entre serviço `UNKNOWN` e `NONE`;
 - `CommercialState` imutável com capital, capacidade e inventário abstratos;
-- compra e venda somente quando a relação porto–mercadoria está documentada no período;
+- compra e venda somente em mercados documentados;
 - bloqueio por falta de capital, capacidade ou inventário;
-- spread de compra/venda isolado em `simulation/trade_rules.csv`;
-- testes automatizados e smoke tests no GitHub Actions.
+- `RouteKnowledgeModel` separado de `KnowledgeModel`;
+- `GameSessionState` reunindo navio, estado comercial, conhecimento por nó e conhecimento por rota;
+- mercado do porto atual bloqueado até `market_knowledge >= OPERATIONAL`;
+- planejamento de viagem usando conhecimento da rota ou piloto historicamente documentado;
+- aprendizagem por chegada e por conclusão de rota definida em `simulation/session_rules.csv`;
+- teste histórico de aprendizagem Melinde → Calecute com piloto guzerate;
+- cenário técnico determinístico Calecute → Aden capaz de executar `mercado → compra → viagem → chegada → venda`;
+- cenário técnico explicitamente separado do estado histórico inicial;
+- suíte automatizada e smoke tests no GitHub Actions.
 
-Próximo incremento do loop:
+Próximo incremento:
 
-1. criar um `GameSessionState` que reúna data, localização, navio, estado comercial e conhecimento;
-2. consultar mercado do porto atual filtrado pelo conhecimento comercial;
-3. comprar carga;
-4. selecionar destino navegável no mapa;
-5. executar a viagem via `TravelModel`;
-6. chegar ao porto de destino, vender e atualizar conhecimento;
-7. expor esse ciclo em uma interface Pygame mínima, sem tentar ainda reproduzir a interface final.
+1. criar uma interface Pygame mínima sobre `GameSessionState`;
+2. apresentar mapa conhecido, porto atual, data, navio, capital e carga;
+3. abrir painel de mercado apenas quando o conhecimento permitir;
+4. permitir compra e venda acionando `GameSessionModel`;
+5. listar somente destinos navegáveis ou rotas habilitáveis por piloto;
+6. executar viagem e atualizar a interface com o novo estado;
+7. manter toda regra de negócio fora da camada gráfica.
 
 A cartografia visual deve continuar programática e reprodutível. Elementos decorativos podem evocar cartas náuticas, mas não podem alterar costa, coordenadas ou trajetos do grafo.
 
@@ -159,20 +160,21 @@ Somente após estabilizar o núcleo:
 - lógica de domínio independente da camada gráfica;
 - CSVs históricos separados dos parâmetros de simulação;
 - ausência de preços históricos fictícios na calibração inicial;
-- distância de rota calculada como geodésica de referência, não confundida com percurso histórico efetivo;
+- distância de rota calculada como geodésica de referência;
 - confiança espacial da rota acompanha a menor confiança entre seus pontos extremos;
-- conhecimento dividido em quatro dimensões e separado entre personagem e Coroa;
-- provisões representadas provisoriamente por dias-equivalentes, não por unidades físicas inventadas;
-- desgaste representado provisoriamente por escala abstrata de condição;
+- conhecimento de nó e conhecimento de rota são dimensões distintas;
+- conhecimento é separado entre personagem e Coroa;
+- provisões e desgaste permanecem escalas abstratas;
 - piloto documentado habilita rota específica sem bônus quantitativo não sustentado;
-- todos os nós da base inicial possuem âncora cartográfica, com incerteza explicitamente marcada quando necessário;
+- todos os nós da base inicial possuem âncora cartográfica com incerteza explícita quando necessário;
 - mapa de referência usa costa real e não desenha fronteiras políticas modernas;
 - estética histórica do mapa é procedural e separada da geometria;
 - linhas do mapa representam conexões abstratas do grafo, não derrotas históricas;
 - serviço portuário desconhecido não é convertido silenciosamente em serviço ausente ou disponível;
-- reabastecimento e reparo usam efeitos abstratos de simulação enquanto faltarem parâmetros históricos defensáveis;
-- comércio v0.1 usa capital, carga e preço como índices de simulação e não como unidades históricas;
-- uma mercadoria ausente de `node_goods.csv` não é criada artificialmente no mercado.
+- comércio v0.1 usa capital, carga e preço como índices de simulação;
+- mercadoria ausente de `node_goods.csv` não é criada artificialmente no mercado;
+- presença física em porto e conclusão de rota produzem aprendizado apenas por regras explícitas de simulação;
+- cenários técnicos podem conceder conhecimento por override apenas quando identificados como não históricos.
 
 ## Decisões ainda abertas
 
@@ -184,6 +186,7 @@ Somente após estabilizar o núcleo:
 - refinamento arqueológico/cartográfico de Mpinda/Soyo e Sofala;
 - modelo de eventos marítimos e avarias;
 - unidade monetária/contábil histórica ou abstrata da versão posterior ao protótipo;
-- modelo de conhecimento adquirido após visitas, conversas e viagens.
+- forma de aquisição de informação por conversa, contrato, rumor, carta e espionagem;
+- desenho visual definitivo da interface.
 
 Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
