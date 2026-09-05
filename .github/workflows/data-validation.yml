@@ -31,6 +31,8 @@ jobs:
         run: python prototype/travel.py
       - name: Render port service prototype report
         run: python prototype/port.py
+      - name: Render trade prototype report
+        run: python prototype/trade.py
       - name: Smoke-test coordinate map
         env:
           SDL_VIDEODRIVER: dummy
