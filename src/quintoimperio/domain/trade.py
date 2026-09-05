@@ -1,7 +1,9 @@
 """Estado comercial abstrato e operações de compra/venda.
 
 Capital, quantidade, capacidade e preços são índices de simulação. O módulo não
-pretende reproduzir moedas, pesos, volumes ou margens históricas.
+pretende reproduzir moedas, pesos, volumes ou margens históricas. Restrições
+específicas registradas em ``node_goods.csv`` não são anuladas por acesso
+portuário genérico.
 """
 
 from __future__ import annotations
@@ -84,6 +86,10 @@ class TradeModel:
     def capacity_free(self, state: CommercialState) -> float:
         return max(0.0, state.capacity_total - self.capacity_used(state))
 
+    def good_restricted(self, node_id: str, good_id: str, year: int) -> bool:
+        row = self.economy.node_good(node_id, good_id, year)
+        return row is not None and row.get("restricted") == "TRUE"
+
     def quote(
         self,
         node_id: str,
@@ -142,6 +148,8 @@ class TradeModel:
         quote = self.quote(node_id, good_id, TradeSide.BUY, year=year, seed=seed)
         if quote is None:
             reasons.append("GOOD_NOT_DOCUMENTED_IN_MARKET")
+        elif self.good_restricted(node_id, good_id, year):
+            reasons.append("GOOD_RESTRICTED_BY_HISTORICAL_ACCESS_REGIME")
 
         if quote is not None and quantity > 0:
             required_capacity = quote.bulk_per_unit * quantity
@@ -199,6 +207,8 @@ class TradeModel:
         quote = self.quote(node_id, good_id, TradeSide.SELL, year=year, seed=seed)
         if quote is None:
             reasons.append("GOOD_NOT_DOCUMENTED_IN_MARKET")
+        elif self.good_restricted(node_id, good_id, year):
+            reasons.append("GOOD_RESTRICTED_BY_HISTORICAL_ACCESS_REGIME")
 
         current = state.quantity_of(good_id)
         if quantity > current + 1e-12:
