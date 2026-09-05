@@ -1,187 +1,197 @@
 # Roteiro de produção
 
-## Fase 0 — Fundação histórica e de dados
+## Estado após o núcleo v0.1
 
-Status: **v0.1 concluída; aprofundamento histórico contínuo**.
+O PR #1 foi integrado a `main`. O núcleo v0.1 reúne fundação histórica, economia relativa, navegação, calendário, conhecimento, viagem, serviços portuários, comércio, informação, acesso institucional, relações por atores, risco marítimo inicial, cartografia, sessão integrada e uma primeira interface Pygame.
 
-Objetivo: estabilizar a primeira representação do mundo de 1497–1500 antes de programar mecânicas definitivas.
+O merge não encerra o projeto e não equivale ao MVP. O próximo objetivo é transformar sistemas já existentes em uma experiência histórica contínua, jogável e encerrável, evitando ampliar o escopo antes de fechar essa vertical slice.
 
-Entregas já existentes:
+Princípio de desenvolvimento até o MVP: **priorizar continuidade de campanha, consequências das decisões, legibilidade da interface e robustez da sessão; novos sistemas só entram quando forem necessários para fechar o loop.**
 
-- nós atlânticos e primeiros nós do Índico;
-- mercadorias, relações nó–mercadoria, rotas e fluxos;
-- observações documentadas de viagem;
-- pilotos e competências por rota;
-- expedições/armadas, sequência de pernas e permanências logísticas;
-- atores/comunidades historicamente normalizados por nó e período;
-- proveniência, confiança e incerteza explícitas;
-- validação automática e testes de domínio.
+## Definição do MVP
 
-A pesquisa continua refinando relações e cronologias sem bloquear o protótipo.
+O MVP é uma vertical slice da primeira viagem portuguesa de 1497–1498, iniciada em Lisboa em 8 de julho de 1497 e encerrada após a primeira estadia jogável em Calecute.
 
-## Fase 1 — Protótipo econômico sem interface final
+O jogador deve conseguir, sem usar o cenário técnico nem overrides de teste:
 
-Status: **v0.1 concluída**.
+1. iniciar em Lisboa com a armada de Vasco da Gama;
+2. percorrer as dez pernas normalizadas da campanha até Calecute;
+3. lidar com permanências históricas, serviços, espera, informação e condição do navio;
+4. manter separadas cronologia `GUIDED` e trajetória `COUNTERFACTUAL`;
+5. chegar a Melinde e utilizar o piloto documentado quando aplicável;
+6. chegar a Calecute com conhecimento e acesso institucional tratados como estados distintos;
+7. estabelecer contatos apenas com atores historicamente normalizados;
+8. consultar e realizar pelo menos uma operação comercial jogável em mercado documentado;
+9. concluir objetivos explícitos da campanha e alcançar uma condição clara de encerramento;
+10. salvar e restaurar o estado da campanha;
+11. passar integralmente pela validação automática, testes, smoke tests e revisão externa do PR.
 
-Implementado:
+O MVP não precisa reproduzir ainda o retorno a Lisboa, Cochim, a armada de 1500, Goa, Ormuz, Malaca, cartaz, combate, naufrágio, tripulação individual ou economia monetária histórica completa.
 
-- oferta/demanda relativas derivadas do papel comercial documentado;
-- volume, valor e função de troca separados em `simulation/`;
-- custos relativos de provisões, frete, acesso/tributação e intermediação;
-- estoques estruturais e dependentes de trânsito;
-- choques determinísticos por semente;
-- restrições específicas de mercadoria separadas do acesso portuário genérico;
-- testes automatizados.
+## M0 — Saneamento pós-merge
 
-Nenhum índice é tratado como preço ou quantidade histórica.
+Issue: #33.
 
-## Fase 2 — Navegação, calendário, conhecimento e viagem
+Status: concluído.
 
-Status: **núcleo v0.1 concluído; calibração histórica contínua**.
+Objetivos:
 
-Implementado:
+- confirmar `main` após o merge e CI verde;
+- encerrar issues legadas cujo escopo v0.1 já foi entregue;
+- eliminar backlog aberto que não represente trabalho futuro real;
+- consolidar neste documento a definição do MVP e a sequência de gates;
+- preparar uma branch limpa e um PR exclusivamente documental/organizacional.
 
-- calendário e fases gerais da monção;
-- distância geodésica de referência e confiança espacial da rota;
-- observações documentadas de viagem e divergências entre fontes;
-- precedência de observação da mesma rota/data sobre extrapolação geodésica;
-- Melinde–Calecute 1498 preservada em 26/27 dias;
-- itinerário inicial de Gama segmentado em pernas operacionais entre Lisboa, São Thiago, baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais, Moçambique, Mombaça, Melinde e Calecute;
-- conexões Lisboa–Cabo e Cabo–Moçambique mantidas apenas como `STRATEGIC_AGGREGATE`, bloqueadas para execução;
-- permanências logísticas registradas separadamente do tempo de navegação;
-- `ChronologyMode.GUIDED` e `COUNTERFACTUAL` para separar reprodução temporal da campanha de trajetórias divergentes;
-- bloqueio de partida antes da data documentada numa escala guiada;
-- espera explícita até a partida sem efeitos materiais automáticos;
-- serviços, informação e negociação consumindo o mesmo calendário;
-- ruído determinístico somente quando não há observação exata da partida;
-- eventos marítimos genéricos determinísticos por semente, limitados a atraso e perda abstrata de condição;
-- observação histórica exata suprimindo eventos aleatórios em cronologia `GUIDED`;
-- possibilidade de a mesma rota/data receber evento em cronologia `COUNTERFACTUAL`;
-- quatro dimensões de conhecimento por nó;
-- conhecimento náutico de rota separado de conhecimento de nó;
-- estados separados para personagem e Coroa;
-- piloto guzerate de Melinde associado somente à rota documentada;
-- bases `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND`;
-- provisões e condição abstratas;
-- planejamento/execução de viagem e bloqueios explícitos.
+Critério de saída: backlog legado encerrado, roadmap atualizado, CI preservado e próxima issue funcional pronta.
 
-Próximos aprofundamentos:
+## M1 — Campanha Lisboa–Calecute ponta a ponta
 
-1. perfis direcionais de vento apenas quando documentados por trecho;
-2. substituir escalas abstratas somente quando houver evidência suficiente;
-3. refinar cronologias editoriais do `Roteiro` quando novas edições/fontes permitirem;
-4. somente depois avaliar doença, perdas materiais, encalhe/naufrágio e outros riscos com modelos próprios.
+Próxima frente funcional.
 
-## Fase 3 — Primeiro mapa e loop jogável
+Objetivo: garantir que a campanha histórica percorra pela interface toda a sequência já presente no domínio:
 
-Status: **interface jogável v0.1 concluída; campanha histórica em refinamento**.
+`LIS → STG → SHB → CGH → SBR → RCO → RBS → MOZ → MOM → MAL → CAL`.
 
-Implementado:
+Entregas mínimas:
 
-- mapa de runtime independente da lógica de domínio;
-- referência cartográfica programática com costa real e sem fronteiras políticas modernas;
-- visibilidade de nós/rotas condicionada ao conhecimento;
-- rótulos do mapa reposicionados apenas para legibilidade, sem deslocar coordenadas dos nós, com regressão automatizada contra sobreposição nos cenários padrão;
-- serviços portuários com `UNKNOWN` distinto de `NONE`;
-- estado comercial imutável;
-- compra/venda apenas em mercados documentados;
-- `GameSessionState` reunindo navio, comércio, conhecimento, acesso, relações, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
-- mercado bloqueado até conhecimento operacional;
-- acesso comercial separado de conhecimento do mercado;
-- `FOREIGN_NEGOTIATED` exigindo negociação explícita antes de compra/venda;
-- monopólios e mercadorias restritas não desbloqueados pela negociação genérica;
-- reabastecimento/reparo integrados à sessão;
-- aprendizagem por chegada e conclusão de rota;
-- aquisição ativa de informação por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`;
-- oportunidades informativas limitadas à rede documentada e nunca derivadas por cópia do estado da Coroa;
-- canais limitados abaixo de `OPERATIONAL` para que rumor/consulta não substituam experiência efetiva;
-- cada oportunidade informativa utilizável uma vez por sessão e seleção determinística por semente;
-- relações por ator limitadas a `UNESTABLISHED` e `CONTACTED`;
-- contato com autoridade e comunidade mercantil registrado somente quando a base histórica possui associação não ambígua;
-- atores não contatados ocultos na interface;
-- eventos de viagem registrados no plano e no histórico da sessão para auditoria;
-- cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → negociação → venda`;
-- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, acesso, informação, relações estabelecidas, mercado, armada ativa, escala, espera, rotas e último evento `SIM` quando houver;
-- botão de negociação exibido somente quando o gate institucional é negociável;
-- mercado conhecido pode ser consultado mesmo quando a operação está bloqueada por acesso;
-- modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497` e cronologia `GUIDED`;
-- modo `TECHNICAL` claramente identificado como não histórico e `COUNTERFACTUAL`;
-- `FLEET_COMMAND` visível sem elevar conhecimento pessoal;
-- piloto documentado preservado como base específica quando aplicável;
-- primeira perna histórica executável Lisboa → São Thiago;
-- rotas estratégicas agregadas bloqueadas no domínio;
-- escalas guiadas impedindo partida precoce e oferecendo espera apenas pelo tempo restante;
-- mudança para cronologia contrafactual quando o jogador ultrapassa a partida histórica e prossegue;
-- smoke tests e capturas no GitHub Actions.
+- cada perna executável pela interface;
+- escala ativa correta após cada chegada;
+- bloqueios de partida e espera coerentes com `GUIDED`;
+- transição auditável para `COUNTERFACTUAL` quando o jogador divergir;
+- reabastecimento e reparo apenas por ações explícitas e disponibilidade documentada;
+- nenhuma rota `STRATEGIC_AGGREGATE` executável;
+- piloto de Melinde restrito à competência documentada;
+- testes de integração cobrindo a campanha completa até Calecute.
 
-Próximos incrementos do loop:
+Não incluir neste gate retorno da Índia, Cochim ou nova expansão geográfica.
 
-1. definir se relações precisam de mais estados categóricos antes de qualquer escore numérico;
-2. introduzir efeitos relacionais somente onde houver ator documentado e regra de simulação explícita;
-3. aprofundar intermediários e comunidades mercantis além do campo de disponibilidade;
-4. refinar a interface sem sacrificar a separação entre cartografia, conhecimento e instituições.
+## M2 — Relações com consequências mínimas
 
-## Fase 4 — Portos, instituições e relações
+Objetivo: dar consequência jogável a relações sem criar uma reputação global arbitrária.
 
-Status: **acesso institucional e relações por atores v0.1 implementados; efeitos relacionais são a próxima frente**.
+Diretriz:
 
-Já implementado:
+- manter relação por ator documentado;
+- preferir estados categóricos a um score contínuo;
+- introduzir apenas transições necessárias ao MVP, por exemplo `UNESTABLISHED → CONTACTED → COOPERATIVE` e, quando justificável, um estado adverso;
+- efeitos devem ser locais e explícitos: acesso a informação, disponibilidade de intermediário, possibilidade de ação institucional ou outra consequência claramente parametrizada;
+- contato relacional não deve alterar preço, crédito ou acesso por simples existência, salvo regra específica.
 
-- participação em expedição/armada separada do conhecimento individual;
-- sequência de pernas por expedição;
-- permanências logísticas documentadas separadas de mercados;
-- comando institucional como base de viagem específica;
-- piloto como competência distinta do comando;
-- serviços portuários mínimos;
-- permanência histórica sem efeitos materiais automáticos;
-- rumor como canal de conhecimento não operacional;
-- contato mercantil condicionado à disponibilidade de intermediários;
-- consulta a piloto condicionada a competência histórica de rota;
-- histórico de oportunidades informativas usadas por sessão;
-- risco marítimo genérico separado de incidentes históricos documentados;
-- `AccessModel` com estados `OPEN`, `NEGOTIATION_REQUIRED`, `NEGOTIATED`, `RESTRICTED`, `NONCOMMERCIAL` e `UNKNOWN`;
-- negociação genérica de `FOREIGN_NEGOTIATED` sem inventar taxas, presentes, diálogo ou probabilidade de êxito;
-- ancoradouros e marcos náuticos preservados como não comerciais;
-- monopólios régios preservados como restritos;
-- `node_goods.restricted=TRUE` como bloqueio independente de mercadoria;
-- `actors.csv` e `node_actors.csv` com proveniência e limites temporais explícitos;
-- `RelationshipModel` sem ator genérico de preenchimento;
-- autoridade do Samudri Raja e comunidade mercantil muçulmana/pardesi de Calecute mantidas como atores distintos;
-- autoridade local de Melinde normalizada somente para 1498;
-- negociação em Calecute podendo registrar contato com a autoridade documentada;
-- `MERCHANT_CONTACT` podendo registrar contato com a comunidade mercantil documentada;
-- ausência de efeito relacional automático em portos sem ator normalizado;
-- interface mostrando somente relações já `CONTACTED`.
+O MVP não exige uma diplomacia geral para todos os portos.
 
-Ainda por implementar:
+## M3 — Comércio operacional dentro da campanha
 
-- estados relacionais além de `CONTACTED`, caso sejam necessários;
-- efeitos de confiança, hostilidade ou reputação sem reduzi-los automaticamente a uma pontuação global;
-- intermediários e comunidades mercantis como agentes mais ricos que um simples campo de disponibilidade;
-- impostos, monopólios, privilégios e presentes diplomáticos somente quando historicamente sustentados ou explicitamente parametrizados como simulação;
-- contratos e crédito;
-- cartas persistentes, mensagens e redes pessoais de informação;
-- desinformação/qualidade de informantes somente se necessária ao jogo;
-- hierarquia mais detalhada de capitães, mestres, pilotos, escrivães, marinheiros e soldados, apenas se necessária ao jogo e sustentada pela documentação.
+Objetivo: transformar o comércio atual de demonstração em decisão utilizável pelo jogador.
 
-## Fase 5 — Campanha 1497–1505
+Entregas mínimas:
 
-Recorte inicial:
+- quantidade selecionável na compra e venda;
+- indicação clara de capital, carga e capacidade restante;
+- visualização de bens conhecidos no mercado atual;
+- bloqueios de acesso e de mercadoria explicados na interface;
+- pelo menos uma decisão comercial útil dentro da vertical slice;
+- preservação da regra de que índices econômicos de `simulation/` não são preços históricos.
 
-1. Lisboa e rede atlântica conhecida;
-2. viagem de 1497 com escalas, permanências e aprendizagem progressiva;
-3. Moçambique, Mombaça e Melinde;
-4. chegada a Calecute;
-5. negociação de acesso separada do simples conhecimento do mercado;
-6. contatos diferenciados com autoridade e comunidade mercantil quando documentados;
-7. retorno e reconfiguração após a primeira viagem;
-8. expansão inicial até Cochim e primeiras estruturas portuguesas.
+Crédito, câmbio, juros, contratos complexos e unidade monetária histórica ficam fora do MVP.
 
-O jogo deve deixar clara a diferença entre a rede atlântica portuguesa já estabelecida e a rede índica preexistente.
+## M4 — Objetivos e encerramento da campanha
 
-## Fase 6 — Expansão 1505–1540
+Objetivo: transformar o loop em uma experiência com progresso reconhecível e fim definido.
 
-Somente após estabilizar o núcleo:
+Criar uma camada mínima de campanha, separada do domínio econômico e náutico, capaz de registrar marcos como:
+
+- participação na armada;
+- chegada às escalas-chave;
+- aquisição de conhecimento;
+- contato com atores documentados;
+- chegada a Calecute;
+- negociação de acesso;
+- primeira operação comercial elegível.
+
+O encerramento do MVP ocorre em Calecute, com resumo da campanha: cronologia, conhecimento adquirido, relações estabelecidas, capital/carga e indicação de eventual divergência contrafactual.
+
+Não transformar esses marcos em uma sequência rígida de quests quando a liberdade do jogador permitir outra ordem.
+
+## M5 — Interface v0.2
+
+Objetivo: deixar de apresentar apenas um painel técnico e oferecer uma interface suficientemente clara para jogar a vertical slice.
+
+Prioridades:
+
+- hierarquia visual entre mapa, porto, navio, mercado, informação, relações e viagem;
+- objetivo atual e estado da campanha visíveis;
+- motivo dos bloqueios apresentado em linguagem curta;
+- confirmação antes de viagens relevantes;
+- controles simples de quantidade no comércio;
+- histórico curto de acontecimentos da sessão;
+- indicação discreta, porém clara, de `GUIDED` versus `COUNTERFACTUAL`;
+- preservação da regra arquitetural: Pygame apresenta estado e envia comandos; regras de negócio permanecem no domínio.
+
+Refino estético amplo fica depois do fechamento funcional do loop.
+
+## M6 — Persistência
+
+Objetivo: permitir interromper e retomar a campanha.
+
+Escopo mínimo:
+
+- um formato versionado de save, inicialmente JSON;
+- serialização de `GameSessionState`, campanha, seed e versão do schema;
+- um slot de save é suficiente;
+- carregamento deve reproduzir o mesmo estado e determinismo;
+- teste de round-trip save/load.
+
+Perfis, múltiplos slots, nuvem e migrações sofisticadas não são requisitos do MVP.
+
+## M7 — Balanceamento e robustez
+
+Objetivo: verificar que a campanha completa não cria becos sem saída artificiais nem exploração trivial dos parâmetros de simulação.
+
+Testar, em múltiplas seeds quando aplicável:
+
+- provisões suficientes para tornar as pernas executáveis sem concessões automáticas;
+- desgaste recuperável dentro das regras existentes;
+- eventos marítimos sem dominar a campanha;
+- comércio sem crescimento explosivo ou arbitragem infinita evidente;
+- ações de espera com custo temporal perceptível;
+- informação útil sem revelar conhecimento oculto;
+- ausência de vazamento de nós, rotas, atores ou mercados desconhecidos;
+- comportamento determinístico para mesma seed e mesmo estado.
+
+Ajustes de balanceamento devem ocorrer em `simulation/`; fatos históricos não devem ser alterados para melhorar o jogo.
+
+## M8 — Gate de MVP
+
+O MVP só pode ser marcado quando todos os itens abaixo forem verdadeiros:
+
+- a campanha histórica inicia em Lisboa e chega a Calecute pela interface comum;
+- nenhuma etapa exige `TECHNICAL` ou override de teste;
+- divergências históricas mudam corretamente para `COUNTERFACTUAL`;
+- mercado, acesso e relações permanecem estados distintos;
+- existe ao menos uma decisão comercial real dentro da campanha;
+- existem objetivos e condição explícita de encerramento;
+- save/load preserva o estado;
+- CI integralmente verde;
+- smoke tests de interface e mapas aprovados;
+- revisão Copilot sem achado concreto bloqueador após as correções;
+- documentação sincronizada com o comportamento real.
+
+Após esse gate, criar a tag de versão do MVP e somente então ampliar o horizonte cronológico.
+
+## Pós-MVP — Primeira expansão
+
+A expansão imediata deve continuar 1498–1505, em incrementos pequenos:
+
+1. retorno e reconfiguração após a primeira viagem;
+2. Cochim e primeiras estruturas portuguesas na costa do Malabar;
+3. novas expedições e competição institucional/comercial;
+4. contratos, crédito e intermediários mais ricos quando necessários;
+5. cartas persistentes, mensagens e redes pessoais de informação;
+6. doença, perdas materiais e tripulação apenas com modelos próprios e evidência adequada.
+
+## Pós-MVP — Expansão 1505–1540
+
+Somente após estabilizar a vertical slice e a primeira expansão:
 
 - Goa;
 - Ormuz;
@@ -189,7 +199,19 @@ Somente após estabilizar o núcleo:
 - carreiras intra-asiáticas;
 - cartaz;
 - comércio privado e casados;
-- Coromandel, Bengala e Sudeste Asiático.
+- Coromandel, Bengala e Sudeste Asiático;
+- combate e violência marítima somente quando houver modelo histórico e mecânico defensável.
+
+## Pesquisa histórica contínua
+
+A pesquisa permanece ativa sem bloquear o MVP quando a lacuna não impede o loop. Continuam válidas as seguintes prioridades:
+
+- refinar cronologias editoriais do `Roteiro` quando novas edições/fontes permitirem;
+- melhorar âncoras cartográficas provisórias sem inventar precisão;
+- introduzir perfis de vento direcionais somente quando documentados por trecho;
+- normalizar novos atores somente quando houver base documental suficiente;
+- ampliar cestas portuárias e rotas apenas quando necessárias à campanha ou à expansão planejada;
+- preservar divergências entre fontes em vez de harmonizá-las silenciosamente.
 
 ## Decisões resolvidas
 
@@ -197,7 +219,7 @@ Somente após estabilizar o núcleo:
 - domínio independente da interface;
 - dados históricos separados dos parâmetros de simulação;
 - preços históricos não são inventados;
-- linhas do mapa são arestas do grafo, não derrotas;
+- linhas do mapa são arestas do grafo, não rotas navegadas;
 - coordenadas dos nós não são deslocadas para resolver colisões de rótulos;
 - conhecimento de nó, conhecimento de rota, acesso institucional, relação com ator e comando de expedição são estados distintos;
 - personagem e Coroa possuem estados de conhecimento separados;
@@ -222,7 +244,7 @@ Somente após estabilizar o núcleo:
 - eventos marítimos v0.1 são `SIMULATION`, no máximo um por viagem e limitados a tempo/provisões/condição;
 - evento genérico não representa calmaria, tempestade ou avaria histórica específica;
 - em `COUNTERFACTUAL`, uma rota/data historicamente observada pode receber evento de simulação;
-- itinerário Lisboa–Moçambique é segmentado para execução e as conexões agregadas ficam apenas como camada estratégica;
+- itinerário Lisboa–Calecute é segmentado em pernas executáveis, mantendo conexões agregadas apenas como camada estratégica;
 - ancoradouro logístico não é convertido automaticamente em mercado;
 - datas editoriais do `Roteiro` são marcadas como reconstruções;
 - `observed_stay_days` permanece distinto da diferença aritmética entre datas editoriais;
@@ -230,19 +252,28 @@ Somente após estabilizar o núcleo:
 - atraso além da partida documentada converte a sessão em cronologia contrafactual em vez de forçar datas históricas;
 - limite de provisões continua parâmetro abstrato mesmo quando calibrado para acomodar uma perna histórica longa;
 - serviço desconhecido não é tratado como ausente nem disponível;
-- cenários técnicos permanecem explicitamente separados do estado histórico;
-- identidade/profissão do protagonista continua não fixada.
+- cenários técnicos permanecem explicitamente separados do estado histórico.
 
-## Decisões ainda abertas
+## Decisões abertas até o MVP
 
-- unidade física/abstrata de carga definitiva;
-- classes de navio e velocidades relativas;
-- grau de controle direto do jogador sobre navio e tripulação;
-- protagonista e enquadramento exato da campanha;
-- desenho multidimensional de relações/reputação além de `CONTACTED`;
-- doenças, perdas de carga/tripulação, encalhe, naufrágio e combate marítimo;
-- unidade monetária posterior ao protótipo;
-- cartas, contratos informacionais, espionagem e desinformação;
-- desenho visual definitivo da interface.
+Somente decisões que podem bloquear a vertical slice devem ser resolvidas antes do MVP:
 
-Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
+- protagonista e enquadramento mínimo da campanha, apenas no grau necessário para apresentar objetivos e encerramento;
+- representação definitiva de quantidade/capacidade suficiente para controles de compra e venda;
+- conjunto mínimo de estados relacionais além de `CONTACTED`, se os efeitos do MVP realmente exigirem;
+- formato de persistência e versão inicial do schema de save.
+
+## Decisões pós-MVP
+
+Não devem expandir o escopo atual:
+
+- classes detalhadas de navio e velocidades relativas;
+- controle detalhado de tripulação;
+- doenças, perdas de tripulação/carga, encalhe e naufrágio;
+- combate marítimo;
+- unidade monetária histórica definitiva;
+- cartas, espionagem e desinformação;
+- desenho visual definitivo da interface;
+- hierarquias completas de capitães, mestres, pilotos, escrivães, marinheiros e soldados.
+
+Essas decisões devem continuar sendo tomadas por pequenos protótipos, pesquisa e testes, não por documentação especulativa.
