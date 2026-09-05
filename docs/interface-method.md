@@ -2,81 +2,80 @@
 
 ## Objetivo
 
-A interface Pygame v0.1 expõe o núcleo já implementado em `GameSessionModel` sem duplicar regras econômicas, de conhecimento, serviços portuários ou viagem na camada gráfica.
+A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, serviços portuários, expedições ou viagem na camada gráfica.
 
-A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, mercado do porto e rotas de saída. Compra, venda, reabastecimento, reparo e viagem chamam diretamente os métodos do domínio.
+A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, mercado, armada ativa quando houver e rotas de saída.
 
 ## Dois estados explicitamente distintos
 
-A interface oferece dois cenários porque o estado histórico inicial ainda não contém todos os mecanismos institucionais necessários para reproduzir a partida da armada de Vasco da Gama a partir de Lisboa.
-
 ### HISTORICAL
 
-É o padrão. Abre em Lisboa em 8 de julho de 1497 usando `GameSessionModel.initial_state()` sem elevar conhecimento náutico ou mercantil para tornar ações possíveis. Se uma rota estiver bloqueada por conhecimento insuficiente, a interface mostra o bloqueio.
+É o padrão. Abre em Lisboa em 8 de julho de 1497 com `EXP_GAMA_1497` ativa. A associação à armada não fixa identidade ou profissão do protagonista e não eleva seu conhecimento náutico.
 
-Esse comportamento é deliberado: uma limitação atual do modelo não deve ser ocultada por um parâmetro inventado.
+O painel mostra a expedição e a perna corrente. Uma rota pode aparecer como disponível por `FLEET_COMMAND` mesmo quando o conhecimento pessoal ainda não é `OPERATIONAL`. O banner explicita: **comando institucional ≠ conhecimento pessoal**.
+
+A cronologia documentada tem precedência quando existe observação da mesma rota e data. Assim, `R_LIS_CGH` parte em 8 de julho e usa a duração agregada observada de 134 dias até 19 de novembro, não a antiga extrapolação de velocidade derivada do Índico.
+
+Essa primeira aresta continua inadequada como unidade final de provisões porque inclui escalas intermediárias. A interface preserva o eventual bloqueio por recursos em vez de inflar silenciosamente a capacidade do navio; o itinerário será segmentado em escalas documentadas.
 
 ### TECHNICAL
 
-É um cenário de integração que começa em Calecute em 22 de maio de 1498 e reaplica somente os mesmos overrides explicitamente documentados no protótipo de sessão: mercado de Calecute operacional e rota Calecute–Aden operacional.
+É um cenário de integração que começa em Calecute em 22 de maio de 1498 e aplica somente os overrides técnicos já documentados: mercado de Calecute operacional e rota Calecute–Aden operacional.
 
-O cenário existe para permitir testar de forma interativa o ciclo `mercado -> compra -> viagem -> chegada -> venda`. Um banner vermelho informa que ele não representa o estado histórico inicial do personagem.
+Ele permite testar `mercado -> compra -> viagem -> chegada -> venda`. Um banner informa que não representa o estado histórico inicial do personagem.
 
 ## Mapa
 
-O mapa usa as coordenadas de `nodes.csv`. Somente nós com conhecimento geográfico pelo menos `RUMORED` aparecem. Linhas representam arestas do grafo cuja rota possui algum conhecimento náutico no estado atual; não representam derrotas históricas, correntes ou trajetos efetivamente navegados.
+O mapa usa as coordenadas de `nodes.csv`. Somente nós com conhecimento geográfico pelo menos `RUMORED` aparecem. Linhas representam arestas do grafo, não derrotas históricas, correntes ou trajetos efetivamente navegados.
 
-A v0.1 da interface continua usando fundo esquemático. A costa real permanece na ferramenta cartográfica de referência separada em `tools/render_cartographic_map.py`.
+Uma rota pode ficar visível porque o personagem a conhece ou porque corresponde à perna corrente de uma expedição ativa. Isso não altera o estado de conhecimento pessoal.
+
+A costa real permanece na ferramenta cartográfica de referência separada em `tools/render_cartographic_map.py`.
 
 ## Serviços portuários
 
-O painel consulta `GameSessionModel.service_quote()` para provisões e reparo. A categoria exibida vem dos campos históricos de `nodes.csv` e mantém a distinção entre `UNKNOWN`, `NONE`, `LOW`, `MEDIUM` e `HIGH`.
+O painel consulta `GameSessionModel.service_quote()` para provisões e reparo e mantém `UNKNOWN`, `NONE`, `LOW`, `MEDIUM` e `HIGH` distintos.
 
-Os botões usam ações abstratas fixas da interface:
+- `Reabastecer +30` solicita 30 dias-equivalentes;
+- `Reparar +20` solicita 20 pontos abstratos de condição.
 
-- `Reabastecer +30` solicita 30 dias-equivalentes, sujeitos à capacidade e às regras de `port_rules.csv`;
-- `Reparar +20` solicita 20 pontos abstratos de condição, sujeitos à disponibilidade e à taxa definida em `port_rules.csv`.
-
-Esses números são ações de simulação e não quantidades históricas. A v0.1 não desconta capital por serviços porque ainda não existe base histórica ou regra de balanceamento separada para custo monetário.
-
-Serviço `UNKNOWN` continua bloqueado; a interface não o converte em disponibilidade presumida.
+Esses números são parâmetros de simulação. Nenhum custo monetário histórico é inventado.
 
 ## Mercado
 
-O painel chama `GameSessionModel.market_view()`. Se `market_knowledge` for inferior a `OPERATIONAL`, nenhuma mercadoria acionável é mostrada. Compra e venda usam `GameSessionModel.buy()` e `GameSessionModel.sell()` com quantidade unitária abstrata.
+O painel chama `GameSessionModel.market_view()`. Se `market_knowledge < OPERATIONAL`, nenhuma mercadoria acionável é mostrada. Compra e venda usam quantidade unitária abstrata e são delegadas ao domínio.
 
-Capital, quantidade, capacidade, preço e volume continuam índices de simulação. A interface não os apresenta como cruzados, xerafins, quintais, toneladas ou preços históricos.
+Capital, quantidade, capacidade e preço continuam índices de simulação.
 
 ## Viagem
 
-O painel lista rotas cuja origem coincide com o porto atual. Cada rota é planejada por `GameSessionModel.plan_voyage()`.
+Cada rota de saída é planejada pelo domínio. O painel exibe a base disponível:
 
-Quando o conhecimento próprio não basta, a interface procura um piloto apenas entre os pilotos historicamente registrados em `pilots.csv` e `pilot_routes.csv` que estejam ativos no porto, período e rota. Nenhum bônus de velocidade é atribuído ao piloto.
+- `OWN_KNOWLEDGE`;
+- `PILOT`;
+- `FLEET_COMMAND`;
+- ou bloqueio.
 
-Uma viagem só é executada se o `VoyagePlan` for viável. A chegada chama `GameSessionModel.execute_voyage()` e portanto atualiza data, provisões, condição e aprendizagem de nó/rota segundo as regras já separadas em `simulation/`.
+Quando existe piloto documentado para porto, período e rota, a interface o fornece ao plano antes de recorrer ao comando institucional. Isso preserva o caso Melinde–Calecute de 1498.
+
+A execução de uma viagem atualiza calendário, provisões, condição, aprendizagem e, quando aplicável, avança a expedição para a próxima perna.
 
 ## Interação
 
-- `Reabastecer +30` e `Reparar +20` acionam serviços do porto atual quando documentados;
-- clique em uma mercadoria para selecioná-la;
-- `Comprar 1` e `Vender 1` executam operações unitárias abstratas;
-- clique em uma rota da lista ou em um porto de destino conectado no mapa para selecionar a rota;
-- `Executar viagem` aplica o plano quando viável;
-- `R` reinicia o cenário atual;
-- `Tab` alterna entre `HISTORICAL` e `TECHNICAL`;
+- `Reabastecer +30` e `Reparar +20` acionam serviços do porto atual;
+- clique em mercadoria, depois `Comprar 1` ou `Vender 1`;
+- clique em rota ou destino conectado e use `Executar viagem`;
+- `R` reinicia;
+- `Tab` alterna `HISTORICAL`/`TECHNICAL`;
 - `Esc` encerra.
 
-## Inspeção visual
+## Inspeção visual e teste reprodutível
 
-As capturas de 1497/Lisboa e do cenário técnico de Calecute são produzidas automaticamente pelo CI. A inspeção v0.1 confirmou que os elementos cabem no painel lateral, os avisos não ultrapassam seus limites e os serviços portuários permanecem visualmente distinguíveis do mercado e das rotas.
-
-## Teste reprodutível
-
-A interface pode ser renderizada sem janela:
+As duas telas são renderizadas no CI:
 
 ```bash
 SDL_VIDEODRIVER=dummy python prototype/game.py --scenario HISTORICAL --output /tmp/game-historical.png
 SDL_VIDEODRIVER=dummy python prototype/game.py --scenario TECHNICAL --output /tmp/game-technical.png
 ```
 
-O GitHub Actions executa os dois smoke tests e publica as capturas como artefato do workflow para inspeção visual.
+O GitHub Actions executa os smoke tests e publica as capturas como artefato para inspeção visual.
