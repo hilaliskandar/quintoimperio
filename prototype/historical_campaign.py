@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+"""Interface histórica contínua da vertical slice Lisboa–Calecute.
+
+Reutiliza a interface Pygame v0.1 e troca apenas a orquestração da sessão pela
+fachada ``HistoricalCampaignModel``. A espera em Moçambique, Mombaça e Melinde
+serve somente para alinhar o relógio às partidas já observadas; esses nós não
+são promovidos a novas permanências em ``expedition_stops.csv``.
+"""
+
+from __future__ import annotations
+
+import argparse
+
+import pygame
+
+from game import (
+    BG,
+    BUTTON,
+    HEIGHT,
+    INK,
+    LINE,
+    MAP_RECT,
+    MUTED,
+    SEED,
+    WIDTH,
+    ClickTarget,
+    PlayablePrototype,
+)
+from quintoimperio.domain import ChronologyMode, HistoricalCampaignModel
+
+
+class HistoricalCampaignPrototype(PlayablePrototype):
+    """Versão histórica do painel v0.1 com cronologia guiada ponta a ponta."""
+
+    def __init__(self) -> None:
+        super().__init__("HISTORICAL")
+        self.session = HistoricalCampaignModel()
+        self.state = self._make_state("HISTORICAL")
+        self.message = "Campanha histórica iniciada em Lisboa."
+
+    def plan_for_route(self, route_id: str):
+        pilot_id = self.session.recommended_pilot_id(self.state, route_id)
+        return self.session.plan_voyage(
+            self.state,
+            route_id,
+            pilot_id=pilot_id,
+            seed=SEED,
+        )
+
+    def wait_stop(self) -> None:
+        result = self.session.wait_for_guided_departure(self.state)
+        if result.executed:
+            self.state = result.state_after
+            self.message = (
+                f"Espera guiada: {result.days_waited} dia(s); "
+                f"data {self.state.vessel.clock.current_date}."
+            )
+        else:
+            self.message = "Espera indisponível: " + ", ".join(result.reasons)
+
+    def _guided_wait_overlay(self, surface: pygame.Surface) -> None:
+        if self.state.chronology_mode is not ChronologyMode.GUIDED:
+            return
+        if self.session.active_stop(self.state) is not None:
+            return
+        expected = self.session.guided_departure_date(self.state)
+        if expected is None:
+            return
+        current = self.state.vessel.clock.current_date
+        if current >= expected:
+            return
+
+        days = (expected - current).days
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 48, 345, 34)
+        pygame.draw.rect(surface, BG, rect, border_radius=3)
+        pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
+        font = pygame.font.SysFont("monospace", 12)
+        text = f"Próxima partida observada: {expected} | esperar {days}d"
+        surface.blit(font.render(text, True, INK), (rect.x + 8, rect.y + 9))
+        self.targets.append(ClickTarget(rect, "action", "wait_stop"))
+
+    def render(self, surface: pygame.Surface) -> None:
+        super().render(surface)
+        self._guided_wait_overlay(surface)
+
+    def _travel(self, route_id: str) -> None:
+        self.selected_route = route_id
+        self.travel_selected()
+        if self.state.vessel.location_node != self.session.routes[route_id]["destination_node"]:
+            raise RuntimeError(f"Smoke da campanha não chegou ao destino de {route_id}: {self.message}")
+
+    def _wait(self) -> None:
+        before = self.state.vessel.clock.current_date
+        self.wait_stop()
+        if self.state.vessel.clock.current_date < before:
+            raise RuntimeError("Relógio regressou durante espera guiada")
+
+    def run_scripted_campaign(self) -> None:
+        """Percorre a vertical slice usando as mesmas ações expostas pela UI."""
+        self._travel("R_LIS_STG")
+        for _ in range(3):
+            self.reprovision()
+        self._wait()
+
+        self._travel("R_STG_SHB")
+        self._wait()
+        self._travel("R_SHB_CGH")
+        self._travel("R_CGH_SBR")
+
+        for _ in range(4):
+            self.reprovision()
+        self._wait()
+        self._travel("R_SBR_RCO")
+
+        self.reprovision()
+        self._wait()
+        self._travel("R_RCO_RBS")
+
+        self.reprovision()
+        self._wait()
+        self._travel("R_RBS_MOZ")
+
+        self._wait()
+        self._travel("R_MOZ_MOM")
+        self._wait()
+        self._travel("R_MOM_MAL")
+        self._wait()
+        self._travel("R_MAL_CAL")
+
+        if self.state.vessel.location_node != "CAL":
+            raise RuntimeError("Campanha histórica não terminou em Calecute")
+        if self.state.active_expedition_id is not None:
+            raise RuntimeError("Expedição permaneceu ativa após a décima perna")
+        self.message = (
+            f"Smoke concluído: Calecute em {self.state.vessel.clock.current_date}; "
+            f"cronologia {self.state.chronology_mode.value}."
+        )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", help="salva o quadro final em PNG")
+    parser.add_argument(
+        "--campaign-smoke",
+        action="store_true",
+        help="executa automaticamente Lisboa–Calecute pelas ações da interface",
+    )
+    args = parser.parse_args()
+
+    pygame.init()
+    surface = (
+        pygame.Surface((WIDTH, HEIGHT))
+        if args.output or args.campaign_smoke
+        else pygame.display.set_mode((WIDTH, HEIGHT))
+    )
+    app = HistoricalCampaignPrototype()
+
+    if args.campaign_smoke:
+        app.run_scripted_campaign()
+        app.render(surface)
+        print(app.message)
+        if args.output:
+            pygame.image.save(surface, args.output)
+        pygame.quit()
+        return
+
+    app.render(surface)
+    if args.output:
+        pygame.image.save(surface, args.output)
+        pygame.quit()
+        return
+
+    pygame.display.set_caption("Quinto Império — campanha histórica 1497–1498")
+    pygame.display.flip()
+    clock = pygame.time.Clock()
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                app.handle_click(event.pos)
+                app.render(surface)
+                pygame.display.flip()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                elif event.key == pygame.K_r:
+                    app.__init__()
+                    app.render(surface)
+                    pygame.display.flip()
+        clock.tick(30)
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
