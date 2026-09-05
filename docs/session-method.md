@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameSessionModel` não cria nova evidência histórica: ele coordena conhecimento, comércio, serviços portuários e viagem e aplica somente regras explícitas de simulação.
+Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameSessionModel` não cria nova evidência histórica: ele coordena conhecimento, comércio, serviços portuários, expedições e viagem e aplica somente regras explícitas de simulação.
 
 ## Estado
 
@@ -11,9 +11,12 @@ Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameS
 - `VesselState`: localização, calendário, provisões e condição;
 - `CommercialState`: capital, capacidade e carga abstratos;
 - conhecimento do personagem por nó;
-- conhecimento náutico do personagem por rota.
+- conhecimento náutico do personagem por rota;
+- expedição ativa opcional e número da perna corrente.
 
 O conhecimento de rota é deliberadamente separado do conhecimento do porto. Saber onde Calecute está ou conhecer seu mercado não torna automaticamente operacional uma ligação marítima Calecute–Aden, Calecute–Hurmuz ou Calecute–Melaka.
+
+Do mesmo modo, participar de uma armada que percorre uma rota não torna o personagem conhecedor daquela rota antes da experiência.
 
 ## Conhecimento inicial de rota
 
@@ -26,6 +29,24 @@ A conversão é parâmetro de simulação. Na v0.1:
 - `CROWN/HIGH` produz conhecimento `OPERATIONAL`;
 - estados `LOW` e `INDIRECT` da Coroa permanecem abaixo do nível operacional.
 
+## Expedições e comando institucional
+
+`ExpeditionModel` lê `data/expeditions.csv` e `data/expedition_routes.csv`. A primeira expedição normalizada é `EXP_GAMA_1497`, com cinco arestas agregadas de saída até Calecute.
+
+Uma sessão pode possuir `active_expedition_id` e `expedition_leg_sequence`. Quando a rota escolhida coincide com a perna corrente, o período é válido e a tabela histórica registra `FLEET_COMMAND`, a viagem recebe essa base institucional.
+
+Isso não altera o conhecimento pessoal antes da partida. As bases de viagem são hierarquicamente distintas:
+
+1. `OWN_KNOWLEDGE` quando o personagem possui conhecimento operacional;
+2. `PILOT` quando um piloto historicamente registrado é competente para a rota e o conhecimento próprio não basta;
+3. `FLEET_COMMAND` quando a perna corrente da expedição autoriza participação sob comando institucional.
+
+Assim, o piloto guzerate de Melinde continua sendo a base específica da travessia Melinde–Calecute quando fornecido ao plano, mesmo se a armada estiver ativa.
+
+Depois de completar uma perna da expedição, a sessão avança para a próxima. Ao concluir a última, os campos de expedição ativa voltam a `None`.
+
+A camada não fixa identidade, profissão, navio ou estatuto social do protagonista.
+
 ## Mercado
 
 O mercado do porto atual só é operacional quando `market_knowledge >= OPERATIONAL`. Antes disso a sessão não expõe cotações nem permite compra/venda. Isso evita que a interface revele toda a cesta comercial histórica a um personagem que apenas ouviu falar do lugar.
@@ -34,7 +55,7 @@ Quando operacional, a sessão delega cotações e operações ao `TradeModel`; n
 
 ## Serviços portuários
 
-`GameSessionModel` também compõe `PortServiceModel`. A sessão expõe a disponibilidade documentada de provisões e reparo no porto atual e devolve um novo `GameSessionState` quando uma ação é executada.
+`GameSessionModel` compõe `PortServiceModel`. A sessão expõe a disponibilidade documentada de provisões e reparo no porto atual e devolve um novo `GameSessionState` quando uma ação é executada.
 
 As regras continuam as mesmas do módulo portuário:
 
@@ -49,11 +70,13 @@ As regras continuam as mesmas do módulo portuário:
 
 `SessionPortServiceResult` preserva o estado antes/depois, bloqueios, efeito e dias gastos.
 
-## Viagem e piloto
+## Navegação e observações históricas
 
-A sessão delega planejamento e execução ao `TravelModel`, usando o conhecimento **da rota**. Um piloto histórico pode habilitar a viagem mesmo quando o personagem ainda não possui conhecimento operacional.
+A sessão delega duração e execução ao `TravelModel`/`NavigationModel`. Observações documentadas para a rota e data exatas têm precedência sobre extrapolações geodésicas.
 
-O caso documentado Melinde–Calecute em 1498 é o primeiro teste desta regra: o piloto guzerate de Melinde permite executar `R_MAL_CAL` com conhecimento inicial do personagem ainda `UNKNOWN`.
+Por isso a partida de Lisboa em 8 de julho de 1497 usa a observação agregada de 134 dias até o Cabo registrada para `R_LIS_CGH`, em vez de aplicar a taxa derivada de Melinde–Calecute. A chegada correspondente é 19 de novembro segundo a observação usada.
+
+A aresta permanece agregada: ela não implica 134 dias sem escalas e ainda não deve ser a unidade final para contabilizar provisões. A segmentação pelas escalas documentadas da viagem é um aprofundamento separado.
 
 ## Aprendizagem por experiência
 
@@ -79,10 +102,12 @@ Ele **não representa o estado histórico inicial do personagem** e não altera 
 
 ## Interface
 
-A interface Pygame chama diretamente os métodos desta sessão para mercado, compra, venda, reabastecimento, reparo, planejamento e execução de viagem. Regras de domínio não são reproduzidas na camada gráfica.
+A interface Pygame chama diretamente os métodos desta sessão para mercado, compra, venda, reabastecimento, reparo, planejamento e execução de viagem.
 
-O estado `HISTORICAL` preserva os bloqueios do modelo atual. O cenário `TECHNICAL` é identificado visualmente como não histórico.
+No modo `HISTORICAL`, a sessão começa em 8 de julho de 1497 associada a `EXP_GAMA_1497`. O painel identifica a armada e a perna corrente e distingue visualmente `FLEET_COMMAND` de conhecimento pessoal. O modo `TECHNICAL` continua explicitamente não histórico.
 
-## Próximo passo
+## Próximos passos
 
-O principal bloqueio conceitual deixou de ser técnico e passou a ser institucional: a campanha de 1497 precisa representar como um personagem participa de uma armada comandada pela Coroa quando seu próprio conhecimento náutico não é suficiente para operar autonomamente a rota. Essa camada deve distinguir ordem/cadeia de comando, piloto, conhecimento institucional e conhecimento individual sem conceder onisciência ao personagem.
+O próximo problema imediato é operacional, não de autorização: a aresta agregada Lisboa–Cabo inclui escalas e reabastecimentos documentados, mas o modelo de provisões a trata como uma única perna. O itinerário deve ser segmentado antes de transformar essa aresta em unidade final de jogabilidade.
+
+Depois disso, a próxima camada institucional é aquisição de informação: rumor, conversa, carta, contato mercantil e piloto devem produzir mudanças distintas de conhecimento sem revelar automaticamente o estado da Coroa ao personagem.
