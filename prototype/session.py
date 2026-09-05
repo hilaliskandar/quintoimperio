@@ -4,6 +4,7 @@
 from datetime import date
 
 from quintoimperio.domain import (
+    AccessStatus,
     GameSessionModel,
     KnowledgeLevel,
     KnowledgeState,
@@ -39,7 +40,7 @@ def expedition_command_demo(model: GameSessionModel) -> None:
 
 
 def historical_learning_demo(model: GameSessionModel) -> None:
-    print("B) Aprendizagem histórica de rota: Melinde -> Calecute, 1498")
+    print("B) Aprendizagem histórica de rota e acesso: Melinde -> Calecute, 1498")
     state = model.initial_state(
         location_node="MAL",
         start_date=date(1498, 4, 24),
@@ -58,7 +59,12 @@ def historical_learning_demo(model: GameSessionModel) -> None:
     print("  chegada:", arrived.vessel.location_node, arrived.vessel.clock.current_date)
     print("  conhecimento da rota:", model.route_nav(arrived, "R_MAL_CAL").name)
     print("  conhecimento do mercado de Calecute:", model.node_state(arrived, "CAL").market.name)
-    print("  mercado operacional:", model.market_view(arrived, seed=1498).actionable)
+    access = model.access_view(arrived)
+    print("  acesso institucional:", access.status.value, "negociável=", access.negotiable)
+    print("  mercado acionável antes da negociação:", model.market_view(arrived, seed=1498).actionable)
+    negotiated = model.negotiate_access(arrived)
+    print("  negociação genérica:", negotiated.executed, "dias=", negotiated.days_spent)
+    print("  mercado acionável depois:", model.market_view(negotiated.state_after, seed=1498).actionable)
     print()
 
 
@@ -86,9 +92,10 @@ def integration_demo(model: GameSessionModel) -> None:
     state = model.scenario_set_route_knowledge(
         state, "R_CAL_ADE", KnowledgeLevel.OPERATIONAL
     )
+    state = model.scenario_set_access(state, "CAL", AccessStatus.NEGOTIATED)
 
     market = model.market_view(state, seed=1498)
-    print("  mercado CAL operacional:", market.actionable)
+    print("  mercado CAL operacional e com acesso:", market.actionable)
     print("  bens visíveis:", ", ".join(entry.good_id for entry in market.entries))
 
     bought = model.buy(state, "PEPPER", 2.0, seed=1498)
@@ -105,7 +112,11 @@ def integration_demo(model: GameSessionModel) -> None:
         f"chegada={plan.arrival_date}"
     )
     state = model.execute_voyage(state, plan)
-    print("  mercado ADE após chegada:", model.market_view(state, seed=1498).actionable)
+    print("  acesso ADE na chegada:", model.access_view(state).status.value)
+    print("  mercado ADE acionável antes de negociar:", model.market_view(state, seed=1498).actionable)
+    access = model.negotiate_access(state)
+    state = access.state_after
+    print("  negociação ADE:", access.executed, "dias=", access.days_spent)
 
     sold = model.sell(state, "PEPPER", 2.0, seed=1498)
     state = sold.state_after
@@ -118,7 +129,7 @@ def integration_demo(model: GameSessionModel) -> None:
 
 def main() -> None:
     print("Quinto Império — sessão integrada v0.1")
-    print("Todos os valores econômicos e de capacidade abaixo são índices de simulação.")
+    print("Todos os valores econômicos, de capacidade e tempos genéricos abaixo são simulação.")
     print()
     model = GameSessionModel()
     expedition_command_demo(model)
