@@ -11,6 +11,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 - separar evidência histórica, inferência e parâmetro de simulação;
 - não inventar mapas, portos, preços ou cronologias;
 - tratar porto, hinterland e rota de abastecimento como dimensões distintas;
+- distinguir mercados, ancoradouros logísticos e marcos náuticos;
 - tratar conhecimento geográfico, náutico, comercial e político como recursos distintos;
 - separar conhecimento do personagem, conhecimento institucional e capacidade de participar de uma expedição;
 - representar monções, risco, intermediação, tributação e regimes de acesso;
@@ -20,7 +21,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
 
-A base contém atualmente **20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 3 observações de viagem, 1 piloto histórico e 1 expedição com 5 pernas normalizadas**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
+A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas e 5 permanências logísticas documentadas**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
 
 O domínio já oferece:
 
@@ -28,7 +29,9 @@ O domínio já oferece:
 - calendário, monções e distâncias geodésicas de referência;
 - observações de viagem com precedência sobre extrapolações quando rota e data coincidem;
 - Melinde–Calecute em 1498 preservada em 26/27 dias;
-- Lisboa–Cabo em 1497 registrada como observação agregada de 134 dias segundo a fonte usada;
+- itinerário de 1497–1498 segmentado operacionalmente em Lisboa → São Thiago → baía de Santa Helena → Cabo → São Brás → Rio do Cobre → Rio dos Bons Sinais → Moçambique → Mombaça → Melinde → Calecute;
+- Lisboa–Cabo e Cabo–Moçambique preservadas apenas como conexões estratégicas agregadas e explicitamente não executáveis;
+- permanências históricas em São Thiago, baía de Santa Helena, São Brás, Rio do Cobre e Rio dos Bons Sinais, com água, madeira, carenagem, reparos e transferência de carga registrados separadamente;
 - quatro dimensões de conhecimento por nó e conhecimento náutico separado por rota;
 - estados separados para personagem e Coroa;
 - piloto guzerate de Melinde associado somente à rota documentada até Calecute;
@@ -47,7 +50,9 @@ O domínio já oferece:
 
 A arquitetura do primeiro jogável é **Python 3.12 + pygame-ce**, com núcleo de domínio independente da camada gráfica.
 
-A próxima correção histórica é decompor a aresta agregada Lisboa–Cabo em escalas documentadas. A viagem de 1497 incluiu reabastecimentos e reparos; portanto 134 dias não devem ser tratados como uma única perna operacional de provisões. Depois dessa segmentação, o próximo sistema será aquisição de informação por rumor, conversa, carta, piloto e contato mercantil.
+A segmentação do itinerário corrige um problema importante da primeira versão: 134 dias Lisboa–Cabo não são mais tratados como uma única perna operacional. O `Roteiro` passa a ser a fonte primária de cronologia fina; datas reconstruídas entre colchetes na edição Ravenstein são explicitamente marcadas como editoriais. O limite de provisões da simulação foi ampliado somente para comportar a longa perna São Thiago–baía de Santa Helena e continua sendo um índice abstrato, não capacidade histórica de um navio.
+
+Próximos sistemas: integrar melhor as permanências da armada ao calendário jogável e introduzir aquisição de informação por rumor, conversa, carta, piloto e contato mercantil.
 
 ## Estrutura
 
@@ -64,6 +69,7 @@ data/
   pilot_routes.csv
   expeditions.csv
   expedition_routes.csv
+  expedition_stops.csv
 
 simulation/
   README.md
@@ -123,6 +129,7 @@ tools/
 tests/
   test_economy.py
   test_expedition.py
+  test_expedition_data.py
   test_knowledge.py
   test_navigation.py
   test_port.py
