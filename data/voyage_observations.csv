@@ -1,3 +1,4 @@
 observation_id,route_id,departure_node,arrival_node,departure_date,arrival_date,observed_days,observation_scope,evidence_grade,source_id,notes
+GAMA1497_LIS_CGH_SUB,R_LIS_CGH,LIS,CGH,1497-07-08,1497-11-19,134,AGGREGATED_VOYAGE_LEG,A,SUBRAHMANYAM_PEA,"Subrahmanyam registra saída do Tejo em 8 de julho e chegada ao Cabo da Boa Esperança em 19 de novembro de 1497. A observação ancora a duração agregada Lisboa-Cabo; não implica viagem sem escalas."
 GAMA1498_MAL_CAL_SUB,R_MAL_CAL,MAL,CAL,1498-04-24,1498-05-21,27,VOYAGE_LEG,A,SUBRAHMANYAM_PEA,"Subrahmanyam registra partida de Melinde em 24 de abril e chegada a Calecute em 21 de maio de 1498. Usar como calibração, não como duração universal da rota."
 GAMA1498_MAL_CAL_PRA,R_MAL_CAL,MAL,CAL,1498-04-24,1498-05-20,26,VOYAGE_LEG,A,PRAKASH_ECE,"Prakash registra a chegada de Gama a Calecute em 20 de maio de 1498. A divergência de um dia em relação a Subrahmanyam é preservada explicitamente."
