@@ -14,6 +14,7 @@ Entregas já existentes:
 - `routes.csv` com conexões históricas e propriedades de navegação;
 - `route_goods.csv` com fluxos por mercadoria;
 - `voyage_observations.csv` para âncoras documentadas de viagem;
+- `pilots.csv` e `pilot_routes.csv` para competência náutica historicamente documentada;
 - documentação de proveniência e incerteza;
 - validação automática dos CSVs;
 - lista explícita de lacunas bibliográficas.
@@ -43,11 +44,11 @@ Invariantes validadas:
 
 Nenhum índice da simulação é tratado como preço ou quantidade histórica.
 
-## Fase 2 — Navegação, calendário e conhecimento
+## Fase 2 — Navegação, calendário, conhecimento e viagem
 
-Status: **núcleo v0.1 implementado; logística de viagem em andamento**.
+Status: **núcleo v0.1 concluído**.
 
-Já implementado:
+Implementado:
 
 - calendário do jogo;
 - fases gerais da monção de nordeste, sudoeste e transições;
@@ -58,21 +59,28 @@ Já implementado:
 - penalidade explícita de junho/julho para rotas com dependência monçônica, tratada como parâmetro de simulação;
 - `geo_knowledge`, `nav_knowledge`, `market_knowledge` e `political_knowledge`;
 - estados separados para personagem e Coroa;
-- testes determinísticos e relatório textual de navegação.
+- piloto histórico guzerate de Melinde associado somente à rota documentada até Calecute;
+- habilitação de rota por conhecimento náutico próprio ou piloto competente;
+- estado imutável do navio;
+- dias-equivalentes de provisões;
+- condição abstrata do navio em escala 0–100;
+- planejamento e execução de viagem;
+- bloqueio de partida por falta de provisões, baixa condição ou ausência de base de navegação;
+- testes determinísticos e relatórios textuais de navegação/viagem.
 
-Próximo incremento da fase:
+Próximos aprofundamentos, sem bloquear a interface:
 
-- provisões e consumo diário;
-- desgaste do navio;
-- pilotos e competência regional;
-- estado de viagem e chegada;
 - eventos de risco marítimo;
+- serviços portuários de reabastecimento e reparo;
 - regras para transformar conhecimento parcial em rotas rumoreadas, localizadas e navegáveis;
-- perfis direcionais de vento apenas quando documentados por trecho.
+- perfis direcionais de vento apenas quando documentados por trecho;
+- substituição progressiva das escalas abstratas por parâmetros históricos quando houver evidência suficiente.
 
 A implementação continua independente de Pygame.
 
 ## Fase 3 — Primeiro mapa e loop jogável
+
+Status: **próxima fase**.
 
 Objetivo: colocar o domínio validado numa interface 2D mínima.
 
@@ -90,7 +98,7 @@ Loop mínimo:
 8. chegar e vender;
 9. atualizar conhecimento e relações.
 
-O mapa deve partir de coordenadas reais e, quando houver costa de fundo, de dados cartográficos reais. Não usar mapas geográficos inventados por IA.
+O primeiro mapa deve projetar os nós a partir de coordenadas reais. Uma costa de fundo só pode ser incorporada a partir de dados cartográficos reais; não usar mapas geográficos inventados por IA.
 
 ## Fase 4 — Portos, instituições e relações
 
@@ -135,16 +143,19 @@ Somente após estabilizar o núcleo:
 - CSVs históricos separados dos parâmetros de simulação;
 - ausência de preços históricos fictícios na calibração inicial;
 - distância de rota calculada como geodésica de referência, não confundida com percurso histórico efetivo;
-- conhecimento dividido em quatro dimensões e separado entre personagem e Coroa.
+- conhecimento dividido em quatro dimensões e separado entre personagem e Coroa;
+- provisões representadas provisoriamente por dias-equivalentes, não por unidades físicas inventadas;
+- desgaste representado provisoriamente por escala abstrata de condição;
+- piloto documentado habilita rota específica sem bônus quantitativo não sustentado.
 
 ## Decisões ainda abertas
 
 - granularidade temporal final do loop jogável;
 - unidade física/abstrata de carga;
-- modelo de provisões e desgaste;
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
-- formato definitivo do mapa costeiro e nível de detalhe cartográfico.
+- formato definitivo do mapa costeiro e nível de detalhe cartográfico;
+- modelo de eventos marítimos e avarias.
 
 Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
