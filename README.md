@@ -18,7 +18,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, a economia relativa, o núcleo de navegação/viagem, o primeiro mapa 2D e os serviços portuários mínimos v0.1 estão operacionais.
+A fundação histórica, a economia relativa, o núcleo de navegação/viagem, o primeiro mapa 2D, os serviços portuários mínimos e a referência cartográfica programática estão operacionais.
 
 A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 é preservada em linhas distintas.
 
@@ -37,14 +37,14 @@ O domínio já oferece:
 - reabastecimento e reparo baseados nos campos históricos de `nodes.csv`;
 - distinção explícita entre serviço `UNKNOWN` e `NONE`;
 - capacidades e tempos de serviço isolados em `simulation/port_rules.csv`;
-- mapa 2D equiretangular baseado exclusivamente nas coordenadas de `nodes.csv`;
-- filtragem do mapa pelo conhecimento geográfico do personagem/Coroa;
-- arestas visíveis de rota tratadas como relações do grafo, não como derrotas históricas;
-- 51 testes automatizados e smoke test do mapa no GitHub Actions.
+- mapa 2D de runtime filtrado pelo conhecimento geográfico do personagem/Coroa;
+- referência cartográfica programática com costa real e sem fronteiras políticas modernas;
+- arestas de rota tratadas como relações do grafo, não como derrotas históricas;
+- testes automatizados e smoke tests dos mapas no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: estado comercial do jogador, inventário/capacidade abstrata e primeiras operações de compra e venda usando apenas os mercados já documentados. Uma costa de fundo só será adicionada a partir de dados cartográficos reais, com fonte, versão e licença registradas.
+Próximo incremento: estado comercial do jogador, inventário/capacidade abstrata e primeiras operações de compra e venda usando apenas os mercados já documentados.
 
 ## Estrutura
 
@@ -99,6 +99,9 @@ prototype/
   travel.py
   map.py
 
+tools/
+  render_cartographic_map.py
+
 tests/
   test_economy.py
   test_knowledge.py
@@ -123,6 +126,12 @@ Instalação com a camada de protótipo em Pygame:
 python -m pip install -e ".[game]"
 ```
 
+Instalação das ferramentas cartográficas de desenvolvimento:
+
+```bash
+python -m pip install -e ".[cartography]"
+```
+
 Validação manual:
 
 ```bash
@@ -135,17 +144,23 @@ python prototype/port.py
 python prototype/map.py
 ```
 
-Também é possível renderizar o mapa sem janela interativa:
+Mapa de runtime sem janela interativa:
 
 ```bash
 SDL_VIDEODRIVER=dummy python prototype/map.py --output /tmp/quintoimperio-map.png
+```
+
+Referência cartográfica programática:
+
+```bash
+python tools/render_cartographic_map.py --perspective REFERENCE --output build/map-reference.png
 ```
 
 O GitHub Actions executa essas verificações automaticamente.
 
 ## Fontes de dados
 
-As tabelas em `data/` mantêm campos de proveniência e grau de evidência. Os números em `simulation/` são índices de balanceamento e não devem ser apresentados como dados históricos.
+As tabelas em `data/` mantêm campos de proveniência e grau de evidência. Os números em `simulation/` são índices de balanceamento e não devem ser apresentados como dados históricos. A costa usada pela ferramenta de referência pertence somente à camada cartográfica de desenvolvimento; a posição dos nós continua vindo de `data/nodes.csv`.
 
 ## Licença
 
