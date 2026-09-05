@@ -107,19 +107,24 @@ class WorldMapModel:
                 visible.append(point)
         return visible
 
-def visible_routes(self, perspective: str = "PLAYER") -> list[MapEdge]:
+    def visible_routes(self, perspective: str = "PLAYER") -> list[MapEdge]:
         perspective = perspective.upper()
         if perspective not in {"PLAYER", "CROWN"}:
             raise ValueError("perspective deve ser PLAYER ou CROWN")
         visible_ids = {point.node_id for point in self.visible_nodes(perspective)}
         field = (
-            "player_knowledge_default" if perspective == "PLAYER" else "crown_knowledge_1497"
+            "player_knowledge_default"
+            if perspective == "PLAYER"
+            else "crown_knowledge_1497"
         )
         edges: list[MapEdge] = []
         for route in self.routes:
             if route[field] == "UNKNOWN":
                 continue
-            if route["origin_node"] not in visible_ids or route["destination_node"] not in visible_ids:
+            if (
+                route["origin_node"] not in visible_ids
+                or route["destination_node"] not in visible_ids
+            ):
                 continue
             edges.append(
                 MapEdge(
