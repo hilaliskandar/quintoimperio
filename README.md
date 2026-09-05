@@ -13,13 +13,13 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 - tratar porto, hinterland e rota de abastecimento como dimensões distintas;
 - distinguir mercados, ancoradouros logísticos e marcos náuticos;
 - tratar conhecimento geográfico, náutico, comercial e político como recursos distintos;
-- separar conhecimento do personagem, conhecimento institucional e capacidade de participar de uma expedição;
-- representar monções, risco, intermediação, tributação e regimes de acesso;
+- separar conhecimento do personagem, conhecimento institucional, acesso comercial e capacidade de participar de uma expedição;
+- representar monções, risco, intermediação, tributação e regimes de acesso sem atribuir precisão documental inexistente;
 - manter pessoas escravizadas fora da tabela de mercadorias ordinárias, com modelagem histórica própria.
 
 ## Estado atual
 
-A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, risco marítimo inicial, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
+A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, acesso institucional, risco marítimo inicial, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
 
 A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas e 5 permanências logísticas documentadas**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
 
@@ -35,12 +35,17 @@ O domínio já oferece:
 - `ChronologyMode.GUIDED` e `ChronologyMode.COUNTERFACTUAL`, distinguindo campanha ainda alinhada à cronologia documentada de trajetória já divergente;
 - bloqueio de partida antes da data documentada quando há escala guiada ativa;
 - ação explícita de espera até a partida documentada, sem conceder automaticamente provisões, reparos, carga ou dinheiro;
-- serviços portuários e interações informativas consumindo o mesmo calendário da permanência;
+- serviços, informação e negociação institucional consumindo o mesmo calendário;
 - quatro dimensões de conhecimento por nó e conhecimento náutico separado por rota;
 - estados separados para personagem e Coroa;
 - aquisição ativa por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`, sem copiar silenciosamente o conhecimento institucional;
 - rumor limitado a `RUMORED`, contato mercantil sem navegação operacional e consulta a piloto limitada a `PARTIAL`;
 - oportunidades de informação derivadas apenas de nós/rotas documentados, com repetição bloqueada por sessão e seleção determinística por semente;
+- `AccessModel` separado de conhecimento e reputação, derivado de `access_regime` dos nós;
+- `OPEN_MARKET`/`CAPTAINCY` com acesso inicial aberto, `FOREIGN_NEGOTIATED` exigindo ação explícita, monopólios régios permanecendo restritos e ancoradouros/marcos náuticos não comerciais;
+- mercado conhecido mas ainda não autorizado permanecendo visível para consulta, porém não acionável para compra/venda;
+- negociação genérica sem taxa, presente, suborno ou probabilidade de sucesso inventados; o único custo v0.1 é um dia abstrato de simulação;
+- mercadorias com `node_goods.restricted=TRUE` bloqueadas independentemente do acesso portuário, de modo que uma autorização genérica não contorna monopólios específicos;
 - piloto guzerate de Melinde associado somente à rota documentada até Calecute;
 - `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
 - `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
@@ -48,12 +53,12 @@ O domínio já oferece:
 - eventos marítimos genéricos `SIMULATION` com seleção determinística por semente e no máximo um evento por viagem;
 - calmaria/atraso, mau tempo, avaria menor de aparelho e perturbação adicional de junho/julho, limitados a tempo e condição abstrata;
 - precedência documental: uma observação histórica exata pode suprimir eventos aleatórios em cronologia `GUIDED`, enquanto a mesma rota/data pode receber evento em modo `COUNTERFACTUAL`;
-- `GameSessionState` imutável reunindo navio, comércio, conhecimento, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
+- `GameSessionState` imutável reunindo navio, comércio, conhecimento, acesso, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
 - provisões/condição abstratas, reabastecimento e reparo;
-- compra/venda somente em mercados documentados;
+- compra/venda somente em mercados documentados e institucionalmente acessíveis;
 - aprendizagem explícita por chegada e conclusão de rota;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
-- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, informação, mercado, armada ativa, escala histórica, espera, rotas e registro discreto do último evento de viagem;
+- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, acesso, informação, mercado, armada ativa, escala histórica, espera, rotas e registro discreto do último evento de viagem;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
 - modo `TECHNICAL` separado para testes de integração;
 - testes automatizados, smoke tests e capturas de interface no GitHub Actions.
@@ -62,13 +67,15 @@ A arquitetura do primeiro jogável é **Python 3.12 + pygame-ce**, com núcleo d
 
 A segmentação do itinerário corrige um problema importante da primeira versão: 134 dias Lisboa–Cabo não são mais tratados como uma única perna operacional. O `Roteiro` passa a ser a fonte primária de cronologia fina; datas reconstruídas entre colchetes na edição Ravenstein são explicitamente marcadas como editoriais. O limite de provisões da simulação foi ampliado somente para comportar a longa perna São Thiago–baía de Santa Helena e continua sendo um índice abstrato, não capacidade histórica de um navio.
 
-A permanência em escala também não produz efeitos materiais por simples passagem do tempo. Uma atividade documentada como `WATER`, `CARENING` ou `MAST_REPAIR` registra evidência; seus efeitos jogáveis continuam exigindo ação explícita. Se o jogador ultrapassa a data documentada de partida e prossegue, a sessão passa para cronologia contrafactual em vez de forçar artificialmente o calendário histórico.
+A permanência em escala não produz efeitos materiais por simples passagem do tempo. Uma atividade documentada como `WATER`, `CARENING` ou `MAST_REPAIR` registra evidência; seus efeitos jogáveis continuam exigindo ação explícita. Se o jogador ultrapassa a data documentada de partida e prossegue, a sessão passa para cronologia contrafactual em vez de forçar artificialmente o calendário histórico.
 
-A informação passou a ser um recurso acionável, mas de forma conservadora. Os canais genéricos de rumor e contato mercantil são mecânicas de simulação, não diálogos históricos inventados. Consulta a piloto só existe onde `pilots.csv`/`pilot_routes.csv` sustentam a competência. Nenhum desses canais torna automaticamente uma rota operacional.
+A informação é um recurso acionável, mas de forma conservadora. Os canais genéricos de rumor e contato mercantil são mecânicas de simulação, não diálogos históricos inventados. Consulta a piloto só existe onde `pilots.csv`/`pilot_routes.csv` sustentam a competência. Nenhum desses canais torna automaticamente uma rota operacional.
 
-O risco marítimo v0.1 também é explicitamente uma camada de simulação. Os eventos não afirmam que determinado incidente ocorreu historicamente; apenas modificam viagens não fixadas pela evidência com dias adicionais e/ou perda de condição. Quando a cronologia guiada possui observação exata de rota e partida, a aleatoriedade é suprimida e o fato documentado tem precedência.
+O acesso institucional também é distinto do conhecimento. A chegada a Calecute pode tornar o mercado conhecido operacionalmente sem conceder automaticamente permissão para comerciar. `FOREIGN_NEGOTIATED` exige uma ação separada; o botão genérico não reconstrói a audiência de 1498, não quantifica os presentes de Gama e não presume impostos ou privilégios. Monopólios régios e restrições específicas de mercadorias continuam bloqueios independentes.
 
-Próximos sistemas: relações institucionais, regimes de acesso e negociação; cartas persistentes, desinformação, redes pessoais de confiança, perdas de carga, tripulação, combate e naufrágio permanecem para incrementos posteriores.
+O risco marítimo v0.1 é explicitamente uma camada de simulação. Os eventos não afirmam que determinado incidente ocorreu historicamente; apenas modificam viagens não fixadas pela evidência com dias adicionais e/ou perda de condição. Quando a cronologia guiada possui observação exata de rota e partida, a aleatoriedade é suprimida e o fato documentado tem precedência.
+
+Próximo sistema: relações/reputação diferenciadas com autoridades e comunidades mercantis. Cartas persistentes, desinformação, redes pessoais de confiança, perdas de carga, tripulação, combate e naufrágio permanecem para incrementos posteriores.
 
 ## Estrutura
 
@@ -95,6 +102,7 @@ simulation/
   knowledge_rules.csv
   route_knowledge_rules.csv
   information_rules.csv
+  access_rules.csv
   session_rules.csv
   travel_rules.csv
   voyage_event_rules.csv
@@ -110,6 +118,7 @@ docs/
   session-method.md
   stop-method.md
   information-method.md
+  access-method.md
   voyage-event-method.md
   interface-method.md
   roadmap.md
@@ -122,6 +131,7 @@ docs/
     0001-runtime-and-engine.md
 
 src/quintoimperio/domain/
+  access.py
   calendar.py
   economy.py
   expedition.py
@@ -151,6 +161,8 @@ tools/
   render_cartographic_map.py
 
 tests/
+  test_access.py
+  test_access_data.py
   test_economy.py
   test_expedition.py
   test_expedition_data.py
@@ -164,6 +176,7 @@ tests/
   test_trade.py
   test_travel.py
   test_voyage_event.py
+  test_voyage_event_data.py
   test_world_map.py
 ```
 
@@ -201,7 +214,7 @@ Cenário técnico de integração:
 python prototype/game.py --scenario TECHNICAL
 ```
 
-`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação. Eventos marítimos efetivamente ocorridos na simulação aparecem após a viagem como `SIM`, sem serem confundidos com fatos históricos.
+`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação. Em portos `FOREIGN_NEGOTIATED`, a interface oferece `Negociar acesso` quando aplicável. Eventos marítimos efetivamente ocorridos na simulação aparecem após a viagem como `SIM`, sem serem confundidos com fatos históricos.
 
 Renderização sem janela:
 
