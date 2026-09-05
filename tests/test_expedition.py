@@ -56,12 +56,15 @@ class ExpeditionSessionTests(unittest.TestCase):
         plan = self.model.plan_voyage(state, "R_LIS_CGH", seed=1497)
         self.assertTrue(plan.feasible)
         self.assertEqual(plan.navigation_basis, NavigationBasis.FLEET_COMMAND)
+        self.assertEqual(plan.travel_days, 134)
+        self.assertEqual(plan.arrival_date, date(1497, 11, 19))
         self.assertEqual(
             self.model.route_nav(state, "R_LIS_CGH"), KnowledgeLevel.PARTIAL
         )
 
         arrived = self.model.execute_voyage(state, plan)
         self.assertEqual(arrived.vessel.location_node, "CGH")
+        self.assertEqual(arrived.vessel.clock.current_date, date(1497, 11, 19))
         self.assertGreaterEqual(
             self.model.route_nav(arrived, "R_LIS_CGH"), KnowledgeLevel.OPERATIONAL
         )
