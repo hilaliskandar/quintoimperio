@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install project package
-        run: python -m pip install -e .
+        run: python -m pip install -e ".[game]"
       - name: Validate CSV data
         run: python scripts/validate_data.py
       - name: Run domain tests
@@ -29,3 +29,9 @@ jobs:
         run: python prototype/navigation.py
       - name: Render travel prototype report
         run: python prototype/travel.py
+      - name: Smoke-test coordinate map
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          python prototype/map.py --output /tmp/quintoimperio-map.png
+          test -s /tmp/quintoimperio-map.png
