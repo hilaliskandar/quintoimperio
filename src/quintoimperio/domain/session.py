@@ -20,6 +20,7 @@ from .expedition import ExpeditionModel
 from .information import InformationChannel, InformationModel, InformationOpportunity
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .port import PortServiceKind, PortServiceModel, PortServiceQuote, PortServiceResult
+from .relationship import HistoricalActor, RelationshipModel, RelationshipStatus
 from .route_knowledge import RouteKnowledgeModel
 from .stop import ChronologyMode, ExpeditionStop, ExpeditionStopModel
 from .trade import CommercialState, TradeModel, TradeResult, TradeSide
@@ -43,6 +44,12 @@ class RouteKnowledgeRecord:
 class AccessRecord:
     node_id: str
     status: AccessStatus
+
+
+@dataclass(frozen=True)
+class RelationshipRecord:
+    actor_id: str
+    status: RelationshipStatus
 
 
 @dataclass(frozen=True)
@@ -70,6 +77,7 @@ class GameSessionState:
     node_knowledge: tuple[NodeKnowledgeRecord, ...]
     route_knowledge: tuple[RouteKnowledgeRecord, ...]
     access_records: tuple[AccessRecord, ...] = ()
+    relationship_records: tuple[RelationshipRecord, ...] = ()
     active_expedition_id: str | None = None
     expedition_leg_sequence: int | None = None
     chronology_mode: ChronologyMode = ChronologyMode.COUNTERFACTUAL
@@ -126,7 +134,7 @@ class SessionAccessResult:
 
 
 class GameSessionModel:
-    """Compõe conhecimento, acesso, informação, comércio, serviços e viagem."""
+    """Compõe conhecimento, acesso, relações, informação, comércio e viagem."""
 
     def __init__(self, root: Path | None = None) -> None:
         repository = RepositoryData(root)
@@ -134,6 +142,7 @@ class GameSessionModel:
         self.knowledge = KnowledgeModel(self.root)
         self.route_knowledge_model = RouteKnowledgeModel(self.root)
         self.access = AccessModel(self.root)
+        self.relationship = RelationshipModel(self.root)
         self.information = InformationModel(self.root)
         self.expedition = ExpeditionModel(self.root)
         self.stops = ExpeditionStopModel(self.root)
@@ -200,6 +209,13 @@ class GameSessionModel:
             AccessRecord(node_id=node_id, status=self.access.initial_status(node_id))
             for node_id in sorted(self.access.nodes)
         )
+        relationship_records = tuple(
+            RelationshipRecord(
+                actor_id=actor_id,
+                status=RelationshipStatus.UNESTABLISHED,
+            )
+            for actor_id in sorted(self.relationship.actors)
+        )
         return GameSessionState(
             vessel=VesselState(
                 location_node=location_node,
@@ -214,6 +230,7 @@ class GameSessionModel:
             node_knowledge=node_records,
             route_knowledge=route_records,
             access_records=access_records,
+            relationship_records=relationship_records,
             active_expedition_id=active_expedition_id,
             expedition_leg_sequence=expedition_leg_sequence,
             chronology_mode=chronology,
@@ -231,6 +248,10 @@ class GameSessionModel:
     def _access_map(state: GameSessionState) -> dict[str, AccessStatus]:
         return {record.node_id: record.status for record in state.access_records}
 
+    @staticmethod
+    def _relationship_map(state: GameSessionState) -> dict[str, RelationshipStatus]:
+        return {record.actor_id: record.status for record in state.relationship_records}
+
     def node_state(self, state: GameSessionState, node_id: str) -> KnowledgeState:
         return self._node_map(state)[node_id]
 
@@ -243,6 +264,23 @@ class GameSessionModel:
     def access_view(self, state: GameSessionState, node_id: str | None = None) -> AccessView:
         target = node_id or state.vessel.location_node
         return self.access.view(target, self.access_status(state, target))
+
+    def relationship_status(
+        self, state: GameSessionState, actor_id: str
+    ) -> RelationshipStatus:
+        return self._relationship_map(state).get(
+            actor_id, RelationshipStatus.UNESTABLISHED
+        )
+
+    def contacted_relationships(
+        self, state: GameSessionState
+    ) -> tuple[HistoricalActor, ...]:
+        return tuple(
+            self.relationship.actors[record.actor_id]
+            for record in state.relationship_records
+            if record.status is RelationshipStatus.CONTACTED
+            and record.actor_id in self.relationship.actors
+        )
 
     def active_stop(self, state: GameSessionState) -> ExpeditionStop | None:
         return self.stops.stop(state.active_stop_id)
@@ -275,6 +313,17 @@ class GameSessionModel:
         return replace(state, access_records=tuple(records))
 
     @staticmethod
+    def _replace_relationship(
+        state: GameSessionState, actor_id: str, status: RelationshipStatus
+    ) -> GameSessionState:
+        records = [
+            record for record in state.relationship_records if record.actor_id != actor_id
+        ]
+        records.append(RelationshipRecord(actor_id=actor_id, status=status))
+        records.sort(key=lambda record: record.actor_id)
+        return replace(state, relationship_records=tuple(records))
+
+    @staticmethod
     def _replace_vessel(state: GameSessionState, vessel: VesselState) -> GameSessionState:
         return replace(state, vessel=vessel)
 
@@ -301,8 +350,9 @@ class GameSessionModel:
         return KnowledgeLevel(max(int(current), int(minimum)))
 
     def negotiate_access(self, state: GameSessionState) -> SessionAccessResult:
-        """Satisfaz o gate institucional genérico sem inventar taxa ou presente."""
+        """Satisfaz o gate institucional e registra contato quando documentado."""
         node_id = state.vessel.location_node
+        on_date = state.vessel.clock.current_date
         before_view = self.access_view(state, node_id)
         if not before_view.negotiable:
             return SessionAccessResult(
@@ -316,6 +366,13 @@ class GameSessionModel:
             )
         new_status = self.access.negotiate(node_id, before_view.status)
         after = self._replace_access(state, node_id, new_status)
+        authority = self.relationship.actor_for_role(
+            node_id, on_date, "AUTHORITY"
+        )
+        if authority is not None:
+            after = self._replace_relationship(
+                after, authority.actor_id, RelationshipStatus.CONTACTED
+            )
         if before_view.time_days:
             after = self._replace_vessel(
                 after,
@@ -379,12 +436,14 @@ class GameSessionModel:
     ) -> SessionInformationResult:
         """Executa uma interação genérica e melhora apenas o estado PLAYER."""
         parsed = InformationChannel(channel)
+        origin_node = state.vessel.location_node
+        on_date = state.vessel.clock.current_date
         opportunities = self.information_opportunities(state, parsed)
         chosen = self.information.choose(
             opportunities,
             seed=seed,
-            node_id=state.vessel.location_node,
-            on_date=state.vessel.clock.current_date,
+            node_id=origin_node,
+            on_date=on_date,
             channel=parsed,
         )
         if chosen is None:
@@ -408,6 +467,14 @@ class GameSessionModel:
             self.route_nav(after, chosen.target_route_id), chosen.route_nav_min
         )
         after = self._replace_route_knowledge(after, chosen.target_route_id, learned_route)
+        if parsed is InformationChannel.MERCHANT_CONTACT:
+            merchants = self.relationship.actor_for_role(
+                origin_node, on_date, "MERCHANT_COMMUNITY"
+            )
+            if merchants is not None:
+                after = self._replace_relationship(
+                    after, merchants.actor_id, RelationshipStatus.CONTACTED
+                )
         vessel = replace(
             after.vessel,
             clock=after.vessel.clock.advance(chosen.time_days),
