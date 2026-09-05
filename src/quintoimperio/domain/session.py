@@ -23,6 +23,7 @@ from .route_knowledge import RouteKnowledgeModel
 from .stop import ChronologyMode, ExpeditionStop, ExpeditionStopModel
 from .trade import CommercialState, TradeModel, TradeResult, TradeSide
 from .travel import TravelModel, VesselState, VoyagePlan
+from .voyage_event import VoyageEvent
 
 
 @dataclass(frozen=True)
@@ -64,6 +65,7 @@ class GameSessionState:
     chronology_mode: ChronologyMode = ChronologyMode.COUNTERFACTUAL
     active_stop_id: str | None = None
     information_history: tuple[str, ...] = ()
+    voyage_event_history: tuple[VoyageEvent, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -103,7 +105,7 @@ class SessionInformationResult:
 
 
 class GameSessionModel:
-    """Compõe conhecimento, informação, comércio, serviços e viagem."""
+    """Compõe conhecimento, informação, comércio, serviços, eventos e viagem."""
 
     def __init__(self, root: Path | None = None) -> None:
         repository = RepositoryData(root)
@@ -535,6 +537,9 @@ class GameSessionModel:
             pilot_id=pilot_id,
             fleet_command=self.expedition_authorizes(state, route_id),
             seed=seed,
+            preserve_observed_timing=(
+                state.chronology_mode is ChronologyMode.GUIDED
+            ),
         )
         stop = self.active_stop(state)
         if (
@@ -568,6 +573,7 @@ class GameSessionModel:
             vessel=vessel_after,
             chronology_mode=chronology,
             active_stop_id=None,
+            voyage_event_history=(*state.voyage_event_history, *plan.events),
         )
 
         destination = self.node_state(after, plan.destination_node)
