@@ -43,9 +43,10 @@ class NavigationModel:
     deve acompanhar qualquer leitura dessas distâncias.
 
     Quando existe observação histórica de duração para a própria rota, ela tem
-    precedência como duração-base. Rotas sem observação continuam usando a taxa
-    diária de referência calibrada pela travessia Melinde–Calecute de 1498; a
-    taxa não é velocidade histórica universal.
+    precedência como duração-base. Se a data de partida coincide exatamente com
+    uma observação documentada, a duração observada é preservada sem ruído de
+    simulação. Rotas ou datas sem observação exata continuam usando calibrações
+    relativas; a taxa Melinde–Calecute não é velocidade histórica universal.
     """
 
     def __init__(self, root: Path | None = None) -> None:
@@ -94,18 +95,27 @@ class NavigationModel:
             float(destination["longitude"]),
         )
 
+    @staticmethod
+    def _observation_days(row: dict[str, str]) -> int:
+        if row.get("observed_days"):
+            return int(row["observed_days"])
+        return (_parse_date(row["arrival_date"]) - _parse_date(row["departure_date"])).days
+
     def observed_days(self, route_id: str) -> list[int]:
-        days: list[int] = []
-        for row in self.observations:
-            if row["route_id"] != route_id:
-                continue
-            if row.get("observed_days"):
-                days.append(int(row["observed_days"]))
-            else:
-                days.append(
-                    (_parse_date(row["arrival_date"]) - _parse_date(row["departure_date"])).days
-                )
-        return days
+        return [
+            self._observation_days(row)
+            for row in self.observations
+            if row["route_id"] == route_id
+        ]
+
+    def observed_days_for_departure(self, route_id: str, departure: date) -> list[int]:
+        """Durações observadas para a rota na data histórica exata de partida."""
+        iso = departure.isoformat()
+        return [
+            self._observation_days(row)
+            for row in self.observations
+            if row["route_id"] == route_id and row.get("departure_date") == iso
+        ]
 
     @property
     def reference_route_id(self) -> str:
@@ -135,7 +145,11 @@ class NavigationModel:
             raise KeyError(f"Regra de navegação ausente para {key[0]}/{key[1]}") from exc
 
     def base_duration_days(self, route_id: str, departure: date) -> float | None:
-        """Duração-base sem ruído, preferindo observações da própria rota."""
+        """Duração-base, preservando primeiro a observação da data exata."""
+        exact = self.observed_days_for_departure(route_id, departure)
+        if exact:
+            return mean(exact)
+
         observations = self.observed_days(route_id)
         if observations:
             base = mean(observations)
@@ -151,12 +165,15 @@ class NavigationModel:
     ) -> float | None:
         """Duração estimada em dias para comparação interna do protótipo.
 
-        Observações da própria rota são a primeira âncora. Em sua ausência, a
-        v0.1 usa distância geodésica, taxa de progresso calibrada e penalidade
-        sazonal conservadora. Não infere automaticamente que uma direção é
-        favorecida pela monção. Quando a rota depende de âncora `MEDIUM` ou
-        `LOW`, a duração deve acompanhar ``route_coordinate_confidence``.
+        Uma partida que coincide com observação histórica preserva a duração
+        observada e não recebe ruído. Em datas sem observação exata, a v0.1 usa
+        duração-base relativa e ruído determinístico. Não infere automaticamente
+        que uma direção é favorecida pela monção.
         """
+        exact = self.observed_days_for_departure(route_id, departure)
+        if exact:
+            return mean(exact)
+
         base_days = self.base_duration_days(route_id, departure)
         if base_days is None:
             return None
