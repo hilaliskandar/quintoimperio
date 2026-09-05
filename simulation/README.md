@@ -2,7 +2,7 @@
 
 Este diretório contém **parâmetros de balanceamento**, não dados históricos.
 
-Os arquivos em `data/` registram evidência histórica e inferências explicitamente marcadas. Os arquivos em `simulation/` traduzem essa estrutura em índices e regras para testar economia, navegação, conhecimento, informação, viagem, serviços portuários, comércio e aprendizagem da sessão. Nenhum número deste diretório deve ser citado como preço, produção, alíquota, frete, velocidade, consumo, desgaste, capacidade portuária, margem comercial, probabilidade histórica ou duração histórica de uma conversa.
+Os arquivos em `data/` registram evidência histórica e inferências explicitamente marcadas. Os arquivos em `simulation/` traduzem essa estrutura em índices e regras para testar economia, navegação, conhecimento, informação, viagem, eventos marítimos, serviços portuários, comércio e aprendizagem da sessão. Nenhum número deste diretório deve ser citado como preço, produção, alíquota, frete, velocidade, consumo, desgaste, capacidade portuária, margem comercial, probabilidade histórica, frequência histórica de avarias ou duração histórica de uma conversa.
 
 ## Escalas
 
@@ -24,6 +24,7 @@ Capital, capacidade de carga e quantidades comerciais também são índices abst
 - `information_rules.csv`: custos de tempo e limites mínimos dos canais `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`. São escolhas de jogabilidade e não registros de conversas históricas.
 - `session_rules.csv`: níveis mínimos de conhecimento adquiridos após chegar fisicamente a um porto e após completar uma rota. São regras de jogabilidade, não medições históricas.
 - `travel_rules.csv`: consumo em dias-equivalentes, desgaste abstrato por tipo de rota e condição mínima de partida. Esses valores existem somente para fazer o primeiro loop de viagem funcionar e permanecem separados da evidência histórica.
+- `voyage_event_rules.csv`: probabilidades e limites de efeitos para calmaria, mau tempo, avaria menor de aparelho e perturbação de junho/julho. Todos os eventos são hipóteses `SIMULATION`, não incidentes históricos documentados.
 - `port_rules.csv`: capacidades abstratas de reabastecimento, taxas abstratas de reparo, duração do serviço e limite provisório de provisões embarcadas. As categorias `LOW`, `MEDIUM` e `HIGH` vêm da base histórica; os valores numéricos que as tornam jogáveis pertencem apenas à simulação.
 - `trade_rules.csv`: multiplicadores abstratos de compra e venda usados para criar um spread mínimo de simulação. Não representam margens, impostos, comissão ou prática mercantil histórica.
 
@@ -40,5 +41,7 @@ Nos serviços portuários, campo histórico vazio continua `UNKNOWN`: a simulaç
 No comércio, ausência de uma relação porto–mercadoria em `data/node_goods.csv` permanece ausência de mercado no protótipo. O modelo não cria oferta ou demanda apenas para tornar uma rota jogável.
 
 Na aquisição de informação, oportunidades só apontam para nós e rotas já documentados. `RUMOR` não ultrapassa `RUMORED`, contato mercantil não produz navegação operacional e `PILOT_CONSULTATION` não ultrapassa `PARTIAL`. O estado de conhecimento da Coroa nunca é copiado silenciosamente para o personagem. Uma interação custa um dia de simulação na v0.1 e pode consumir parte de uma permanência histórica, mas não concede recursos materiais.
+
+Nos eventos marítimos, probabilidades e intensidades pertencem inteiramente à simulação. Uma observação histórica exata de rota e data pode suprimir a camada aleatória quando o plano deve preservar a cronologia documentada. Fora desse caso, o sistema seleciona no máximo um evento por viagem e limita seus efeitos a dias adicionais, provisões correspondentes e condição abstrata. Nenhum evento genérico implica morte, perda de carga, combate ou naufrágio.
 
 Na sessão, presença física e experiência produzem aprendizado segundo regras explícitas. O protótipo não transforma automaticamente informação indireta em domínio náutico ou comercial; a passagem entre níveis ocorre por chegada, viagem, interação ativa ou por um cenário técnico explicitamente marcado como tal.
