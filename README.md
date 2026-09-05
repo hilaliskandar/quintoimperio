@@ -19,7 +19,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
+A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, risco marítimo inicial, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
 
 A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas e 5 permanências logísticas documentadas**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
 
@@ -45,12 +45,15 @@ O domínio já oferece:
 - `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
 - `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
 - `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND` como bases distintas de viagem;
-- `GameSessionState` imutável reunindo navio, comércio, conhecimento, histórico de informação, expedição ativa, cronologia e escala ativa;
+- eventos marítimos genéricos `SIMULATION` com seleção determinística por semente e no máximo um evento por viagem;
+- calmaria/atraso, mau tempo, avaria menor de aparelho e perturbação adicional de junho/julho, limitados a tempo e condição abstrata;
+- precedência documental: uma observação histórica exata pode suprimir eventos aleatórios em cronologia `GUIDED`, enquanto a mesma rota/data pode receber evento em modo `COUNTERFACTUAL`;
+- `GameSessionState` imutável reunindo navio, comércio, conhecimento, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
 - provisões/condição abstratas, reabastecimento e reparo;
 - compra/venda somente em mercados documentados;
 - aprendizagem explícita por chegada e conclusão de rota;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
-- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, informação, mercado, armada ativa, escala histórica, espera e rotas;
+- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, informação, mercado, armada ativa, escala histórica, espera, rotas e registro discreto do último evento de viagem;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
 - modo `TECHNICAL` separado para testes de integração;
 - testes automatizados, smoke tests e capturas de interface no GitHub Actions.
@@ -63,7 +66,9 @@ A permanência em escala também não produz efeitos materiais por simples passa
 
 A informação passou a ser um recurso acionável, mas de forma conservadora. Os canais genéricos de rumor e contato mercantil são mecânicas de simulação, não diálogos históricos inventados. Consulta a piloto só existe onde `pilots.csv`/`pilot_routes.csv` sustentam a competência. Nenhum desses canais torna automaticamente uma rota operacional.
 
-Próximos sistemas: eventos marítimos/avarias e relações institucionais mais detalhadas; cartas persistentes, desinformação e redes pessoais de confiança permanecem para incrementos posteriores.
+O risco marítimo v0.1 também é explicitamente uma camada de simulação. Os eventos não afirmam que determinado incidente ocorreu historicamente; apenas modificam viagens não fixadas pela evidência com dias adicionais e/ou perda de condição. Quando a cronologia guiada possui observação exata de rota e partida, a aleatoriedade é suprimida e o fato documentado tem precedência.
+
+Próximos sistemas: relações institucionais, regimes de acesso e negociação; cartas persistentes, desinformação, redes pessoais de confiança, perdas de carga, tripulação, combate e naufrágio permanecem para incrementos posteriores.
 
 ## Estrutura
 
@@ -92,6 +97,7 @@ simulation/
   information_rules.csv
   session_rules.csv
   travel_rules.csv
+  voyage_event_rules.csv
   port_rules.csv
   trade_rules.csv
 
@@ -104,6 +110,7 @@ docs/
   session-method.md
   stop-method.md
   information-method.md
+  voyage-event-method.md
   interface-method.md
   roadmap.md
   sources.md
@@ -127,6 +134,7 @@ src/quintoimperio/domain/
   stop.py
   trade.py
   travel.py
+  voyage_event.py
   world_map.py
 
 prototype/
@@ -155,6 +163,7 @@ tests/
   test_stop.py
   test_trade.py
   test_travel.py
+  test_voyage_event.py
   test_world_map.py
 ```
 
@@ -192,7 +201,7 @@ Cenário técnico de integração:
 python prototype/game.py --scenario TECHNICAL
 ```
 
-`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação.
+`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação. Eventos marítimos efetivamente ocorridos na simulação aparecem após a viagem como `SIM`, sem serem confundidos com fatos históricos.
 
 Renderização sem janela:
 
