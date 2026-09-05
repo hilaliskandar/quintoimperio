@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
-"""Validate historical data tables without adding game-engine dependencies."""
+"""Validate historical data and simulation configuration without game-engine dependencies."""
 
 from __future__ import annotations
 
 import csv
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
+SIMULATION = ROOT / "simulation"
 SOURCES = ROOT / "docs" / "sources.md"
 
 EVIDENCE = {"A", "B", "C", "D"}
 EVIDENCE_SCOPE = {"NODE_DIRECT", "REGIONAL", "NETWORK", "LATER_PERIOD_ANALOGY"}
 BOOLS = {"", "TRUE", "FALSE"}
+KNOWLEDGE_PERSPECTIVES = {"PLAYER", "CROWN"}
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -28,8 +31,8 @@ def warn(message: str) -> None:
     warnings.append(message)
 
 
-def read_csv(name: str) -> list[dict[str, str]]:
-    path = DATA / name
+def read_csv(name: str, directory: Path = DATA) -> list[dict[str, str]]:
+    path = directory / name
     if not path.exists():
         fail(f"missing file: {path.relative_to(ROOT)}")
         return []
@@ -37,20 +40,21 @@ def read_csv(name: str) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         if reader.fieldnames is None:
-            fail(f"{name}: missing header")
+            fail(f"{path.relative_to(ROOT)}: missing header")
             return []
 
         rows: list[dict[str, str]] = []
         for line_no, row in enumerate(reader, start=2):
+            table = str(path.relative_to(ROOT))
             if None in row:
-                fail(f"{name}:{line_no}: extra CSV fields: {row[None]}")
+                fail(f"{table}:{line_no}: extra CSV fields: {row[None]}")
                 continue
             if any(value is None for value in row.values()):
-                fail(f"{name}:{line_no}: missing CSV fields")
+                fail(f"{table}:{line_no}: missing CSV fields")
                 continue
             for key, value in row.items():
                 if value != value.strip():
-                    fail(f"{name}:{line_no}: whitespace around field {key!r}: {value!r}")
+                    fail(f"{table}:{line_no}: whitespace around field {key!r}: {value!r}")
             row["__line__"] = str(line_no)
             rows.append(row)
         return rows
@@ -143,12 +147,107 @@ def validate_bool(rows: list[dict[str, str]], table: str, fields: tuple[str, ...
                 fail(f"{table}:{row['__line__']}: invalid boolean {field}={row[field]!r}")
 
 
+def validate_voyage_observations(
+    rows: list[dict[str, str]], node_ids: set[str], route_by_id: dict[str, dict[str, str]]
+) -> None:
+    unique(rows, "observation_id", "voyage_observations.csv")
+    for row in rows:
+        line = row["__line__"]
+        route_id = row["route_id"]
+        if route_id not in route_by_id:
+            fail(f"voyage_observations.csv:{line}: unknown route_id={route_id}")
+            continue
+        if row["departure_node"] not in node_ids or row["arrival_node"] not in node_ids:
+            fail(f"voyage_observations.csv:{line}: unknown node reference")
+            continue
+        route = route_by_id[route_id]
+        if (row["departure_node"], row["arrival_node"]) != (
+            route["origin_node"], route["destination_node"]
+        ):
+            fail(f"voyage_observations.csv:{line}: endpoints do not match {route_id}")
+        try:
+            departure = date.fromisoformat(row["departure_date"])
+            arrival = date.fromisoformat(row["arrival_date"])
+        except ValueError:
+            fail(f"voyage_observations.csv:{line}: invalid ISO date")
+            continue
+        elapsed = (arrival - departure).days
+        if elapsed <= 0:
+            fail(f"voyage_observations.csv:{line}: arrival must be after departure")
+        try:
+            recorded = int(row["observed_days"])
+        except ValueError:
+            fail(f"voyage_observations.csv:{line}: observed_days must be integer")
+        else:
+            if recorded != elapsed:
+                fail(
+                    f"voyage_observations.csv:{line}: observed_days={recorded} "
+                    f"but dates imply {elapsed}"
+                )
+
+
+def validate_knowledge_rules(rows: list[dict[str, str]], nodes: list[dict[str, str]]) -> None:
+    mappings: set[tuple[str, str]] = set()
+    for row in rows:
+        line = row["__line__"]
+        perspective = row["perspective"]
+        if perspective not in KNOWLEDGE_PERSPECTIVES:
+            fail(f"simulation/knowledge_rules.csv:{line}: invalid perspective={perspective}")
+        key = (perspective, row["source_value"])
+        if key in mappings:
+            fail(f"simulation/knowledge_rules.csv:{line}: duplicate mapping {key}")
+        mappings.add(key)
+        for field in ("geo", "nav", "market", "political"):
+            try:
+                value = int(row[field])
+            except ValueError:
+                fail(f"simulation/knowledge_rules.csv:{line}: {field} must be integer")
+                continue
+            if not 0 <= value <= 4:
+                fail(f"simulation/knowledge_rules.csv:{line}: {field} outside 0..4")
+
+    for node in nodes:
+        player_key = ("PLAYER", node["player_default_knowledge"])
+        crown_key = ("CROWN", node["known_to_portugal_1497"])
+        if player_key not in mappings:
+            fail(f"simulation/knowledge_rules.csv: missing mapping {player_key} used by {node['node_id']}")
+        if crown_key not in mappings:
+            fail(f"simulation/knowledge_rules.csv: missing mapping {crown_key} used by {node['node_id']}")
+
+
+def validate_navigation_rules(rows: list[dict[str, str]], route_ids: set[str]) -> None:
+    reference_routes = []
+    for row in rows:
+        line = row["__line__"]
+        rule_type = row["rule_type"]
+        key = row["key"]
+        value = row["value"]
+        if rule_type == "REFERENCE_ROUTE":
+            if key not in route_ids:
+                fail(f"simulation/navigation_rules.csv:{line}: unknown reference route {key}")
+            if value == "1":
+                reference_routes.append(key)
+        else:
+            try:
+                numeric = float(value)
+            except ValueError:
+                fail(f"simulation/navigation_rules.csv:{line}: value must be numeric")
+                continue
+            if numeric < 0:
+                fail(f"simulation/navigation_rules.csv:{line}: negative value")
+    if len(reference_routes) != 1:
+        fail("simulation/navigation_rules.csv: exactly one REFERENCE_ROUTE with value=1 is required")
+
+
 def main() -> int:
     nodes = read_csv("nodes.csv")
     goods = read_csv("goods.csv")
     node_goods = read_csv("node_goods.csv")
     routes = read_csv("routes.csv")
     route_goods = read_csv("route_goods.csv")
+    voyage_observations = read_csv("voyage_observations.csv")
+    navigation_rules = read_csv("navigation_rules.csv", SIMULATION)
+    knowledge_rules = read_csv("knowledge_rules.csv", SIMULATION)
 
     node_ids = unique(nodes, "node_id", "nodes.csv")
     good_ids = unique(goods, "good_id", "goods.csv")
@@ -168,6 +267,7 @@ def main() -> int:
         ("node_goods.csv", node_goods),
         ("routes.csv", routes),
         ("route_goods.csv", route_goods),
+        ("voyage_observations.csv", voyage_observations),
     ):
         validate_evidence(rows, table)
         validate_sources(rows, table, known_sources)
@@ -208,6 +308,10 @@ def main() -> int:
                 f"({route['origin_node']}->{route['destination_node']})"
             )
 
+    validate_voyage_observations(voyage_observations, node_ids, route_by_id)
+    validate_navigation_rules(navigation_rules, route_ids)
+    validate_knowledge_rules(knowledge_rules, nodes)
+
     for message in warnings:
         print(f"WARNING: {message}")
     for message in errors:
@@ -220,7 +324,8 @@ def main() -> int:
     print(
         "validation OK: "
         f"{len(nodes)} nodes, {len(goods)} goods, {len(node_goods)} node-goods, "
-        f"{len(routes)} routes, {len(route_goods)} route-goods; "
+        f"{len(routes)} routes, {len(route_goods)} route-goods, "
+        f"{len(voyage_observations)} voyage observations; "
         f"{len(warnings)} warning(s)"
     )
     return 0
