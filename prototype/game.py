@@ -2,8 +2,9 @@
 """Primeira interface jogável Pygame para o núcleo integrado.
 
 A interface não cria regras econômicas, náuticas ou históricas. Ela apenas
-expõe ``GameSessionModel``. Valores de capital, capacidade, quantidade, preço
-e eventos marítimos genéricos são parâmetros abstratos de simulação.
+expõe ``GameSessionModel``. Valores de capital, capacidade, quantidade, preço,
+tempo de negociação e eventos marítimos genéricos são parâmetros abstratos de
+simulação.
 
 Dois estados são oferecidos:
 
@@ -24,6 +25,7 @@ from datetime import date
 import pygame
 
 from quintoimperio.domain import (
+    AccessStatus,
     ChronologyMode,
     GameSessionModel,
     GameSessionState,
@@ -100,8 +102,11 @@ class PlayablePrototype:
                 political=cal.political,
             ),
         )
-        return self.session.scenario_set_route_knowledge(
+        state = self.session.scenario_set_route_knowledge(
             state, "R_CAL_ADE", KnowledgeLevel.OPERATIONAL
+        )
+        return self.session.scenario_set_access(
+            state, "CAL", AccessStatus.NEGOTIATED
         )
 
     def reset(self, scenario: str | None = None) -> None:
@@ -156,6 +161,17 @@ class PlayablePrototype:
             if with_pilot.feasible:
                 return with_pilot
         return self.session.plan_voyage(self.state, route_id, seed=SEED)
+
+    def negotiate_access(self) -> None:
+        result = self.session.negotiate_access(self.state)
+        if not result.executed:
+            self.message = "Negociação indisponível: " + ", ".join(result.reasons)
+            return
+        self.state = result.state_after
+        self.message = (
+            f"Acesso institucional negociado; +{result.days_spent} dia(s). "
+            "Nenhum valor de taxa ou presente foi presumido."
+        )
 
     def acquire_information(self, channel: InformationChannel) -> None:
         result = self.session.acquire_information(self.state, channel, seed=SEED)
@@ -416,8 +432,30 @@ class PlayablePrototype:
             pygame.draw.rect(surface, BUTTON if can_wait else BUTTON_DISABLED, wait_rect, border_radius=3)
             label = f"Esperar {wait_days} dia(s)" if wait_days else "Partida liberada"
             self._draw_text(surface, micro, label, (wait_rect.x + 12, wait_rect.y + 6))
-            self.targets.append(ClickTarget(wait_rect, "action", "wait_stop"))
+            if can_wait:
+                self.targets.append(ClickTarget(wait_rect, "action", "wait_stop"))
             y += 32
+
+        access = self.session.access_view(self.state)
+        self._draw_text(
+            surface,
+            tiny,
+            f"Acesso: {access.status.value} | regime {access.access_regime}",
+            (x, y),
+            MUTED,
+        )
+        y += 19
+        if access.negotiable:
+            access_rect = pygame.Rect(x + 5, y, 185, 24)
+            pygame.draw.rect(surface, BUTTON, access_rect, border_radius=3)
+            self._draw_text(
+                surface,
+                micro,
+                f"Negociar acesso ({access.time_days}d)",
+                (access_rect.x + 10, access_rect.y + 5),
+            )
+            self.targets.append(ClickTarget(access_rect, "action", "negotiate_access"))
+            y += 30
 
         provisions = self.session.service_quote(self.state, PortServiceKind.PROVISIONS)
         repair = self.session.service_quote(self.state, PortServiceKind.REPAIR)
@@ -456,37 +494,48 @@ class PlayablePrototype:
             rect = pygame.Rect(info_x, y, width, 24)
             pygame.draw.rect(surface, BUTTON if available else BUTTON_DISABLED, rect, border_radius=3)
             self._draw_text(surface, micro, label, (rect.x + 8, rect.y + 5))
-            self.targets.append(ClickTarget(rect, "information", channel.value))
+            if available:
+                self.targets.append(ClickTarget(rect, "information", channel.value))
             info_x += width + 6
         y += 31
 
         self._draw_text(surface, body, "Carga", (x, y))
         y += 21
         if self.state.commerce.cargo:
-            for item in self.state.commerce.cargo[:3]:
+            for item in self.state.commerce.cargo[:2]:
                 self._draw_text(surface, tiny, f"{item.good_id}: {item.quantity:.1f}", (x + 8, y))
                 y += 17
         else:
             self._draw_text(surface, tiny, "vazia", (x + 8, y), MUTED)
             y += 17
-        y += 4
+        y += 3
 
         market = self.session.market_view(self.state, seed=SEED)
         self._draw_text(surface, body, "Mercado", (x, y))
-        self._draw_text(surface, micro, f"conhecimento: {market.knowledge_level.name}", (x + 190, y + 3), MUTED)
+        self._draw_text(
+            surface,
+            micro,
+            f"conh. {market.knowledge_level.name} | acesso {market.access_status.value}",
+            (x + 150, y + 3),
+            MUTED,
+        )
         y += 22
-        if not market.actionable:
-            self._draw_text(surface, micro, "Mercado não operacional com o conhecimento atual.", (x + 8, y), BAD)
-            y += 21
+        if market.knowledge_level < KnowledgeLevel.OPERATIONAL:
+            self._draw_text(surface, micro, "Mercado oculto: conhecimento insuficiente.", (x + 8, y), BAD)
+            y += 20
         else:
-            for entry in market.entries[:6]:
+            if not market.actionable:
+                self._draw_text(surface, micro, "Cotações conhecidas; compra/venda bloqueadas pelo acesso.", (x + 8, y), BAD)
+                y += 18
+            for entry in market.entries[:4]:
                 rect = pygame.Rect(x + 3, y - 2, 460, 18)
                 if entry.good_id == self.selected_good:
                     pygame.draw.rect(surface, SELECTED, rect, border_radius=2)
+                marker = "*" if entry.restricted else " "
                 self._draw_text(
                     surface,
                     micro,
-                    f"{entry.good_id:<14} compra {entry.buy_price_index:>5.2f} | venda {entry.sell_price_index:>5.2f}",
+                    f"{marker}{entry.good_id:<13} compra {entry.buy_price_index:>5.2f} | venda {entry.sell_price_index:>5.2f}",
                     (x + 8, y),
                 )
                 self.targets.append(ClickTarget(rect, "good", entry.good_id))
@@ -494,14 +543,16 @@ class PlayablePrototype:
 
             buy_rect = pygame.Rect(x + 5, y + 1, 105, 25)
             sell_rect = pygame.Rect(x + 120, y + 1, 105, 25)
-            pygame.draw.rect(surface, BUTTON if self.selected_good else BUTTON_DISABLED, buy_rect, border_radius=3)
-            pygame.draw.rect(surface, BUTTON if self.selected_good else BUTTON_DISABLED, sell_rect, border_radius=3)
+            trade_enabled = bool(self.selected_good) and market.actionable
+            pygame.draw.rect(surface, BUTTON if trade_enabled else BUTTON_DISABLED, buy_rect, border_radius=3)
+            pygame.draw.rect(surface, BUTTON if trade_enabled else BUTTON_DISABLED, sell_rect, border_radius=3)
             self._draw_text(surface, micro, "Comprar 1", (buy_rect.x + 18, buy_rect.y + 6))
             self._draw_text(surface, micro, "Vender 1", (sell_rect.x + 22, sell_rect.y + 6))
-            self.targets.extend(
-                [ClickTarget(buy_rect, "action", "buy"), ClickTarget(sell_rect, "action", "sell")]
-            )
-            y += 32
+            if trade_enabled:
+                self.targets.extend(
+                    [ClickTarget(buy_rect, "action", "buy"), ClickTarget(sell_rect, "action", "sell")]
+                )
+            y += 31
 
         self._draw_text(surface, body, "Rotas de saída", (x, y))
         y += 22
@@ -509,7 +560,7 @@ class PlayablePrototype:
         if not outgoing:
             self._draw_text(surface, micro, "Nenhuma rota de saída na base atual.", (x + 8, y), MUTED)
             y += 19
-        for route_id in outgoing[:5]:
+        for route_id in outgoing[:4]:
             route = self.session.routes[route_id]
             plan = self.plan_for_route(route_id)
             status = "OK" if plan.feasible else "BLOQ"
@@ -531,7 +582,8 @@ class PlayablePrototype:
         travel_rect = pygame.Rect(x + 5, y + 2, 130, 26)
         pygame.draw.rect(surface, BUTTON if self.selected_route else BUTTON_DISABLED, travel_rect, border_radius=3)
         self._draw_text(surface, micro, "Executar viagem", (travel_rect.x + 14, travel_rect.y + 6))
-        self.targets.append(ClickTarget(travel_rect, "action", "travel"))
+        if self.selected_route:
+            self.targets.append(ClickTarget(travel_rect, "action", "travel"))
         y += 34
 
         self._draw_text(surface, micro, "Mensagem:", (x, y), MUTED)
@@ -541,7 +593,7 @@ class PlayablePrototype:
             y += 15
 
         note_y = SIDE_RECT.bottom - 33
-        note = "Informação, eventos e índices econômicos são simulação; linhas do mapa são arestas do grafo."
+        note = "Acesso, informação, eventos e índices são simulação; nenhuma taxa/presente é presumida."
         for line in self._wrap(micro, note, SIDE_RECT.width - 34)[:2]:
             self._draw_text(surface, micro, line, (x, note_y), MUTED)
             note_y += 14
@@ -586,6 +638,8 @@ class PlayablePrototype:
                     self.repair()
                 elif target.value == "wait_stop":
                     self.wait_stop()
+                elif target.value == "negotiate_access":
+                    self.negotiate_access()
                 elif target.value == "travel":
                     self.travel_selected()
             return
