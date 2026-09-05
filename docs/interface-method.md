@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-A interface Pygame v0.1 expõe o núcleo já implementado em `GameSessionModel` sem duplicar regras econômicas, de conhecimento ou de viagem na camada gráfica.
+A interface Pygame v0.1 expõe o núcleo já implementado em `GameSessionModel` sem duplicar regras econômicas, de conhecimento, serviços portuários ou viagem na camada gráfica.
 
-A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, mercado do porto e rotas de saída. Compra, venda e viagem chamam diretamente os métodos do domínio.
+A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, mercado do porto e rotas de saída. Compra, venda, reabastecimento, reparo e viagem chamam diretamente os métodos do domínio.
 
 ## Dois estados explicitamente distintos
 
@@ -28,6 +28,19 @@ O mapa usa as coordenadas de `nodes.csv`. Somente nós com conhecimento geográf
 
 A v0.1 da interface continua usando fundo esquemático. A costa real permanece na ferramenta cartográfica de referência separada em `tools/render_cartographic_map.py`.
 
+## Serviços portuários
+
+O painel consulta `GameSessionModel.service_quote()` para provisões e reparo. A categoria exibida vem dos campos históricos de `nodes.csv` e mantém a distinção entre `UNKNOWN`, `NONE`, `LOW`, `MEDIUM` e `HIGH`.
+
+Os botões usam ações abstratas fixas da interface:
+
+- `Reabastecer +30` solicita 30 dias-equivalentes, sujeitos à capacidade e às regras de `port_rules.csv`;
+- `Reparar +20` solicita 20 pontos abstratos de condição, sujeitos à disponibilidade e à taxa definida em `port_rules.csv`.
+
+Esses números são ações de simulação e não quantidades históricas. A v0.1 não desconta capital por serviços porque ainda não existe base histórica ou regra de balanceamento separada para custo monetário.
+
+Serviço `UNKNOWN` continua bloqueado; a interface não o converte em disponibilidade presumida.
+
 ## Mercado
 
 O painel chama `GameSessionModel.market_view()`. Se `market_knowledge` for inferior a `OPERATIONAL`, nenhuma mercadoria acionável é mostrada. Compra e venda usam `GameSessionModel.buy()` e `GameSessionModel.sell()` com quantidade unitária abstrata.
@@ -44,6 +57,7 @@ Uma viagem só é executada se o `VoyagePlan` for viável. A chegada chama `Game
 
 ## Interação
 
+- `Reabastecer +30` e `Reparar +20` acionam serviços do porto atual quando documentados;
 - clique em uma mercadoria para selecioná-la;
 - `Comprar 1` e `Vender 1` executam operações unitárias abstratas;
 - clique em uma rota da lista ou em um porto de destino conectado no mapa para selecionar a rota;
@@ -51,6 +65,10 @@ Uma viagem só é executada se o `VoyagePlan` for viável. A chegada chama `Game
 - `R` reinicia o cenário atual;
 - `Tab` alterna entre `HISTORICAL` e `TECHNICAL`;
 - `Esc` encerra.
+
+## Inspeção visual
+
+As capturas de 1497/Lisboa e do cenário técnico de Calecute são produzidas automaticamente pelo CI. A inspeção v0.1 confirmou que os elementos cabem no painel lateral, os avisos não ultrapassam seus limites e os serviços portuários permanecem visualmente distinguíveis do mercado e das rotas.
 
 ## Teste reprodutível
 
