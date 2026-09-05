@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, informação, serviços portuários, expedições, permanências ou viagem na camada gráfica.
+A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, informação, serviços portuários, expedições, permanências, eventos marítimos ou viagem na camada gráfica.
 
-A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, canais de informação, mercado, armada ativa quando houver, cronologia, escala histórica ativa e rotas de saída.
+A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, canais de informação, mercado, armada ativa quando houver, cronologia, escala histórica ativa, rotas de saída e o último evento `SIM` de viagem quando houver.
 
 ## Dois estados explicitamente distintos
 
@@ -18,9 +18,11 @@ A primeira perna operacional é `R_LIS_STG`, Lisboa → São Thiago/baía de San
 
 Quando a chegada ativa uma permanência documentada, o painel mostra o nó da escala, `observed_stay_days`, atividades documentadas, data de partida e um botão `Esperar N dia(s)` enquanto a cronologia ainda é `GUIDED`.
 
+Quando uma rota/data possui observação histórica exata e a sessão está em `GUIDED`, a mensagem de chegada explicita que eventos aleatórios foram suprimidos pela observação. A interface não inventa um incidente para tornar a viagem mais dramática.
+
 ### TECHNICAL
 
-É um cenário de integração que começa em Calecute em 22 de maio de 1498. Permite testar `mercado -> compra -> viagem -> chegada -> venda` e também os canais informativos em um grande entreposto. Um banner informa que não representa o estado histórico inicial do personagem. Esse cenário usa cronologia `COUNTERFACTUAL`.
+É um cenário de integração que começa em Calecute em 22 de maio de 1498. Permite testar `mercado -> compra -> viagem -> chegada -> venda`, os canais informativos e a camada de risco em uma sessão contrafactual. Um banner informa que não representa o estado histórico inicial do personagem. Esse cenário usa cronologia `COUNTERFACTUAL`.
 
 ## Informação
 
@@ -56,13 +58,17 @@ O painel consulta `GameSessionModel.service_quote()` para provisões e reparo e 
 
 O mercado usa `GameSessionModel.market_view()`. Se `market_knowledge < OPERATIONAL`, nenhuma mercadoria acionável é mostrada. Nós logísticos com `market_scale=NONE` não recebem mercadorias apenas por terem sido escalas da expedição.
 
-## Viagem
+## Viagem e eventos marítimos
 
 Cada rota de saída é planejada pelo domínio. O painel exibe `OWN_KNOWLEDGE`, `PILOT`, `FLEET_COMMAND` ou bloqueio.
 
 Quando existe piloto documentado para porto, período e rota, a interface o fornece ao plano antes de recorrer ao comando institucional. Isso preserva o caso Melinde–Calecute de 1498. Uma consulta prévia ao piloto não substitui esse papel operacional: ela só pode ensinar a rota até `PARTIAL`.
 
 Em `GUIDED`, uma rota de saída é bloqueada por `HISTORICAL_STOP_NOT_RELEASED` enquanto a data estiver antes da partida da escala ativa. Se o jogador permanece além da partida e depois navega, o domínio muda para `COUNTERFACTUAL`; a interface exibe essa condição e não força novas esperas históricas.
+
+Os eventos marítimos não são sorteados nem interpretados pela camada gráfica. `VoyagePlan.events` vem pronto do domínio. Quando há evento, a mensagem de chegada o identifica explicitamente como `evento SIM`, com dias adicionais e perda abstrata de condição. O painel mantém o último evento da sessão visível para auditoria. Quando `events_suppressed_by_observation=True`, a mensagem informa que a aleatoriedade foi suprimida pela observação histórica.
+
+A interface não apresenta calmaria, mau tempo ou avaria genérica como fato histórico. Também não cria perdas de tripulação, carga, combate ou naufrágio, pois esses efeitos não existem na v0.1.
 
 ## Interação
 
