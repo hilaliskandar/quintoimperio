@@ -1,0 +1,3 @@
+observation_id,route_id,departure_node,arrival_node,departure_date,arrival_date,observed_days,observation_scope,evidence_grade,source_id,notes
+GAMA1498_MAL_CAL_SUB,R_MAL_CAL,MAL,CAL,1498-04-24,1498-05-21,27,VOYAGE_LEG,A,SUBRAHMANYAM_PEA,"Subrahmanyam registra partida de Melinde em 24 de abril e chegada a Calecute em 21 de maio de 1498. Usar como calibração, não como duração universal da rota."
+GAMA1498_MAL_CAL_PRA,R_MAL_CAL,MAL,CAL,1498-04-24,1498-05-20,26,VOYAGE_LEG,A,PRAKASH_ECE,"Prakash registra a chegada de Gama a Calecute em 20 de maio de 1498. A divergência de um dia em relação a Subrahmanyam é preservada explicitamente."
