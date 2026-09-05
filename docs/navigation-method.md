@@ -28,10 +28,35 @@ Alpers descreve o regime amplo do Índico da seguinte forma:
 
 A v0.1 converte apenas a forte interrupção de junho/julho em uma penalidade explícita para rotas já classificadas com alta ou média dependência monçônica. **Não** deduz automaticamente que toda rota leste/oeste ou norte/sul é favorecida ou prejudicada por uma determinada monção. Perfis direcionais por trecho só serão adicionados quando houver evidência regional suficiente.
 
+## Pilotos
+
+Subrahmanyam registra que, em Melinde, a armada de Vasco da Gama encontrou quatro navios provenientes de Cranganor e recebeu do governante local um piloto guzerate para a travessia até Calecute. O autor também adverte que esse piloto é frequentemente identificado de forma incorreta como Ahmad ibn Majid.
+
+Por isso a v0.1 introduz duas tabelas históricas específicas:
+
+- `data/pilots.csv` — identidade, origem, local de disponibilidade e período;
+- `data/pilot_routes.csv` — competência documentada por rota.
+
+O primeiro piloto é registrado como pessoa não nomeada no corpus atual. Sua competência é ligada somente a `R_MAL_CAL`, em 1498. O modelo não transforma esse dado em bônus arbitrário de velocidade. O piloto serve, por ora, para fornecer a base operacional de navegação necessária a uma rota que o personagem ainda conhece apenas por rumor ou informação parcial.
+
+Essa distinção preserva o princípio central do jogo: **saber que um porto existe não equivale a saber navegar até ele**.
+
+## Provisões e desgaste
+
+O corpus atual não fornece taxas suficientemente sólidas para converter a viagem de 1498 em consumo diário de água, alimento, tonelagem de mantimentos ou desgaste físico comparável entre classes de navio. Esses componentes entram na v0.1 somente como variáveis abstratas de jogabilidade:
+
+- `provision_days`: dias-equivalentes de provisões;
+- `condition`: escala abstrata de condição do navio de 0 a 100;
+- `travel_rules.csv`: parâmetros de consumo e desgaste exclusivamente de simulação.
+
+Assim, uma viagem de 25 dias de jogo pode consumir 25 dias-equivalentes de provisões sem que isso seja apresentado como uma quantidade histórica de comida ou água. Da mesma forma, a perda de pontos de condição não representa uma taxa histórica de deterioração do casco.
+
+O objetivo desta camada é permitir que o jogador enfrente custo de oportunidade, necessidade de reabastecimento e risco de operar um navio degradado, mantendo totalmente explícita a diferença entre evidência histórica e regra de jogo.
+
 ## Limitações regionais
 
 O Mar Vermelho e o Golfo Pérsico têm condições próprias — ventos predominantes, baixios, marés e gargalos — e não devem ser reduzidos ao calendário monçônico geral. O mesmo vale para acessos portuários dependentes de maré e assoreamento.
 
 ## Próximas calibrações
 
-A base deve crescer com observações de viagens cuja partida, chegada e itinerário sejam suficientemente claros. Cada observação deve manter fonte e incerteza. O modelo só ganhará velocidades por classe de navio, duração de escala, desgaste e consumo de provisões depois de existir evidência suficiente para separar esses componentes.
+A base deve crescer com observações de viagens cuja partida, chegada e itinerário sejam suficientemente claros. Cada observação deve manter fonte e incerteza. Velocidades por classe de navio, capacidades físicas, taxas de consumo, reparos e efeitos quantitativos de pilotos só devem substituir as escalas abstratas quando houver documentação suficiente para separar esses componentes.
