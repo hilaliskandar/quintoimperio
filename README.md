@@ -13,15 +13,15 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 - tratar porto, hinterland e rota de abastecimento como dimensões distintas;
 - distinguir mercados, ancoradouros logísticos e marcos náuticos;
 - tratar conhecimento geográfico, náutico, comercial e político como recursos distintos;
-- separar conhecimento do personagem, conhecimento institucional, acesso comercial e capacidade de participar de uma expedição;
+- separar conhecimento do personagem, conhecimento institucional, acesso comercial, relações com atores e capacidade de participar de uma expedição;
 - representar monções, risco, intermediação, tributação e regimes de acesso sem atribuir precisão documental inexistente;
 - manter pessoas escravizadas fora da tabela de mercadorias ordinárias, com modelagem histórica própria.
 
 ## Estado atual
 
-A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, acesso institucional, risco marítimo inicial, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
+A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, acesso institucional, relações por atores documentados, risco marítimo inicial, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
 
-A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas e 5 permanências logísticas documentadas**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
+A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas, 5 permanências logísticas documentadas e 3 atores/comunidades historicamente normalizados no primeiro recorte relacional**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
 
 O domínio já oferece:
 
@@ -41,11 +41,17 @@ O domínio já oferece:
 - aquisição ativa por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`, sem copiar silenciosamente o conhecimento institucional;
 - rumor limitado a `RUMORED`, contato mercantil sem navegação operacional e consulta a piloto limitada a `PARTIAL`;
 - oportunidades de informação derivadas apenas de nós/rotas documentados, com repetição bloqueada por sessão e seleção determinística por semente;
-- `AccessModel` separado de conhecimento e reputação, derivado de `access_regime` dos nós;
+- `AccessModel` separado de conhecimento e relações, derivado de `access_regime` dos nós;
 - `OPEN_MARKET`/`CAPTAINCY` com acesso inicial aberto, `FOREIGN_NEGOTIATED` exigindo ação explícita, monopólios régios permanecendo restritos e ancoradouros/marcos náuticos não comerciais;
 - mercado conhecido mas ainda não autorizado permanecendo visível para consulta, porém não acionável para compra/venda;
 - negociação genérica sem taxa, presente, suborno ou probabilidade de sucesso inventados; o único custo v0.1 é um dia abstrato de simulação;
 - mercadorias com `node_goods.restricted=TRUE` bloqueadas independentemente do acesso portuário, de modo que uma autorização genérica não contorna monopólios específicos;
+- `RelationshipModel` com estado por ator, separado de conhecimento, acesso e comando institucional;
+- três atores/comunidades normalizados no primeiro gate: autoridade do Samudri Raja, mercadores muçulmanos/pardesi de Calecute e autoridade local de Melinde em 1498;
+- relações v0.1 limitadas a `UNESTABLISHED` e `CONTACTED`, sem pontuação global de reputação;
+- negociação de acesso e `MERCHANT_CONTACT` registrando contato somente quando existe associação histórica não ambígua com autoridade ou comunidade mercantil documentada;
+- ausência de ator genérico em portos ainda não pesquisados: uma negociação em Aden, por exemplo, não fabrica uma autoridade para preencher a interface;
+- atores ainda não contatados permanecendo ocultos na interface;
 - piloto guzerate de Melinde associado somente à rota documentada até Calecute;
 - `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
 - `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
@@ -53,12 +59,13 @@ O domínio já oferece:
 - eventos marítimos genéricos `SIMULATION` com seleção determinística por semente e no máximo um evento por viagem;
 - calmaria/atraso, mau tempo, avaria menor de aparelho e perturbação adicional de junho/julho, limitados a tempo e condição abstrata;
 - precedência documental: uma observação histórica exata pode suprimir eventos aleatórios em cronologia `GUIDED`, enquanto a mesma rota/data pode receber evento em modo `COUNTERFACTUAL`;
-- `GameSessionState` imutável reunindo navio, comércio, conhecimento, acesso, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
+- `GameSessionState` imutável reunindo navio, comércio, conhecimento, acesso, relações, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
 - provisões/condição abstratas, reabastecimento e reparo;
 - compra/venda somente em mercados documentados e institucionalmente acessíveis;
 - aprendizagem explícita por chegada e conclusão de rota;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
-- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, acesso, informação, mercado, armada ativa, escala histórica, espera, rotas e registro discreto do último evento de viagem;
+- rótulos cartográficos deslocáveis apenas para legibilidade, sem alterar as coordenadas dos nós, com teste de regressão contra sobreposição nos cenários padrão;
+- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, acesso, informação, relações estabelecidas, mercado, armada ativa, escala histórica, espera, rotas e registro discreto do último evento de viagem;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
 - modo `TECHNICAL` separado para testes de integração;
 - testes automatizados, smoke tests e capturas de interface no GitHub Actions.
@@ -73,9 +80,11 @@ A informação é um recurso acionável, mas de forma conservadora. Os canais ge
 
 O acesso institucional também é distinto do conhecimento. A chegada a Calecute pode tornar o mercado conhecido operacionalmente sem conceder automaticamente permissão para comerciar. `FOREIGN_NEGOTIATED` exige uma ação separada; o botão genérico não reconstrói a audiência de 1498, não quantifica os presentes de Gama e não presume impostos ou privilégios. Monopólios régios e restrições específicas de mercadorias continuam bloqueios independentes.
 
+A camada relacional começa igualmente de forma conservadora. Calecute não é comprimida em uma reputação única: a autoridade do Samudri Raja e a comunidade mercantil muçulmana/pardesi são atores distintos porque o corpus permite distingui-los. O estado `CONTACTED` registra apenas que houve interação explícita; não concede amizade, hostilidade, crédito, desconto ou influência. Portos sem ator historicamente normalizado permanecem sem relação inventada.
+
 O risco marítimo v0.1 é explicitamente uma camada de simulação. Os eventos não afirmam que determinado incidente ocorreu historicamente; apenas modificam viagens não fixadas pela evidência com dias adicionais e/ou perda de condição. Quando a cronologia guiada possui observação exata de rota e partida, a aleatoriedade é suprimida e o fato documentado tem precedência.
 
-Próximo sistema: relações/reputação diferenciadas com autoridades e comunidades mercantis. Cartas persistentes, desinformação, redes pessoais de confiança, perdas de carga, tripulação, combate e naufrágio permanecem para incrementos posteriores.
+Próximo sistema relacional: efeitos diferenciados de confiança, hostilidade, reputação, privilégios e crédito somente onde houver ator e justificativa histórica suficientes. Cartas persistentes, desinformação, redes pessoais de confiança, perdas de carga, tripulação, combate e naufrágio permanecem para incrementos posteriores.
 
 ## Estrutura
 
@@ -93,6 +102,8 @@ data/
   expeditions.csv
   expedition_routes.csv
   expedition_stops.csv
+  actors.csv
+  node_actors.csv
 
 simulation/
   README.md
@@ -119,6 +130,7 @@ docs/
   stop-method.md
   information-method.md
   access-method.md
+  relationship-method.md
   voyage-event-method.md
   interface-method.md
   roadmap.md
@@ -139,6 +151,7 @@ src/quintoimperio/domain/
   knowledge.py
   navigation.py
   port.py
+  relationship.py
   route_knowledge.py
   session.py
   stop.py
@@ -167,10 +180,15 @@ tests/
   test_expedition.py
   test_expedition_data.py
   test_information.py
+  test_interface_layout.py
+  test_interface_relationships.py
   test_knowledge.py
   test_navigation.py
   test_port.py
   test_port_data.py
+  test_relationship.py
+  test_relationship_data.py
+  test_relationship_session.py
   test_session.py
   test_stop.py
   test_trade.py
@@ -214,7 +232,7 @@ Cenário técnico de integração:
 python prototype/game.py --scenario TECHNICAL
 ```
 
-`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação. Em portos `FOREIGN_NEGOTIATED`, a interface oferece `Negociar acesso` quando aplicável. Eventos marítimos efetivamente ocorridos na simulação aparecem após a viagem como `SIM`, sem serem confundidos com fatos históricos.
+`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação. Em portos `FOREIGN_NEGOTIATED`, a interface oferece `Negociar acesso` quando aplicável. Relações só aparecem depois de contato explícito com um ator documentado. Eventos marítimos efetivamente ocorridos na simulação aparecem após a viagem como `SIM`, sem serem confundidos com fatos históricos.
 
 Renderização sem janela:
 
