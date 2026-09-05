@@ -23,6 +23,28 @@ class NavigationTests(unittest.TestCase):
 
     def test_malindi_calicut_has_two_preserved_1498_observations(self):
         self.assertEqual(sorted(self.model.observed_days("R_MAL_CAL")), [26, 27])
+        self.assertEqual(
+            sorted(
+                self.model.observed_days_for_departure(
+                    "R_MAL_CAL", date(1498, 4, 24)
+                )
+            ),
+            [26, 27],
+        )
+
+    def test_lisbon_cape_preserves_documented_1497_duration_without_noise(self):
+        departure = date(1497, 7, 8)
+        self.assertEqual(self.model.observed_days("R_LIS_CGH"), [134])
+        self.assertEqual(
+            self.model.observed_days_for_departure("R_LIS_CGH", departure), [134]
+        )
+        self.assertEqual(self.model.base_duration_days("R_LIS_CGH", departure), 134)
+        self.assertEqual(
+            self.model.estimate_duration_days("R_LIS_CGH", departure, seed=1), 134
+        )
+        self.assertEqual(
+            self.model.estimate_duration_days("R_LIS_CGH", departure, seed=999), 134
+        )
 
     def test_reference_progress_is_plausible_but_not_historical_speed_claim(self):
         # Faixa larga: apenas protege contra erros de unidade/coordenada.
@@ -33,6 +55,15 @@ class NavigationTests(unittest.TestCase):
         base = self.model.base_duration_days("R_MAL_CAL", date(1498, 4, 24))
         self.assertIsNotNone(base)
         self.assertAlmostEqual(base, 26.5, places=6)
+
+    def test_exact_malindi_calicut_observation_is_not_randomized(self):
+        departure = date(1498, 4, 24)
+        self.assertEqual(
+            self.model.estimate_duration_days("R_MAL_CAL", departure, seed=1), 26.5
+        )
+        self.assertEqual(
+            self.model.estimate_duration_days("R_MAL_CAL", departure, seed=999), 26.5
+        )
 
     def test_april_estimate_matches_reference_order_of_magnitude(self):
         days = self.model.estimate_duration_days(
