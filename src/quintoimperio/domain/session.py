@@ -19,6 +19,7 @@ from .expedition import ExpeditionModel
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .port import PortServiceKind, PortServiceModel, PortServiceQuote, PortServiceResult
 from .route_knowledge import RouteKnowledgeModel
+from .stop import ChronologyMode, ExpeditionStop, ExpeditionStopModel
 from .trade import CommercialState, TradeModel, TradeResult, TradeSide
 from .travel import TravelModel, VesselState, VoyagePlan
 
@@ -59,6 +60,8 @@ class GameSessionState:
     route_knowledge: tuple[RouteKnowledgeRecord, ...]
     active_expedition_id: str | None = None
     expedition_leg_sequence: int | None = None
+    chronology_mode: ChronologyMode = ChronologyMode.COUNTERFACTUAL
+    active_stop_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -79,8 +82,17 @@ class SessionPortServiceResult:
     service_result: PortServiceResult
 
 
+@dataclass(frozen=True)
+class SessionWaitResult:
+    executed: bool
+    reasons: tuple[str, ...]
+    days_waited: int
+    state_before: GameSessionState
+    state_after: GameSessionState
+
+
 class GameSessionModel:
-    """Compõe conhecimento, comércio, serviços, expedições e viagem."""
+    """Compõe conhecimento, comércio, serviços, expedições, escalas e viagem."""
 
     def __init__(self, root: Path | None = None) -> None:
         repository = RepositoryData(root)
@@ -88,6 +100,7 @@ class GameSessionModel:
         self.knowledge = KnowledgeModel(self.root)
         self.route_knowledge_model = RouteKnowledgeModel(self.root)
         self.expedition = ExpeditionModel(self.root)
+        self.stops = ExpeditionStopModel(self.root)
         self.trade = TradeModel(self.root)
         self.port = PortServiceModel(self.root)
         self.travel = TravelModel(self.root)
@@ -108,6 +121,7 @@ class GameSessionModel:
         capacity_total: float = 30.0,
         active_expedition_id: str | None = None,
         expedition_leg_sequence: int | None = None,
+        chronology_mode: ChronologyMode | str | None = None,
     ) -> GameSessionState:
         if active_expedition_id is not None:
             if active_expedition_id not in self.expedition.expeditions:
@@ -120,6 +134,17 @@ class GameSessionModel:
                 )
         elif expedition_leg_sequence is not None:
             raise ValueError("expedition_leg_sequence exige active_expedition_id")
+
+        if chronology_mode is None:
+            chronology = (
+                ChronologyMode.GUIDED
+                if active_expedition_id is not None
+                else ChronologyMode.COUNTERFACTUAL
+            )
+        elif isinstance(chronology_mode, ChronologyMode):
+            chronology = chronology_mode
+        else:
+            chronology = ChronologyMode(chronology_mode)
 
         node_records = tuple(
             NodeKnowledgeRecord(
@@ -150,6 +175,7 @@ class GameSessionModel:
             route_knowledge=route_records,
             active_expedition_id=active_expedition_id,
             expedition_leg_sequence=expedition_leg_sequence,
+            chronology_mode=chronology,
         )
 
     @staticmethod
@@ -165,6 +191,9 @@ class GameSessionModel:
 
     def route_nav(self, state: GameSessionState, route_id: str) -> KnowledgeLevel:
         return self._route_map(state)[route_id]
+
+    def active_stop(self, state: GameSessionState) -> ExpeditionStop | None:
+        return self.stops.stop(state.active_stop_id)
 
     @staticmethod
     def _replace_node_knowledge(
@@ -269,6 +298,49 @@ class GameSessionModel:
             service_result=result,
         )
 
+    def wait_for_stop_release(self, state: GameSessionState) -> SessionWaitResult:
+        """Avança somente o relógio até a partida documentada da escala ativa.
+
+        Esperar não concede provisões, reparos, mercadorias ou qualquer outro
+        efeito material. Esses efeitos continuam exigindo ações explícitas dos
+        respectivos modelos.
+        """
+        stop = self.active_stop(state)
+        if stop is None:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("NO_ACTIVE_EXPEDITION_STOP",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        if state.chronology_mode is not ChronologyMode.GUIDED:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("COUNTERFACTUAL_CHRONOLOGY_NO_FORCED_WAIT",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        days = self.stops.days_until_release(stop, state.vessel.clock.current_date)
+        if days == 0:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("STOP_RELEASE_ALREADY_REACHED",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        vessel = replace(state.vessel, clock=state.vessel.clock.advance(days))
+        after = self._replace_vessel(state, vessel)
+        return SessionWaitResult(
+            executed=True,
+            reasons=(),
+            days_waited=days,
+            state_before=state,
+            state_after=after,
+        )
+
     def _blocked_trade(
         self, state: GameSessionState, reason: str
     ) -> SessionTradeResult:
@@ -350,7 +422,7 @@ class GameSessionModel:
         pilot_id: str | None = None,
         seed: int = 0,
     ) -> VoyagePlan:
-        return self.travel.plan_voyage(
+        plan = self.travel.plan_voyage(
             state.vessel,
             route_id,
             self.route_nav(state, route_id),
@@ -358,6 +430,15 @@ class GameSessionModel:
             fleet_command=self.expedition_authorizes(state, route_id),
             seed=seed,
         )
+        stop = self.active_stop(state)
+        if (
+            stop is not None
+            and state.chronology_mode is ChronologyMode.GUIDED
+            and not self.stops.release_reached(stop, state.vessel.clock.current_date)
+        ):
+            blockers = tuple(dict.fromkeys((*plan.blockers, "HISTORICAL_STOP_NOT_RELEASED")))
+            return replace(plan, feasible=False, blockers=blockers)
+        return plan
 
     @staticmethod
     def _at_least(current: KnowledgeLevel, minimum: int) -> KnowledgeLevel:
@@ -368,9 +449,24 @@ class GameSessionModel:
     ) -> GameSessionState:
         expedition_leg_completed = self.expedition_authorizes(state, plan.route_id)
         completed_sequence = state.expedition_leg_sequence
+        completed_expedition_id = state.active_expedition_id
+
+        chronology = state.chronology_mode
+        departing_stop = self.active_stop(state)
+        if (
+            departing_stop is not None
+            and chronology is ChronologyMode.GUIDED
+            and state.vessel.clock.current_date > departing_stop.departure_date
+        ):
+            chronology = ChronologyMode.COUNTERFACTUAL
 
         vessel_after = self.travel.execute_voyage(state.vessel, plan)
-        after = replace(state, vessel=vessel_after)
+        after = replace(
+            state,
+            vessel=vessel_after,
+            chronology_mode=chronology,
+            active_stop_id=None,
+        )
 
         destination = self.node_state(after, plan.destination_node)
         learned_destination = KnowledgeState(
@@ -393,10 +489,25 @@ class GameSessionModel:
         after = self._replace_route_knowledge(after, plan.route_id, learned_route)
 
         if expedition_leg_completed:
-            assert state.active_expedition_id is not None
+            assert completed_expedition_id is not None
             assert completed_sequence is not None
+            stop = self.stops.for_leg(completed_expedition_id, completed_sequence)
+            if stop is not None:
+                if (
+                    chronology is ChronologyMode.GUIDED
+                    and not self.stops.arrives_on_schedule(
+                        stop, vessel_after.clock.current_date
+                    )
+                ):
+                    chronology = ChronologyMode.COUNTERFACTUAL
+                after = replace(
+                    after,
+                    chronology_mode=chronology,
+                    active_stop_id=stop.stop_id,
+                )
+
             next_id, next_sequence = self.expedition.advance(
-                state.active_expedition_id, completed_sequence
+                completed_expedition_id, completed_sequence
             )
             after = replace(
                 after,
