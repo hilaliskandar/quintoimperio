@@ -16,6 +16,7 @@ from quintoimperio.data.loader import RepositoryData
 
 from .calendar import GameClock
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
+from .port import PortServiceKind, PortServiceModel, PortServiceQuote, PortServiceResult
 from .route_knowledge import RouteKnowledgeModel
 from .trade import CommercialState, TradeModel, TradeResult, TradeSide
 from .travel import TravelModel, VesselState, VoyagePlan
@@ -66,8 +67,17 @@ class SessionTradeResult:
     trade_result: TradeResult | None
 
 
+@dataclass(frozen=True)
+class SessionPortServiceResult:
+    executed: bool
+    reasons: tuple[str, ...]
+    state_before: GameSessionState
+    state_after: GameSessionState
+    service_result: PortServiceResult
+
+
 class GameSessionModel:
-    """Compõe conhecimento, comércio e viagem sem dependência de interface."""
+    """Compõe conhecimento, comércio, serviços portuários e viagem."""
 
     def __init__(self, root: Path | None = None) -> None:
         repository = RepositoryData(root)
@@ -75,6 +85,7 @@ class GameSessionModel:
         self.knowledge = KnowledgeModel(self.root)
         self.route_knowledge_model = RouteKnowledgeModel(self.root)
         self.trade = TradeModel(self.root)
+        self.port = PortServiceModel(self.root)
         self.travel = TravelModel(self.root)
         self.routes = self.travel.routes
         self.rules = {
@@ -163,6 +174,15 @@ class GameSessionModel:
             route_knowledge=tuple(records),
         )
 
+    @staticmethod
+    def _replace_vessel(state: GameSessionState, vessel: VesselState) -> GameSessionState:
+        return GameSessionState(
+            vessel=vessel,
+            commerce=state.commerce,
+            node_knowledge=state.node_knowledge,
+            route_knowledge=state.route_knowledge,
+        )
+
     def scenario_set_node_knowledge(
         self, state: GameSessionState, node_id: str, knowledge: KnowledgeState
     ) -> GameSessionState:
@@ -207,6 +227,41 @@ class GameSessionModel:
             knowledge_level=knowledge,
             actionable=True,
             entries=tuple(entries),
+        )
+
+    def service_quote(
+        self, state: GameSessionState, service: PortServiceKind
+    ) -> PortServiceQuote:
+        return self.port.quote(state.vessel.location_node, service)
+
+    def reprovision(
+        self, state: GameSessionState, requested_days: float
+    ) -> SessionPortServiceResult:
+        result = self.port.reprovision(
+            state.vessel, state.vessel.location_node, requested_days
+        )
+        after = self._replace_vessel(state, result.state_after)
+        return SessionPortServiceResult(
+            executed=result.success,
+            reasons=result.blockers,
+            state_before=state,
+            state_after=after,
+            service_result=result,
+        )
+
+    def repair(
+        self, state: GameSessionState, requested_points: float
+    ) -> SessionPortServiceResult:
+        result = self.port.repair(
+            state.vessel, state.vessel.location_node, requested_points
+        )
+        after = self._replace_vessel(state, result.state_after)
+        return SessionPortServiceResult(
+            executed=result.success,
+            reasons=result.blockers,
+            state_before=state,
+            state_after=after,
+            service_result=result,
         )
 
     def _blocked_trade(
