@@ -16,14 +16,30 @@ class ExpeditionModelTests(unittest.TestCase):
 
     def test_gama_expedition_has_ordered_outbound_legs(self):
         legs = self.model.legs["EXP_GAMA_1497"]
-        self.assertEqual([leg.sequence for leg in legs], [1, 2, 3, 4, 5])
+        self.assertEqual([leg.sequence for leg in legs], list(range(1, 11)))
         self.assertEqual(
             [leg.route_id for leg in legs],
-            ["R_LIS_CGH", "R_CGH_MOZ", "R_MOZ_MOM", "R_MOM_MAL", "R_MAL_CAL"],
+            [
+                "R_LIS_STG",
+                "R_STG_SHB",
+                "R_SHB_CGH",
+                "R_CGH_SBR",
+                "R_SBR_RCO",
+                "R_RCO_RBS",
+                "R_RBS_MOZ",
+                "R_MOZ_MOM",
+                "R_MOM_MAL",
+                "R_MAL_CAL",
+            ],
         )
 
     def test_command_authorization_is_route_and_period_specific(self):
         self.assertTrue(
+            self.model.authorizes(
+                "EXP_GAMA_1497", 1, "R_LIS_STG", date(1497, 7, 8)
+            )
+        )
+        self.assertFalse(
             self.model.authorizes(
                 "EXP_GAMA_1497", 1, "R_LIS_CGH", date(1497, 7, 8)
             )
@@ -35,7 +51,7 @@ class ExpeditionModelTests(unittest.TestCase):
         )
         self.assertFalse(
             self.model.authorizes(
-                "EXP_GAMA_1497", 1, "R_LIS_CGH", date(1498, 7, 8)
+                "EXP_GAMA_1497", 1, "R_LIS_STG", date(1498, 7, 8)
             )
         )
 
@@ -45,31 +61,40 @@ class ExpeditionSessionTests(unittest.TestCase):
     def setUpClass(cls):
         cls.model = GameSessionModel()
 
-    def test_fleet_command_enables_first_leg_without_upgrading_knowledge_before_departure(self):
+    def test_fleet_command_enables_first_segment_without_upgrading_knowledge_before_departure(self):
         state = self.model.initial_state(
             active_expedition_id="EXP_GAMA_1497",
             provision_days=1000.0,
         )
         self.assertEqual(
-            self.model.route_nav(state, "R_LIS_CGH"), KnowledgeLevel.PARTIAL
+            self.model.route_nav(state, "R_LIS_STG"), KnowledgeLevel.PARTIAL
         )
-        plan = self.model.plan_voyage(state, "R_LIS_CGH", seed=1497)
+        plan = self.model.plan_voyage(state, "R_LIS_STG", seed=1497)
         self.assertTrue(plan.feasible)
         self.assertEqual(plan.navigation_basis, NavigationBasis.FLEET_COMMAND)
-        self.assertEqual(plan.travel_days, 134)
-        self.assertEqual(plan.arrival_date, date(1497, 11, 19))
+        self.assertEqual(plan.travel_days, 19)
+        self.assertEqual(plan.arrival_date, date(1497, 7, 27))
         self.assertEqual(
-            self.model.route_nav(state, "R_LIS_CGH"), KnowledgeLevel.PARTIAL
+            self.model.route_nav(state, "R_LIS_STG"), KnowledgeLevel.PARTIAL
         )
 
         arrived = self.model.execute_voyage(state, plan)
-        self.assertEqual(arrived.vessel.location_node, "CGH")
-        self.assertEqual(arrived.vessel.clock.current_date, date(1497, 11, 19))
+        self.assertEqual(arrived.vessel.location_node, "STG")
+        self.assertEqual(arrived.vessel.clock.current_date, date(1497, 7, 27))
         self.assertGreaterEqual(
-            self.model.route_nav(arrived, "R_LIS_CGH"), KnowledgeLevel.OPERATIONAL
+            self.model.route_nav(arrived, "R_LIS_STG"), KnowledgeLevel.OPERATIONAL
         )
         self.assertEqual(arrived.active_expedition_id, "EXP_GAMA_1497")
         self.assertEqual(arrived.expedition_leg_sequence, 2)
+
+    def test_strategic_aggregate_is_not_executable(self):
+        state = self.model.initial_state(
+            active_expedition_id="EXP_GAMA_1497",
+            provision_days=1000.0,
+        )
+        plan = self.model.plan_voyage(state, "R_LIS_CGH", seed=1497)
+        self.assertFalse(plan.feasible)
+        self.assertIn("STRATEGIC_AGGREGATE_NOT_EXECUTABLE", plan.blockers)
 
     def test_expedition_does_not_authorize_unrelated_route(self):
         state = self.model.initial_state(
@@ -88,7 +113,7 @@ class ExpeditionSessionTests(unittest.TestCase):
             location_node="MAL",
             start_date=date(1498, 4, 24),
             active_expedition_id="EXP_GAMA_1497",
-            expedition_leg_sequence=5,
+            expedition_leg_sequence=10,
             provision_days=60.0,
         )
         plan = self.model.plan_voyage(
