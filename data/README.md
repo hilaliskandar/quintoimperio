@@ -37,6 +37,12 @@ Pessoas ou registros historicos de pilotos que podem ser associados a um local e
 ### `pilot_routes.csv`
 Competencias de piloto documentadas por rota e periodo. Esta tabela nao atribui bonus de velocidade ou consumo: apenas registra que a fonte sustenta capacidade de guia em determinada conexao.
 
+### `expeditions.csv`
+Expedicoes ou armadas historicamente documentadas. A primeira linha registra a armada de Vasco da Gama de 1497-1499, sua autoridade, lideranca e o carater misto do financiamento documentado. A tabela nao fixa a identidade do protagonista.
+
+### `expedition_routes.csv`
+Sequencia de pernas agregadas associadas a uma expedicao. `FLEET_COMMAND` registra uma base institucional de participacao na viagem; nao e conhecimento nautico individual e nao concede bonus quantitativo. As arestas continuam sendo abstracoes do grafo e nao derrotas historicas exatas.
+
 ## Campos de evidencia
 
 `evidence_grade` usa `A`, `B`, `C` ou `D`, conforme `docs/historical-method.md`.
