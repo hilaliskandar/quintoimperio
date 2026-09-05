@@ -1,9 +1,9 @@
 """Estado de sessão para o primeiro loop contínuo do jogo.
 
 O módulo compõe modelos existentes. Valores monetários, capacidade, provisões,
-desgaste e preços continuam índices de simulação. Overrides com prefixo
-``scenario_`` existem para testes/demonstrações e não definem por si só o estado
-histórico da campanha.
+desgaste, preços e custos de tempo de interações continuam índices de
+simulação. Overrides com prefixo ``scenario_`` existem para testes/demonstrações
+e não definem por si só o estado histórico da campanha.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from quintoimperio.data.loader import RepositoryData
 
 from .calendar import GameClock
 from .expedition import ExpeditionModel
+from .information import InformationChannel, InformationModel, InformationOpportunity
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .port import PortServiceKind, PortServiceModel, PortServiceQuote, PortServiceResult
 from .route_knowledge import RouteKnowledgeModel
@@ -62,6 +63,7 @@ class GameSessionState:
     expedition_leg_sequence: int | None = None
     chronology_mode: ChronologyMode = ChronologyMode.COUNTERFACTUAL
     active_stop_id: str | None = None
+    information_history: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -91,14 +93,24 @@ class SessionWaitResult:
     state_after: GameSessionState
 
 
+@dataclass(frozen=True)
+class SessionInformationResult:
+    executed: bool
+    reasons: tuple[str, ...]
+    state_before: GameSessionState
+    state_after: GameSessionState
+    opportunity: InformationOpportunity | None
+
+
 class GameSessionModel:
-    """Compõe conhecimento, comércio, serviços, expedições, escalas e viagem."""
+    """Compõe conhecimento, informação, comércio, serviços e viagem."""
 
     def __init__(self, root: Path | None = None) -> None:
         repository = RepositoryData(root)
         self.root = repository.root
         self.knowledge = KnowledgeModel(self.root)
         self.route_knowledge_model = RouteKnowledgeModel(self.root)
+        self.information = InformationModel(self.root)
         self.expedition = ExpeditionModel(self.root)
         self.stops = ExpeditionStopModel(self.root)
         self.trade = TradeModel(self.root)
@@ -228,6 +240,100 @@ class GameSessionModel:
     ) -> GameSessionState:
         """Override explícito para cenário técnico; não altera regras históricas."""
         return self._replace_route_knowledge(state, route_id, nav)
+
+    @staticmethod
+    def _at_least(current: KnowledgeLevel, minimum: int | KnowledgeLevel) -> KnowledgeLevel:
+        return KnowledgeLevel(max(int(current), int(minimum)))
+
+    def _information_would_improve(
+        self, state: GameSessionState, opportunity: InformationOpportunity
+    ) -> bool:
+        node = self.node_state(state, opportunity.target_node_id)
+        route = self.route_nav(state, opportunity.target_route_id)
+        return any(
+            (
+                node.geo < opportunity.geo_min,
+                node.market < opportunity.market_min,
+                node.political < opportunity.political_min,
+                route < opportunity.route_nav_min,
+            )
+        )
+
+    def information_opportunities(
+        self,
+        state: GameSessionState,
+        channel: InformationChannel | str | None = None,
+    ) -> tuple[InformationOpportunity, ...]:
+        """Lista somente interações que podem acrescentar conhecimento pessoal.
+
+        Esta operação não consulta a perspectiva ``CROWN``. O alvo decorre da
+        conectividade documentada a partir do nó atual.
+        """
+        parsed = None if channel is None else InformationChannel(channel)
+        structural = self.information.opportunities(
+            state.vessel.location_node,
+            state.vessel.clock.current_date,
+            channel=parsed,
+            used_ids=state.information_history,
+        )
+        return tuple(
+            item for item in structural if self._information_would_improve(state, item)
+        )
+
+    def acquire_information(
+        self,
+        state: GameSessionState,
+        channel: InformationChannel | str,
+        *,
+        seed: int = 0,
+    ) -> SessionInformationResult:
+        """Executa uma interação genérica e melhora apenas o estado PLAYER."""
+        parsed = InformationChannel(channel)
+        opportunities = self.information_opportunities(state, parsed)
+        chosen = self.information.choose(
+            opportunities,
+            seed=seed,
+            node_id=state.vessel.location_node,
+            on_date=state.vessel.clock.current_date,
+            channel=parsed,
+        )
+        if chosen is None:
+            return SessionInformationResult(
+                executed=False,
+                reasons=("NO_INFORMATION_OPPORTUNITY",),
+                state_before=state,
+                state_after=state,
+                opportunity=None,
+            )
+
+        target = self.node_state(state, chosen.target_node_id)
+        learned_node = KnowledgeState(
+            geo=self._at_least(target.geo, chosen.geo_min),
+            nav=target.nav,
+            market=self._at_least(target.market, chosen.market_min),
+            political=self._at_least(target.political, chosen.political_min),
+        )
+        after = self._replace_node_knowledge(state, chosen.target_node_id, learned_node)
+        learned_route = self._at_least(
+            self.route_nav(after, chosen.target_route_id), chosen.route_nav_min
+        )
+        after = self._replace_route_knowledge(after, chosen.target_route_id, learned_route)
+        vessel = replace(
+            after.vessel,
+            clock=after.vessel.clock.advance(chosen.time_days),
+        )
+        after = replace(
+            after,
+            vessel=vessel,
+            information_history=(*after.information_history, chosen.opportunity_id),
+        )
+        return SessionInformationResult(
+            executed=True,
+            reasons=(),
+            state_before=state,
+            state_after=after,
+            opportunity=chosen,
+        )
 
     def market_view(self, state: GameSessionState, seed: int = 0) -> MarketView:
         node_id = state.vessel.location_node
@@ -439,10 +545,6 @@ class GameSessionModel:
             blockers = tuple(dict.fromkeys((*plan.blockers, "HISTORICAL_STOP_NOT_RELEASED")))
             return replace(plan, feasible=False, blockers=blockers)
         return plan
-
-    @staticmethod
-    def _at_least(current: KnowledgeLevel, minimum: int) -> KnowledgeLevel:
-        return KnowledgeLevel(max(int(current), minimum))
 
     def execute_voyage(
         self, state: GameSessionState, plan: VoyagePlan
