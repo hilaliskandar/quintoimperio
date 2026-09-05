@@ -1,4 +1,4 @@
-# Método cartográfico v0.3
+# Método cartográfico do núcleo v0.1 — renderizador cartográfico v0.3
 
 ## Regra principal
 
@@ -8,6 +8,8 @@ O mapa do jogo não pode inventar costa, posição de porto ou trajeto marítimo
 2. a incerteza seja explicitamente registrada;
 3. `coordinate_confidence` não seja `HIGH`;
 4. a interface deixe claro que o ponto é aproximado.
+
+Este documento descreve o comportamento cartográfico do núcleo jogável **v0.1**. A marca **v0.3** usada abaixo refere-se exclusivamente à terceira iteração do renderizador cartográfico programático de referência; ela não altera a versão funcional do núcleo de jogo.
 
 ## Duas camadas distintas
 
@@ -20,7 +22,7 @@ O gerador cartográfico é uma ferramenta de desenvolvimento e não uma dependê
 
 ## Costa
 
-A referência v0.3 usa a costa real distribuída com Basemap. Não são desenhadas fronteiras políticas modernas, porque elas seriam anacrônicas para 1497–1500. O fundo cartográfico serve para posicionamento espacial, inspeção e produção de uma referência estética reprodutível.
+O renderizador cartográfico de referência v0.3 usa a costa real distribuída com Basemap. Não são desenhadas fronteiras políticas modernas, porque elas seriam anacrônicas para 1497–1500. O fundo cartográfico serve para posicionamento espacial, inspeção e produção de uma referência estética reprodutível.
 
 Instalação opcional:
 
@@ -65,7 +67,7 @@ Na referência de desenvolvimento, as conexões de exploração portuguesa e as 
 
 ## Estética histórica programática
 
-A v0.3 adiciona uma camada estética procedural inspirada em cartas náuticas dos séculos XV–XVI:
+O renderizador cartográfico v0.3 adiciona uma camada estética procedural inspirada em cartas náuticas dos séculos XV–XVI:
 
 - paleta de pergaminho;
 - linhas de rumo decorativas;
