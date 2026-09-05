@@ -80,25 +80,30 @@ A implementação continua independente de Pygame.
 
 ## Fase 3 — Primeiro mapa e loop jogável
 
-Status: **próxima fase**.
+Status: **mapa v0.1 implementado; loop jogável em construção**.
 
-Objetivo: colocar o domínio validado numa interface 2D mínima.
+Implementado:
 
-Arquitetura definida pelo ADR 0001: Python 3.12 + pygame-ce.
+- `WorldMapModel` independente de Pygame;
+- projeção equiretangular simples de coordenadas reais de `nodes.csv`;
+- exclusão automática de nós sem coordenadas defensáveis;
+- visibilidade de nós condicionada ao conhecimento geográfico do personagem/Coroa;
+- visibilidade de rotas sem revelar conexões classificadas como `UNKNOWN`;
+- linhas de rota tratadas como arestas do grafo, não como reconstrução do percurso navegado;
+- protótipo Pygame capaz de abrir janela ou renderizar PNG em modo headless;
+- ausência deliberada de costa até incorporar dado cartográfico real;
+- smoke test cartográfico no GitHub Actions.
 
-Loop mínimo:
+Próximo incremento do loop:
 
-1. consultar mapa e informações conhecidas;
-2. entrar em um porto;
-3. consultar mercado;
-4. comprar carga dentro da capacidade;
-5. escolher destino navegável;
-6. consumir tempo e provisões na viagem;
-7. processar risco/evento;
-8. chegar e vender;
-9. atualizar conhecimento e relações.
+1. serviços portuários mínimos de reabastecimento e reparo;
+2. estado de porto e consulta de mercado;
+3. seleção de destino navegável no mapa;
+4. compra de carga dentro da capacidade;
+5. viagem utilizando o `TravelModel`;
+6. chegada, venda e atualização do conhecimento.
 
-O primeiro mapa deve projetar os nós a partir de coordenadas reais. Uma costa de fundo só pode ser incorporada a partir de dados cartográficos reais; não usar mapas geográficos inventados por IA.
+A costa de fundo só pode ser incorporada a partir de dados cartográficos reais, com origem, licença e versão documentadas. Não usar mapas geográficos inventados por IA.
 
 ## Fase 4 — Portos, instituições e relações
 
@@ -146,7 +151,9 @@ Somente após estabilizar o núcleo:
 - conhecimento dividido em quatro dimensões e separado entre personagem e Coroa;
 - provisões representadas provisoriamente por dias-equivalentes, não por unidades físicas inventadas;
 - desgaste representado provisoriamente por escala abstrata de condição;
-- piloto documentado habilita rota específica sem bônus quantitativo não sustentado.
+- piloto documentado habilita rota específica sem bônus quantitativo não sustentado;
+- primeiro mapa usa somente coordenadas reais disponíveis e não inventa costa;
+- linhas do mapa representam conexões abstratas do grafo, não derrotas históricas.
 
 ## Decisões ainda abertas
 
@@ -155,7 +162,7 @@ Somente após estabilizar o núcleo:
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
-- formato definitivo do mapa costeiro e nível de detalhe cartográfico;
+- conjunto cartográfico real e nível de detalhe da costa;
 - modelo de eventos marítimos e avarias.
 
 Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
