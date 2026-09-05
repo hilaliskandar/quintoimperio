@@ -32,18 +32,22 @@ O domínio já oferece:
 - itinerário de 1497–1498 segmentado operacionalmente em Lisboa → São Thiago → baía de Santa Helena → Cabo → São Brás → Rio do Cobre → Rio dos Bons Sinais → Moçambique → Mombaça → Melinde → Calecute;
 - Lisboa–Cabo e Cabo–Moçambique preservadas apenas como conexões estratégicas agregadas e explicitamente não executáveis;
 - permanências históricas em São Thiago, baía de Santa Helena, São Brás, Rio do Cobre e Rio dos Bons Sinais, com água, madeira, carenagem, reparos e transferência de carga registrados separadamente;
+- `ChronologyMode.GUIDED` e `ChronologyMode.COUNTERFACTUAL`, distinguindo campanha ainda alinhada à cronologia documentada de trajetória já divergente;
+- bloqueio de partida antes da data documentada quando há escala guiada ativa;
+- ação explícita de espera até a partida documentada, sem conceder automaticamente provisões, reparos, carga ou dinheiro;
+- serviços portuários consumindo o mesmo calendário da permanência;
 - quatro dimensões de conhecimento por nó e conhecimento náutico separado por rota;
 - estados separados para personagem e Coroa;
 - piloto guzerate de Melinde associado somente à rota documentada até Calecute;
 - `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
 - `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
 - `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND` como bases distintas de viagem;
-- `GameSessionState` imutável reunindo navio, comércio, conhecimento e expedição ativa;
+- `GameSessionState` imutável reunindo navio, comércio, conhecimento, expedição ativa, cronologia e escala ativa;
 - provisões/condição abstratas, reabastecimento e reparo;
 - compra/venda somente em mercados documentados;
 - aprendizagem explícita por chegada e conclusão de rota;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
-- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, mercado, armada ativa e rotas;
+- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, mercado, armada ativa, escala histórica, espera e rotas;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
 - modo `TECHNICAL` separado para testes de integração;
 - testes automatizados, smoke tests e capturas de interface no GitHub Actions.
@@ -52,7 +56,9 @@ A arquitetura do primeiro jogável é **Python 3.12 + pygame-ce**, com núcleo d
 
 A segmentação do itinerário corrige um problema importante da primeira versão: 134 dias Lisboa–Cabo não são mais tratados como uma única perna operacional. O `Roteiro` passa a ser a fonte primária de cronologia fina; datas reconstruídas entre colchetes na edição Ravenstein são explicitamente marcadas como editoriais. O limite de provisões da simulação foi ampliado somente para comportar a longa perna São Thiago–baía de Santa Helena e continua sendo um índice abstrato, não capacidade histórica de um navio.
 
-Próximos sistemas: integrar melhor as permanências da armada ao calendário jogável e introduzir aquisição de informação por rumor, conversa, carta, piloto e contato mercantil.
+A permanência em escala também não produz efeitos materiais por simples passagem do tempo. Uma atividade documentada como `WATER`, `CARENING` ou `MAST_REPAIR` registra evidência; seus efeitos jogáveis continuam exigindo ação explícita. Se o jogador ultrapassa a data documentada de partida e prossegue, a sessão passa para cronologia contrafactual em vez de forçar artificialmente o calendário histórico.
+
+Próximos sistemas: aquisição de informação por rumor, conversa, carta, piloto e contato mercantil; depois, eventos marítimos e relações institucionais mais detalhadas.
 
 ## Estrutura
 
@@ -90,6 +96,7 @@ docs/
   port-method.md
   trade-method.md
   session-method.md
+  stop-method.md
   interface-method.md
   roadmap.md
   sources.md
@@ -109,6 +116,7 @@ src/quintoimperio/domain/
   port.py
   route_knowledge.py
   session.py
+  stop.py
   trade.py
   travel.py
   world_map.py
@@ -135,6 +143,7 @@ tests/
   test_port.py
   test_port_data.py
   test_session.py
+  test_stop.py
   test_trade.py
   test_travel.py
   test_world_map.py
@@ -174,7 +183,7 @@ Cenário técnico de integração:
 python prototype/game.py --scenario TECHNICAL
 ```
 
-`R` reinicia, `Tab` alterna os modos e `Esc` encerra.
+`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente.
 
 Renderização sem janela:
 
