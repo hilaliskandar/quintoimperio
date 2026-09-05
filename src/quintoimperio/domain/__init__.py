@@ -1,5 +1,6 @@
 """Regras de dominio independentes da interface grafica."""
 
+from .access import AccessModel, AccessRule, AccessStatus, AccessView
 from .calendar import GameClock, MonsoonPhase, monsoon_phase
 from .economy import EconomyModel
 from .expedition import ExpeditionLeg, ExpeditionModel
@@ -20,12 +21,14 @@ from .port import (
 )
 from .route_knowledge import RouteKnowledgeModel
 from .session import (
+    AccessRecord,
     GameSessionModel,
     GameSessionState,
     MarketEntry,
     MarketView,
     NodeKnowledgeRecord,
     RouteKnowledgeRecord,
+    SessionAccessResult,
     SessionInformationResult,
     SessionPortServiceResult,
     SessionTradeResult,
@@ -38,6 +41,11 @@ from .voyage_event import VoyageEvent, VoyageEventModel, VoyageEventRule, Voyage
 from .world_map import MapEdge, MapExtent, MapPoint, WorldMapModel
 
 __all__ = [
+    "AccessModel",
+    "AccessRecord",
+    "AccessRule",
+    "AccessStatus",
+    "AccessView",
     "CargoHolding",
     "ChronologyMode",
     "CommercialState",
@@ -72,6 +80,7 @@ __all__ = [
     "RouteKnowledgeModel",
     "RouteKnowledgeRecord",
     "ServiceAvailability",
+    "SessionAccessResult",
     "SessionInformationResult",
     "SessionPortServiceResult",
     "SessionTradeResult",
