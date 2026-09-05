@@ -1,6 +1,6 @@
 import unittest
 
-from prototype.economy import EconomyModel
+from quintoimperio.domain import EconomyModel
 
 
 class EconomyPrototypeTests(unittest.TestCase):
