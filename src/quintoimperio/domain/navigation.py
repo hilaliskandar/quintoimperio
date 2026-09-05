@@ -118,6 +118,15 @@ class NavigationModel:
         except KeyError as exc:
             raise KeyError(f"Regra de navegação ausente para {key[0]}/{key[1]}") from exc
 
+    def base_duration_days(self, route_id: str, departure: date) -> float | None:
+        """Duração-base sem ruído, usada para auditoria da calibração."""
+        distance = self.route_geodesic_nm(route_id)
+        if distance is None:
+            return None
+        return (
+            distance / self.reference_daily_nm
+        ) * self.seasonal_multiplier(route_id, departure)
+
     def estimate_duration_days(
         self, route_id: str, departure: date, seed: int = 0
     ) -> float | None:
@@ -128,15 +137,13 @@ class NavigationModel:
         direção específica é favorecida pela monção: isso exigirá evidência
         regional por rota.
         """
-        distance = self.route_geodesic_nm(route_id)
-        if distance is None:
+        base_days = self.base_duration_days(route_id, departure)
+        if base_days is None:
             return None
 
-        base_days = distance / self.reference_daily_nm
-        seasonal = self.seasonal_multiplier(route_id, departure)
         noise_fraction = float(
             self.navigation_rules[("DURATION_NOISE_FRACTION", "DEFAULT")]
         )
         rng = random.Random(f"navigation:{seed}:{route_id}:{departure.isoformat()}")
         noise = rng.uniform(1.0 - noise_fraction, 1.0 + noise_fraction)
-        return base_days * seasonal * noise
+        return base_days * noise
