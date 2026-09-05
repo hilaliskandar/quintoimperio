@@ -1,20 +1,21 @@
 """Estado de sessão para o primeiro loop contínuo do jogo.
 
-O módulo apenas compõe modelos já existentes. Valores monetários, capacidade,
-provisões, desgaste e preços continuam índices de simulação. Overrides com
-prefixo ``scenario_`` existem para testes/demonstrações técnicas e não definem
-o estado histórico inicial da campanha.
+O módulo compõe modelos existentes. Valores monetários, capacidade, provisões,
+desgaste e preços continuam índices de simulação. Overrides com prefixo
+``scenario_`` existem para testes/demonstrações e não definem por si só o estado
+histórico da campanha.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 
 from quintoimperio.data.loader import RepositoryData
 
 from .calendar import GameClock
+from .expedition import ExpeditionModel
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .port import PortServiceKind, PortServiceModel, PortServiceQuote, PortServiceResult
 from .route_knowledge import RouteKnowledgeModel
@@ -56,6 +57,8 @@ class GameSessionState:
     commerce: CommercialState
     node_knowledge: tuple[NodeKnowledgeRecord, ...]
     route_knowledge: tuple[RouteKnowledgeRecord, ...]
+    active_expedition_id: str | None = None
+    expedition_leg_sequence: int | None = None
 
 
 @dataclass(frozen=True)
@@ -77,13 +80,14 @@ class SessionPortServiceResult:
 
 
 class GameSessionModel:
-    """Compõe conhecimento, comércio, serviços portuários e viagem."""
+    """Compõe conhecimento, comércio, serviços, expedições e viagem."""
 
     def __init__(self, root: Path | None = None) -> None:
         repository = RepositoryData(root)
         self.root = repository.root
         self.knowledge = KnowledgeModel(self.root)
         self.route_knowledge_model = RouteKnowledgeModel(self.root)
+        self.expedition = ExpeditionModel(self.root)
         self.trade = TradeModel(self.root)
         self.port = PortServiceModel(self.root)
         self.travel = TravelModel(self.root)
@@ -102,7 +106,21 @@ class GameSessionModel:
         condition: float = 100.0,
         capital_index: float = 100.0,
         capacity_total: float = 30.0,
+        active_expedition_id: str | None = None,
+        expedition_leg_sequence: int | None = None,
     ) -> GameSessionState:
+        if active_expedition_id is not None:
+            if active_expedition_id not in self.expedition.expeditions:
+                raise KeyError(f"Expedicao desconhecida: {active_expedition_id}")
+            if expedition_leg_sequence is None:
+                expedition_leg_sequence = self.expedition.first_sequence(active_expedition_id)
+            if self.expedition.leg(active_expedition_id, expedition_leg_sequence) is None:
+                raise KeyError(
+                    f"Perna inexistente: {active_expedition_id}/{expedition_leg_sequence}"
+                )
+        elif expedition_leg_sequence is not None:
+            raise ValueError("expedition_leg_sequence exige active_expedition_id")
+
         node_records = tuple(
             NodeKnowledgeRecord(
                 node_id=node_id,
@@ -130,6 +148,8 @@ class GameSessionModel:
             ),
             node_knowledge=node_records,
             route_knowledge=route_records,
+            active_expedition_id=active_expedition_id,
+            expedition_leg_sequence=expedition_leg_sequence,
         )
 
     @staticmethod
@@ -153,12 +173,7 @@ class GameSessionModel:
         records = [record for record in state.node_knowledge if record.node_id != node_id]
         records.append(NodeKnowledgeRecord(node_id=node_id, state=knowledge))
         records.sort(key=lambda record: record.node_id)
-        return GameSessionState(
-            vessel=state.vessel,
-            commerce=state.commerce,
-            node_knowledge=tuple(records),
-            route_knowledge=state.route_knowledge,
-        )
+        return replace(state, node_knowledge=tuple(records))
 
     @staticmethod
     def _replace_route_knowledge(
@@ -167,21 +182,11 @@ class GameSessionModel:
         records = [record for record in state.route_knowledge if record.route_id != route_id]
         records.append(RouteKnowledgeRecord(route_id=route_id, nav=nav))
         records.sort(key=lambda record: record.route_id)
-        return GameSessionState(
-            vessel=state.vessel,
-            commerce=state.commerce,
-            node_knowledge=state.node_knowledge,
-            route_knowledge=tuple(records),
-        )
+        return replace(state, route_knowledge=tuple(records))
 
     @staticmethod
     def _replace_vessel(state: GameSessionState, vessel: VesselState) -> GameSessionState:
-        return GameSessionState(
-            vessel=vessel,
-            commerce=state.commerce,
-            node_knowledge=state.node_knowledge,
-            route_knowledge=state.route_knowledge,
-        )
+        return replace(state, vessel=vessel)
 
     def scenario_set_node_knowledge(
         self, state: GameSessionState, node_id: str, knowledge: KnowledgeState
@@ -293,12 +298,7 @@ class GameSessionModel:
             year=state.vessel.clock.current_date.year,
             seed=seed,
         )
-        after = GameSessionState(
-            vessel=state.vessel,
-            commerce=result.state_after,
-            node_knowledge=state.node_knowledge,
-            route_knowledge=state.route_knowledge,
-        )
+        after = replace(state, commerce=result.state_after)
         return SessionTradeResult(
             executed=result.executed,
             reasons=result.reasons,
@@ -325,18 +325,21 @@ class GameSessionModel:
             year=state.vessel.clock.current_date.year,
             seed=seed,
         )
-        after = GameSessionState(
-            vessel=state.vessel,
-            commerce=result.state_after,
-            node_knowledge=state.node_knowledge,
-            route_knowledge=state.route_knowledge,
-        )
+        after = replace(state, commerce=result.state_after)
         return SessionTradeResult(
             executed=result.executed,
             reasons=result.reasons,
             state_before=state,
             state_after=after,
             trade_result=result,
+        )
+
+    def expedition_authorizes(self, state: GameSessionState, route_id: str) -> bool:
+        return self.expedition.authorizes(
+            state.active_expedition_id,
+            state.expedition_leg_sequence,
+            route_id,
+            state.vessel.clock.current_date,
         )
 
     def plan_voyage(
@@ -352,6 +355,7 @@ class GameSessionModel:
             route_id,
             self.route_nav(state, route_id),
             pilot_id=pilot_id,
+            fleet_command=self.expedition_authorizes(state, route_id),
             seed=seed,
         )
 
@@ -362,13 +366,11 @@ class GameSessionModel:
     def execute_voyage(
         self, state: GameSessionState, plan: VoyagePlan
     ) -> GameSessionState:
+        expedition_leg_completed = self.expedition_authorizes(state, plan.route_id)
+        completed_sequence = state.expedition_leg_sequence
+
         vessel_after = self.travel.execute_voyage(state.vessel, plan)
-        after = GameSessionState(
-            vessel=vessel_after,
-            commerce=state.commerce,
-            node_knowledge=state.node_knowledge,
-            route_knowledge=state.route_knowledge,
-        )
+        after = replace(state, vessel=vessel_after)
 
         destination = self.node_state(after, plan.destination_node)
         learned_destination = KnowledgeState(
@@ -388,4 +390,17 @@ class GameSessionModel:
         learned_route = self._at_least(
             route_nav, self.rules[("ROUTE_COMPLETION", "NAV_MIN")]
         )
-        return self._replace_route_knowledge(after, plan.route_id, learned_route)
+        after = self._replace_route_knowledge(after, plan.route_id, learned_route)
+
+        if expedition_leg_completed:
+            assert state.active_expedition_id is not None
+            assert completed_sequence is not None
+            next_id, next_sequence = self.expedition.advance(
+                state.active_expedition_id, completed_sequence
+            )
+            after = replace(
+                after,
+                active_expedition_id=next_id,
+                expedition_leg_sequence=next_sequence,
+            )
+        return after
