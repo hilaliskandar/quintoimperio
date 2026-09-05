@@ -81,7 +81,7 @@ Próximos aprofundamentos, sem bloquear a interface:
 
 ## Fase 3 — Primeiro mapa e loop jogável
 
-Status: **núcleo integrado v0.1 concluído; interface jogável mínima é o próximo incremento**.
+Status: **interface jogável v0.1 concluída; refinamento do loop em andamento**.
 
 Implementado:
 
@@ -104,21 +104,30 @@ Implementado:
 - teste histórico de aprendizagem Melinde → Calecute com piloto guzerate;
 - cenário técnico determinístico Calecute → Aden capaz de executar `mercado → compra → viagem → chegada → venda`;
 - cenário técnico explicitamente separado do estado histórico inicial;
+- interface `prototype/game.py` mostrando mapa conhecido, porto, data, navio, capital, carga, mercado e rotas de saída;
+- compra e venda unitárias abstratas acionáveis por clique;
+- seleção de rota pela lista ou pelo destino no mapa;
+- execução de viagem delegada ao `GameSessionModel`;
+- busca automática somente de piloto documentado, ativo no porto/período/rota;
+- modo `HISTORICAL` que preserva bloqueios do estado inicial e modo `TECHNICAL` claramente marcado como não histórico;
+- reinício por `R`, alternância de cenário por `Tab` e encerramento por `Esc`;
+- renderização headless dos dois cenários e publicação das capturas como artefato do GitHub Actions;
 - suíte automatizada e smoke tests no GitHub Actions.
 
-Próximo incremento:
+Próximos incrementos do loop:
 
-1. criar uma interface Pygame mínima sobre `GameSessionState`;
-2. apresentar mapa conhecido, porto atual, data, navio, capital e carga;
-3. abrir painel de mercado apenas quando o conhecimento permitir;
-4. permitir compra e venda acionando `GameSessionModel`;
-5. listar somente destinos navegáveis ou rotas habilitáveis por piloto;
-6. executar viagem e atualizar a interface com o novo estado;
-7. manter toda regra de negócio fora da camada gráfica.
+1. integrar reabastecimento e reparo ao `GameSessionModel`, para que serviços portuários sejam acionáveis pela mesma sessão;
+2. modelar a forma institucional de participação do personagem numa armada comandada pela Coroa, evitando transformar conhecimento náutico individual em requisito para toda viagem histórica;
+3. introduzir aquisição de informação por conversa, rumor, carta, piloto e contato mercantil;
+4. expor diferenças entre conhecimento do personagem e conhecimento institucional da Coroa sem revelar informação oculta diretamente;
+5. acrescentar eventos marítimos e avarias somente depois de estabelecer regras auditáveis;
+6. refinar a interface e incorporar, quando tecnicamente adequado, a costa real também ao runtime sem criar dependência cartográfica pesada no núcleo.
 
 A cartografia visual deve continuar programática e reprodutível. Elementos decorativos podem evocar cartas náuticas, mas não podem alterar costa, coordenadas ou trajetos do grafo.
 
 ## Fase 4 — Portos, instituições e relações
+
+Status: **fundação conceitual pronta; implementação ainda não iniciada como sistema integrado**.
 
 Sistemas:
 
@@ -127,7 +136,9 @@ Sistemas:
 - intermediários e comunidades mercantis;
 - reputação com autoridades e grupos comerciais;
 - impostos, monopólios, privilégios e presentes diplomáticos;
-- contratos e crédito.
+- contratos e crédito;
+- cadeia de comando e participação em armadas;
+- acesso a informação, pilotos e corretores como relações institucionais.
 
 ## Fase 5 — Campanha 1497–1505
 
@@ -174,7 +185,9 @@ Somente após estabilizar o núcleo:
 - comércio v0.1 usa capital, carga e preço como índices de simulação;
 - mercadoria ausente de `node_goods.csv` não é criada artificialmente no mercado;
 - presença física em porto e conclusão de rota produzem aprendizado apenas por regras explícitas de simulação;
-- cenários técnicos podem conceder conhecimento por override apenas quando identificados como não históricos.
+- cenários técnicos podem conceder conhecimento por override apenas quando identificados como não históricos;
+- a interface não cria permissões ou conhecimento para contornar bloqueios do domínio;
+- o estado `HISTORICAL` e o cenário `TECHNICAL` permanecem visivelmente distintos na interface.
 
 ## Decisões ainda abertas
 
@@ -187,6 +200,7 @@ Somente após estabilizar o núcleo:
 - modelo de eventos marítimos e avarias;
 - unidade monetária/contábil histórica ou abstrata da versão posterior ao protótipo;
 - forma de aquisição de informação por conversa, contrato, rumor, carta e espionagem;
+- cadeia de comando e relação entre conhecimento pessoal, piloto, capitão e ordem da Coroa;
 - desenho visual definitivo da interface.
 
 Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
