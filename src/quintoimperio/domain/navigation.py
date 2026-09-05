@@ -1,4 +1,4 @@
-"""Navegação v0.1: distância geodésica, calibração e duração relativa."""
+"""Navegação v0.1: distância geodésica, observações e duração relativa."""
 
 from __future__ import annotations
 
@@ -40,9 +40,12 @@ class NavigationModel:
     As distâncias são geodésicas calculadas a partir das âncoras em
     ``nodes.csv``. Elas não são distâncias históricas efetivamente navegadas.
     A confiança espacial da rota é a menor confiança entre as duas âncoras e
-    deve acompanhar qualquer leitura dessas distâncias. A taxa diária de
-    referência é calibrada pela travessia Melinde–Calecute de 1498 e não deve
-    ser interpretada como velocidade histórica universal.
+    deve acompanhar qualquer leitura dessas distâncias.
+
+    Quando existe observação histórica de duração para a própria rota, ela tem
+    precedência como duração-base. Rotas sem observação continuam usando a taxa
+    diária de referência calibrada pela travessia Melinde–Calecute de 1498; a
+    taxa não é velocidade histórica universal.
     """
 
     def __init__(self, root: Path | None = None) -> None:
@@ -132,25 +135,27 @@ class NavigationModel:
             raise KeyError(f"Regra de navegação ausente para {key[0]}/{key[1]}") from exc
 
     def base_duration_days(self, route_id: str, departure: date) -> float | None:
-        """Duração-base sem ruído, usada para auditoria da calibração."""
-        distance = self.route_geodesic_nm(route_id)
-        if distance is None:
-            return None
-        return (
-            distance / self.reference_daily_nm
-        ) * self.seasonal_multiplier(route_id, departure)
+        """Duração-base sem ruído, preferindo observações da própria rota."""
+        observations = self.observed_days(route_id)
+        if observations:
+            base = mean(observations)
+        else:
+            distance = self.route_geodesic_nm(route_id)
+            if distance is None:
+                return None
+            base = distance / self.reference_daily_nm
+        return base * self.seasonal_multiplier(route_id, departure)
 
     def estimate_duration_days(
         self, route_id: str, departure: date, seed: int = 0
     ) -> float | None:
         """Duração estimada em dias para comparação interna do protótipo.
 
-        A v0.1 usa distância geodésica, taxa de progresso calibrada e uma
-        penalidade sazonal conservadora. Não infere automaticamente que uma
-        direção específica é favorecida pela monção: isso exigirá evidência
-        regional por rota. Quando a rota depende de âncora `MEDIUM` ou `LOW`, a
-        duração permanece utilizável apenas como hipótese de simulação e deve
-        ser acompanhada por ``route_coordinate_confidence``.
+        Observações da própria rota são a primeira âncora. Em sua ausência, a
+        v0.1 usa distância geodésica, taxa de progresso calibrada e penalidade
+        sazonal conservadora. Não infere automaticamente que uma direção é
+        favorecida pela monção. Quando a rota depende de âncora `MEDIUM` ou
+        `LOW`, a duração deve acompanhar ``route_coordinate_confidence``.
         """
         base_days = self.base_duration_days(route_id, departure)
         if base_days is None:
