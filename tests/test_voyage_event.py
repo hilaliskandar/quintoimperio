@@ -1,7 +1,14 @@
 import unittest
 from datetime import date
 
-from quintoimperio.domain import GameClock, KnowledgeLevel, TravelModel, VesselState
+from quintoimperio.domain import (
+    ChronologyMode,
+    GameClock,
+    GameSessionModel,
+    KnowledgeLevel,
+    TravelModel,
+    VesselState,
+)
 from quintoimperio.domain.voyage_event import VoyageEventModel
 
 
@@ -93,6 +100,46 @@ class VoyageEventModelTests(unittest.TestCase):
         assert selected is not None
         self.assertEqual(selected.provision_days_required, float(selected.travel_days))
         self.assertLessEqual(selected.condition_after, selected.condition_before)
+
+
+class VoyageEventSessionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.session = GameSessionModel()
+
+    def test_guided_session_preserves_exact_first_leg(self):
+        state = self.session.initial_state(
+            active_expedition_id="EXP_GAMA_1497",
+            provision_days=120.0,
+        )
+        self.assertEqual(state.chronology_mode, ChronologyMode.GUIDED)
+        plan = self.session.plan_voyage(state, "R_LIS_STG", seed=17)
+        self.assertTrue(plan.events_suppressed_by_observation)
+        self.assertEqual(plan.events, ())
+        after = self.session.execute_voyage(state, plan)
+        self.assertEqual(after.voyage_event_history, ())
+
+    def test_counterfactual_session_can_apply_and_log_event_on_exact_route_date(self):
+        state = self.session.initial_state(
+            location_node="MAL",
+            start_date=date(1498, 4, 24),
+            provision_days=120.0,
+            chronology_mode=ChronologyMode.COUNTERFACTUAL,
+        )
+        state = self.session.scenario_set_route_knowledge(
+            state, "R_MAL_CAL", KnowledgeLevel.OPERATIONAL
+        )
+        selected = None
+        for seed in range(1000):
+            candidate = self.session.plan_voyage(state, "R_MAL_CAL", seed=seed)
+            if candidate.events:
+                selected = candidate
+                break
+        self.assertIsNotNone(selected)
+        assert selected is not None
+        self.assertFalse(selected.events_suppressed_by_observation)
+        after = self.session.execute_voyage(state, selected)
+        self.assertEqual(after.voyage_event_history, selected.events)
 
 
 if __name__ == "__main__":
