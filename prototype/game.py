@@ -24,6 +24,7 @@ from datetime import date
 import pygame
 
 from quintoimperio.domain import (
+    ChronologyMode,
     GameSessionModel,
     GameSessionState,
     KnowledgeLevel,
@@ -146,9 +147,6 @@ class PlayablePrototype:
         return None
 
     def plan_for_route(self, route_id: str):
-        # Se há piloto documentado, tente primeiro preservá-lo como base histórica
-        # específica; TravelModel ainda prioriza conhecimento próprio quando já é
-        # operacional. O comando da armada entra somente depois do piloto.
         pilot_id = self._pilot_for_route(route_id)
         if pilot_id:
             with_pilot = self.session.plan_voyage(
@@ -201,6 +199,14 @@ class PlayablePrototype:
             )
         else:
             self.message = "Reparo bloqueado: " + ", ".join(result.reasons)
+
+    def wait_stop(self) -> None:
+        result = self.session.wait_for_stop_release(self.state)
+        if result.executed:
+            self.state = result.state_after
+            self.message = f"Espera na escala: {result.days_waited} dia(s); data {self.state.vessel.clock.current_date}."
+        else:
+            self.message = "Espera indisponível: " + ", ".join(result.reasons)
 
     def travel_selected(self) -> None:
         if not self.selected_route:
@@ -256,7 +262,6 @@ class PlayablePrototype:
         extent = MapExtent.from_points(points)
         by_id = {point.node_id: point for point in points}
 
-        # Linhas de referência decorativas; não são costa nem meridianos históricos.
         for fraction in (0.25, 0.5, 0.75):
             x = MAP_RECT.left + round(MAP_RECT.width * fraction)
             y = MAP_RECT.top + round(MAP_RECT.height * fraction)
@@ -268,8 +273,6 @@ class PlayablePrototype:
             record.route_id: record.nav for record in self.state.route_knowledge
         }
         for route_id, level in route_levels.items():
-            # Uma rota pode estar visível por conhecimento pessoal ou por ser a
-            # perna corrente de uma expedição institucional ativa.
             institutionally_visible = self.session.expedition_authorizes(self.state, route_id)
             if level <= KnowledgeLevel.UNKNOWN and not institutionally_visible:
                 continue
@@ -352,13 +355,33 @@ class PlayablePrototype:
             self._draw_text(
                 surface,
                 micro,
-                f"Armada: {self.state.active_expedition_id} | perna {self.state.expedition_leg_sequence}",
+                f"Armada: {self.state.active_expedition_id} | perna {self.state.expedition_leg_sequence} | cronologia {self.state.chronology_mode.value}",
                 (x, y),
                 MUTED,
             )
             y += 18
         else:
-            y += 5
+            self._draw_text(surface, micro, f"Cronologia: {self.state.chronology_mode.value}", (x, y), MUTED)
+            y += 18
+
+        stop = self.session.active_stop(self.state)
+        if stop is not None:
+            self._draw_text(surface, tiny, f"Escala histórica: {stop.node_id} | permanência narrada {stop.observed_stay_days}d", (x, y), INK)
+            y += 17
+            activities = ", ".join(stop.activities)
+            for line in self._wrap(micro, f"Atividades documentadas: {activities}", SIDE_RECT.width - 34)[:2]:
+                self._draw_text(surface, micro, line, (x, y), MUTED)
+                y += 14
+            self._draw_text(surface, micro, f"Partida documentada: {stop.departure_date.isoformat()}", (x, y), MUTED)
+            y += 17
+            wait_days = self.session.stops.days_until_release(stop, self.state.vessel.clock.current_date)
+            can_wait = self.state.chronology_mode is ChronologyMode.GUIDED and wait_days > 0
+            wait_rect = pygame.Rect(x + 5, y, 160, 25)
+            pygame.draw.rect(surface, BUTTON if can_wait else BUTTON_DISABLED, wait_rect, border_radius=3)
+            label = f"Esperar {wait_days} dia(s)" if wait_days else "Partida liberada"
+            self._draw_text(surface, micro, label, (wait_rect.x + 12, wait_rect.y + 6))
+            self.targets.append(ClickTarget(wait_rect, "action", "wait_stop"))
+            y += 32
 
         provisions = self.session.service_quote(self.state, PortServiceKind.PROVISIONS)
         repair = self.session.service_quote(self.state, PortServiceKind.REPAIR)
@@ -506,6 +529,8 @@ class PlayablePrototype:
                     self.reprovision()
                 elif target.value == "repair":
                     self.repair()
+                elif target.value == "wait_stop":
+                    self.wait_stop()
                 elif target.value == "travel":
                     self.travel_selected()
             return
