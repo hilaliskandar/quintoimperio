@@ -12,7 +12,7 @@ Entregas já existentes:
 - mercadorias, relações nó–mercadoria, rotas e fluxos;
 - observações documentadas de viagem;
 - pilotos e competências por rota;
-- expedições/armadas e sequência de pernas;
+- expedições/armadas, sequência de pernas e permanências logísticas;
 - proveniência, confiança e incerteza explícitas;
 - validação automática e testes de domínio.
 
@@ -44,7 +44,9 @@ Implementado:
 - observações documentadas de viagem e divergências entre fontes;
 - precedência de observação da mesma rota/data sobre extrapolação geodésica;
 - Melinde–Calecute 1498 preservada em 26/27 dias;
-- Lisboa–Cabo 1497 registrada como perna agregada de 134 dias segundo a observação usada;
+- itinerário inicial de Gama segmentado em pernas operacionais entre Lisboa, São Thiago, baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais, Moçambique, Mombaça, Melinde e Calecute;
+- conexões Lisboa–Cabo e Cabo–Moçambique mantidas apenas como `STRATEGIC_AGGREGATE`, bloqueadas para execução;
+- permanências logísticas registradas separadamente do tempo de navegação;
 - ruído determinístico somente quando não há observação exata da partida;
 - quatro dimensões de conhecimento por nó;
 - conhecimento náutico de rota separado de conhecimento de nó;
@@ -56,7 +58,7 @@ Implementado:
 
 Próximos aprofundamentos:
 
-1. segmentar o itinerário de 1497 em escalas documentadas para não tratar Lisboa–Cabo como uma única perna operacional de provisões;
+1. integrar as permanências históricas ao calendário e às ações do loop sem inventar quantidades físicas;
 2. eventos de risco marítimo;
 3. perfis direcionais de vento apenas quando documentados por trecho;
 4. substituir escalas abstratas somente quando houver evidência suficiente.
@@ -83,11 +85,13 @@ Implementado:
 - modo `TECHNICAL` claramente identificado como não histórico;
 - `FLEET_COMMAND` visível sem elevar conhecimento pessoal;
 - piloto documentado preservado como base específica quando aplicável;
+- primeira perna histórica executável Lisboa → São Thiago;
+- rotas estratégicas agregadas bloqueadas no domínio;
 - smoke tests e capturas no GitHub Actions.
 
 Próximos incrementos do loop:
 
-1. decompor a primeira viagem em escalas operacionais documentadas;
+1. transformar as permanências documentadas da armada em tempo/ações jogáveis auditáveis;
 2. introduzir aquisição de informação por rumor, conversa, carta, piloto e contato mercantil;
 3. expor diferença entre conhecimento pessoal e institucional sem revelar informação oculta;
 4. acrescentar eventos/avarias com regras auditáveis;
@@ -101,6 +105,7 @@ Já implementado:
 
 - participação em expedição/armada separada do conhecimento individual;
 - sequência de pernas por expedição;
+- permanências logísticas documentadas separadas de mercados;
 - comando institucional como base de viagem específica;
 - piloto como competência distinta do comando;
 - serviços portuários mínimos.
@@ -120,7 +125,7 @@ Ainda por implementar:
 Recorte inicial:
 
 1. Lisboa e rede atlântica conhecida;
-2. viagem de 1497 com escalas e aprendizagem progressiva;
+2. viagem de 1497 com escalas, permanências e aprendizagem progressiva;
 3. Moçambique, Mombaça e Melinde;
 4. chegada a Calecute;
 5. retorno e reconfiguração após a primeira viagem;
@@ -152,13 +157,17 @@ Somente após estabilizar o núcleo:
 - piloto documentado não recebe bônus quantitativo não sustentado;
 - `FLEET_COMMAND` não aumenta conhecimento pessoal antes da viagem;
 - observação exata de viagem tem precedência sobre ruído/extrapolação;
+- itinerário Lisboa–Moçambique é segmentado para execução e as conexões agregadas ficam apenas como camada estratégica;
+- ancoradouro logístico não é convertido automaticamente em mercado;
+- datas editoriais do `Roteiro` são marcadas como reconstruções;
+- limite de provisões continua parâmetro abstrato mesmo quando calibrado para acomodar uma perna histórica longa;
 - serviço desconhecido não é tratado como ausente nem disponível;
 - cenários técnicos permanecem explicitamente separados do estado histórico;
 - identidade/profissão do protagonista continua não fixada.
 
 ## Decisões ainda abertas
 
-- segmentação operacional final do itinerário de 1497;
+- forma de integrar permanências históricas ao calendário e às ações do jogador;
 - unidade física/abstrata de carga definitiva;
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
