@@ -29,6 +29,7 @@ Implementado:
 - custos relativos de provisões, frete, acesso/tributação e intermediação;
 - estoques estruturais e dependentes de trânsito;
 - choques determinísticos por semente;
+- restrições específicas de mercadoria separadas do acesso portuário genérico;
 - testes automatizados.
 
 Nenhum índice é tratado como preço ou quantidade histórica.
@@ -50,7 +51,7 @@ Implementado:
 - `ChronologyMode.GUIDED` e `COUNTERFACTUAL` para separar reprodução temporal da campanha de trajetórias divergentes;
 - bloqueio de partida antes da data documentada numa escala guiada;
 - espera explícita até a partida sem efeitos materiais automáticos;
-- serviços portuários e interações informativas consumindo o mesmo calendário da permanência;
+- serviços, informação e negociação consumindo o mesmo calendário;
 - ruído determinístico somente quando não há observação exata da partida;
 - eventos marítimos genéricos determinísticos por semente, limitados a atraso e perda abstrata de condição;
 - observação histórica exata suprimindo eventos aleatórios em cronologia `GUIDED`;
@@ -82,8 +83,11 @@ Implementado:
 - serviços portuários com `UNKNOWN` distinto de `NONE`;
 - estado comercial imutável;
 - compra/venda apenas em mercados documentados;
-- `GameSessionState` reunindo navio, comércio, conhecimento, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
+- `GameSessionState` reunindo navio, comércio, conhecimento, acesso, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
 - mercado bloqueado até conhecimento operacional;
+- acesso comercial separado de conhecimento do mercado;
+- `FOREIGN_NEGOTIATED` exigindo negociação explícita antes de compra/venda;
+- monopólios e mercadorias restritas não desbloqueados pela negociação genérica;
 - reabastecimento/reparo integrados à sessão;
 - aprendizagem por chegada e conclusão de rota;
 - aquisição ativa de informação por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`;
@@ -91,9 +95,10 @@ Implementado:
 - canais limitados abaixo de `OPERATIONAL` para que rumor/consulta não substituam experiência efetiva;
 - cada oportunidade informativa utilizável uma vez por sessão e seleção determinística por semente;
 - eventos de viagem registrados no plano e no histórico da sessão para auditoria;
-- cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → venda`;
-- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, informação, mercado, armada ativa, escala, espera, rotas e último evento `SIM` quando houver;
-- botões de informação que não revelam o alvo antes da interação;
+- cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → negociação → venda`;
+- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, acesso, informação, mercado, armada ativa, escala, espera, rotas e último evento `SIM` quando houver;
+- botão de negociação exibido somente quando o gate institucional é negociável;
+- mercado conhecido pode ser consultado mesmo quando a operação está bloqueada por acesso;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497` e cronologia `GUIDED`;
 - modo `TECHNICAL` claramente identificado como não histórico e `COUNTERFACTUAL`;
 - `FLEET_COMMAND` visível sem elevar conhecimento pessoal;
@@ -106,14 +111,14 @@ Implementado:
 
 Próximos incrementos do loop:
 
-1. introduzir regimes de acesso e primeira negociação institucional;
-2. expor melhor, sem vazamento, a diferença entre conhecimento pessoal, rumor e informação institucional;
-3. introduzir relações/reputação com atores mercantis e autoridades;
-4. refinar a interface sem sacrificar a separação entre cartografia e domínio.
+1. introduzir relações/reputação separadas por autoridade e comunidade mercantil;
+2. usar essas relações como modificadores de acesso/negociação sem reescrever fatos históricos;
+3. aprofundar intermediários e comunidades mercantis além do campo de disponibilidade;
+4. refinar a interface sem sacrificar a separação entre cartografia, conhecimento e instituições.
 
 ## Fase 4 — Portos, instituições e relações
 
-Status: **fundação institucional e informacional iniciada; próxima frente do loop**.
+Status: **acesso institucional v0.1 implementado; relações/reputação são a próxima frente**.
 
 Já implementado:
 
@@ -128,14 +133,18 @@ Já implementado:
 - contato mercantil condicionado à disponibilidade de intermediários;
 - consulta a piloto condicionada a competência histórica de rota;
 - histórico de oportunidades informativas usadas por sessão;
-- risco marítimo genérico separado de incidentes históricos documentados.
+- risco marítimo genérico separado de incidentes históricos documentados;
+- `AccessModel` com estados `OPEN`, `NEGOTIATION_REQUIRED`, `NEGOTIATED`, `RESTRICTED`, `NONCOMMERCIAL` e `UNKNOWN`;
+- negociação genérica de `FOREIGN_NEGOTIATED` sem inventar taxas, presentes, diálogo ou probabilidade de êxito;
+- ancoradouros e marcos náuticos preservados como não comerciais;
+- monopólios régios preservados como restritos;
+- `node_goods.restricted=TRUE` como bloqueio independente de mercadoria.
 
 Ainda por implementar:
 
-- regimes de acesso e negociação;
+- relações/reputação com autoridades e grupos comerciais;
 - intermediários e comunidades mercantis como agentes mais ricos que um simples campo de disponibilidade;
-- reputação com autoridades e grupos comerciais;
-- impostos, monopólios, privilégios e presentes diplomáticos;
+- impostos, monopólios, privilégios e presentes diplomáticos somente quando historicamente sustentados ou explicitamente parametrizados como simulação;
 - contratos e crédito;
 - cartas persistentes, mensagens e redes pessoais de informação;
 - desinformação/qualidade de informantes somente se necessária ao jogo;
@@ -149,8 +158,9 @@ Recorte inicial:
 2. viagem de 1497 com escalas, permanências e aprendizagem progressiva;
 3. Moçambique, Mombaça e Melinde;
 4. chegada a Calecute;
-5. retorno e reconfiguração após a primeira viagem;
-6. expansão inicial até Cochim e primeiras estruturas portuguesas.
+5. negociação de acesso separada do simples conhecimento do mercado;
+6. retorno e reconfiguração após a primeira viagem;
+7. expansão inicial até Cochim e primeiras estruturas portuguesas.
 
 O jogo deve deixar clara a diferença entre a rede atlântica portuguesa já estabelecida e a rede índica preexistente.
 
@@ -173,13 +183,18 @@ Somente após estabilizar o núcleo:
 - dados históricos separados dos parâmetros de simulação;
 - preços históricos não são inventados;
 - linhas do mapa são arestas do grafo, não derrotas;
-- conhecimento de nó, conhecimento de rota e comando institucional são estados distintos;
+- conhecimento de nó, conhecimento de rota, acesso institucional e comando de expedição são estados distintos;
 - personagem e Coroa possuem estados de conhecimento separados;
 - aquisição de informação não copia silenciosamente o estado da Coroa;
 - rumor não produz conhecimento operacional;
 - contato mercantil melhora conhecimento comercial/geográfico sem conferir navegação operacional;
 - consulta a piloto fica limitada a `PARTIAL` e não substitui pilotagem/experiência;
 - alvos informativos provêm apenas de rotas/nós documentados e excluem `STRATEGIC_AGGREGATE`;
+- `FOREIGN_NEGOTIATED` exige negociação explícita na v0.1;
+- negociação genérica não cobra dinheiro, não quantifica presentes e não sorteia êxito diplomático;
+- `ROYAL_MONOPOLY` e `ROYAL_MONOPOLY_LEASED` não são abertos por negociação portuária genérica;
+- `ANCHORAGE_CONTACT` e `NAVIGATION_ONLY` não geram mercado;
+- restrição de mercadoria é independente do acesso ao porto;
 - piloto documentado não recebe bônus quantitativo não sustentado;
 - `FLEET_COMMAND` não aumenta conhecimento pessoal antes da viagem;
 - observação exata de viagem tem precedência sobre ruído/extrapolação e sobre evento aleatório em cronologia `GUIDED`;
@@ -203,6 +218,7 @@ Somente após estabilizar o núcleo:
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
+- desenho multidimensional de relações/reputação;
 - doenças, perdas de carga/tripulação, encalhe, naufrágio e combate marítimo;
 - unidade monetária posterior ao protótipo;
 - cartas, contratos informacionais, espionagem e desinformação;
