@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, serviços portuários, expedições ou viagem na camada gráfica.
+A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômicas, de conhecimento, serviços portuários, expedições, permanências ou viagem na camada gráfica.
 
-A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, mercado, armada ativa quando houver e rotas de saída.
+A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, serviços portuários, mercado, armada ativa quando houver, cronologia, escala histórica ativa e rotas de saída.
 
 ## Dois estados explicitamente distintos
 
@@ -12,17 +12,19 @@ A tela apresenta mapa conhecido, porto atual, data, condição e provisões do n
 
 É o padrão. Abre em Lisboa em 8 de julho de 1497 com `EXP_GAMA_1497` ativa. A associação à armada não fixa identidade ou profissão do protagonista e não eleva seu conhecimento náutico.
 
-O painel mostra a expedição e a perna corrente. Uma rota pode aparecer como disponível por `FLEET_COMMAND` mesmo quando o conhecimento pessoal ainda não é `OPERATIONAL`. O banner explicita: **comando institucional ≠ conhecimento pessoal**.
+O painel mostra a expedição, a perna corrente e `ChronologyMode`. Uma rota pode aparecer como disponível por `FLEET_COMMAND` mesmo quando o conhecimento pessoal ainda não é `OPERATIONAL`. O banner explicita: **comando institucional ≠ conhecimento pessoal**.
 
-A primeira perna operacional é agora `R_LIS_STG`, Lisboa → São Thiago/baía de Santa Maria. A observação documentada da mesma rota e data produz a chegada em 27 de julho de 1497. A antiga aresta `R_LIS_CGH` permanece somente como conexão `STRATEGIC_AGGREGATE` e o domínio a bloqueia para execução.
+A primeira perna operacional é `R_LIS_STG`, Lisboa → São Thiago/baía de Santa Maria. A observação documentada da mesma rota e data produz a chegada em 27 de julho de 1497. A antiga aresta `R_LIS_CGH` permanece somente como conexão `STRATEGIC_AGGREGATE` e o domínio a bloqueia para execução.
 
-A segmentação prossegue por baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais e Moçambique antes da costa suaíli setentrional e da travessia Melinde–Calecute. Ancoradouros logísticos não são transformados em mercados para tornar o loop mais conveniente.
+Quando a chegada ativa uma permanência documentada, o painel mostra o nó da escala, `observed_stay_days`, atividades documentadas, data de partida e um botão `Esperar N dia(s)` enquanto a cronologia ainda é `GUIDED`.
+
+Esperar apenas avança o calendário. A interface não transforma atividades documentadas como água, carenagem ou reparo em recursos automáticos.
 
 ### TECHNICAL
 
 É um cenário de integração que começa em Calecute em 22 de maio de 1498 e aplica somente os overrides técnicos já documentados: mercado de Calecute operacional e rota Calecute–Aden operacional.
 
-Ele permite testar `mercado -> compra -> viagem -> chegada -> venda`. Um banner informa que não representa o estado histórico inicial do personagem.
+Ele permite testar `mercado -> compra -> viagem -> chegada -> venda`. Um banner informa que não representa o estado histórico inicial do personagem. Esse cenário usa cronologia `COUNTERFACTUAL`.
 
 ## Mapa
 
@@ -32,14 +34,13 @@ Uma rota pode ficar visível porque o personagem a conhece ou porque corresponde
 
 A costa real permanece na ferramenta cartográfica de referência separada em `tools/render_cartographic_map.py`.
 
-## Serviços portuários
+## Serviços portuários e permanência
 
 O painel consulta `GameSessionModel.service_quote()` para provisões e reparo e mantém `UNKNOWN`, `NONE`, `LOW`, `MEDIUM` e `HIGH` distintos.
 
-- `Reabastecer +30` solicita 30 dias-equivalentes;
-- `Reparar +20` solicita 20 pontos abstratos de condição.
+`Reabastecer +30` solicita 30 dias-equivalentes e `Reparar +20` solicita 20 pontos abstratos de condição. Esses números são parâmetros de simulação.
 
-Esses números são parâmetros de simulação. O limite abstrato de provisões foi ampliado para comportar a longa perna São Thiago–baía de Santa Helena; isso não é apresentado como tonelagem, ração ou capacidade histórica. Nenhum custo monetário histórico é inventado.
+Em uma escala guiada, o tempo consumido por reabastecimento e reparo conta contra o mesmo intervalo até a partida documentada. O botão de espera mostra apenas o tempo restante. Nenhum custo monetário histórico é inventado.
 
 ## Mercado
 
@@ -49,20 +50,16 @@ Capital, quantidade, capacidade e preço continuam índices de simulação. Nós
 
 ## Viagem
 
-Cada rota de saída é planejada pelo domínio. O painel exibe a base disponível:
-
-- `OWN_KNOWLEDGE`;
-- `PILOT`;
-- `FLEET_COMMAND`;
-- ou bloqueio.
+Cada rota de saída é planejada pelo domínio. O painel exibe `OWN_KNOWLEDGE`, `PILOT`, `FLEET_COMMAND` ou bloqueio.
 
 Quando existe piloto documentado para porto, período e rota, a interface o fornece ao plano antes de recorrer ao comando institucional. Isso preserva o caso Melinde–Calecute de 1498.
 
-A execução de uma viagem atualiza calendário, provisões, condição, aprendizagem e, quando aplicável, avança a expedição para a próxima perna. As permanências documentadas em `expedition_stops.csv` ainda não são executadas automaticamente; sua integração ao calendário jogável é o próximo incremento.
+Em `GUIDED`, uma rota de saída é bloqueada por `HISTORICAL_STOP_NOT_RELEASED` enquanto a data estiver antes da partida da escala ativa. Se o jogador permanece além da partida e depois navega, o domínio muda para `COUNTERFACTUAL`; a interface exibe essa condição e não força novas esperas históricas.
 
 ## Interação
 
 - `Reabastecer +30` e `Reparar +20` acionam serviços do porto atual;
+- `Esperar N dia(s)` avança somente o restante da permanência histórica guiada;
 - clique em mercadoria, depois `Comprar 1` ou `Vender 1`;
 - clique em rota ou destino conectado e use `Executar viagem`;
 - `R` reinicia;
