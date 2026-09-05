@@ -33,6 +33,8 @@ jobs:
         run: python prototype/port.py
       - name: Render trade prototype report
         run: python prototype/trade.py
+      - name: Run integrated session prototype
+        run: python prototype/session.py
       - name: Smoke-test coordinate map
         env:
           SDL_VIDEODRIVER: dummy
