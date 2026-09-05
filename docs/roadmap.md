@@ -2,9 +2,11 @@
 
 ## Fase 0 — Fundação histórica e de dados
 
+Status: **v0.1 concluída; aprofundamento histórico contínuo**.
+
 Objetivo: estabilizar a primeira representação do mundo de 1497–1500 antes de programar mecânicas definitivas.
 
-Entregas:
+Entregas já existentes:
 
 - `nodes.csv` com nós atlânticos e primeiros nós do Índico;
 - `goods.csv` com conjunto mínimo de bens;
@@ -12,45 +14,76 @@ Entregas:
 - `routes.csv` com conexões históricas e propriedades de navegação;
 - `route_goods.csv` com fluxos por mercadoria;
 - documentação de proveniência e incerteza;
+- validação automática dos CSVs;
 - lista explícita de lacunas bibliográficas.
 
-Critério de conclusão: todas as relações usadas no protótipo devem ser classificadas por evidência e período.
+A pesquisa continua refinando relações e cronologias sem bloquear o protótipo.
 
 ## Fase 1 — Protótipo econômico sem interface final
 
-Objetivo: testar se a rede produz circuitos plausíveis sem impor lucros manualmente.
+Status: **v0.1 concluída**.
 
-Sistemas mínimos:
+O protótipo atual já inclui:
 
-- inventário e capacidade de carga;
-- classes relativas de oferta e demanda;
-- custos de provisões, frete e tributação;
+- classes relativas de oferta e demanda derivadas do papel comercial documentado;
+- volume, valor e função de troca como parâmetros separados em `simulation/`;
+- custos relativos de provisões, frete, acesso/tributação e intermediação;
 - estoques estruturais e estoques dependentes de trânsito;
-- calendário;
-- sementes determinísticas para testes.
+- choques determinísticos por semente;
+- oito testes automatizados;
+- relatório textual de inspeção.
 
-Testes históricos esperados:
+Invariantes validadas:
 
-- ouro africano possuir utilidade como poder de compra;
-- pimenta ser estruturalmente abundante no Malabar e cara em mercados distantes;
-- mercadorias em trânsito terem estoque mais volátil;
-- tecidos indianos funcionarem como mercadoria de troca em circuitos orientais.
+- ouro possui alta função de troca no modelo;
+- pimenta é estruturalmente mais disponível no Malabar que em Lisboa no estado inicial;
+- mercadorias em trânsito em Moçambique são mais voláteis que a oferta de hinterland no Malabar;
+- tecidos indianos habilitam o circuito Gujarat–Melaka.
 
-## Fase 2 — Navegação e conhecimento
+Nenhum índice da simulação é tratado como preço ou quantidade histórica.
+
+## Fase 2 — Navegação, calendário e conhecimento
+
+Status: **próxima fase**.
 
 Objetivo: transformar o mapa em sistema histórico, não em simples grafo de distâncias.
 
-Sistemas:
+Entregas mínimas:
 
+- calendário do jogo;
+- distância geodésica entre nós com coordenadas confiáveis;
+- duração-base de viagem;
 - vento, monção e sazonalidade;
-- duração probabilística de viagem;
 - provisões e desgaste;
 - pilotos;
 - `geo_knowledge`, `nav_knowledge`, `market_knowledge` e `political_knowledge`;
 - nós desconhecidos, rumoreados, localizados e navegáveis;
-- eventos de risco marítimo.
+- eventos de risco marítimo;
+- testes determinísticos para janelas de navegação.
 
-## Fase 3 — Portos, instituições e relações
+A primeira implementação deve continuar independente de Pygame.
+
+## Fase 3 — Primeiro mapa e loop jogável
+
+Objetivo: colocar o domínio validado numa interface 2D mínima.
+
+Arquitetura definida pelo ADR 0001: Python 3.12 + pygame-ce.
+
+Loop mínimo:
+
+1. consultar mapa e informações conhecidas;
+2. entrar em um porto;
+3. consultar mercado;
+4. comprar carga dentro da capacidade;
+5. escolher destino navegável;
+6. consumir tempo e provisões na viagem;
+7. processar risco/evento;
+8. chegar e vender;
+9. atualizar conhecimento e relações.
+
+O mapa deve partir de coordenadas reais e, quando houver costa de fundo, de dados cartográficos reais. Não usar mapas geográficos inventados por IA.
+
+## Fase 4 — Portos, instituições e relações
 
 Sistemas:
 
@@ -61,20 +94,20 @@ Sistemas:
 - impostos, monopólios, privilégios e presentes diplomáticos;
 - contratos e crédito.
 
-## Fase 4 — Campanha 1497–1505
+## Fase 5 — Campanha 1497–1505
 
 Recorte inicial recomendado:
 
 1. Lisboa e rede atlântica conhecida;
 2. travessia do Cabo;
-3. Moçambique, Mombasa e Malindi;
+3. Moçambique, Mombaça e Melinde;
 4. chegada a Calecute;
 5. retorno e reconfiguração após a primeira viagem;
 6. expansão inicial até Cochim e primeiras estruturas portuguesas.
 
-O jogo deve permitir que o jogador compreenda a diferença entre a rede atlântica portuguesa já estabelecida e a rede índica preexistente.
+O jogo deve deixar clara a diferença entre a rede atlântica portuguesa já estabelecida e a rede índica preexistente.
 
-## Fase 5 — Expansão 1505–1540
+## Fase 6 — Expansão 1505–1540
 
 Somente após estabilizar o núcleo:
 
@@ -86,13 +119,20 @@ Somente após estabilizar o núcleo:
 - comércio privado e casados;
 - Coromandel, Bengala e Sudeste Asiático.
 
+## Decisões resolvidas
+
+- motor do primeiro jogável: Python 3.12 + pygame-ce;
+- lógica de domínio independente da camada gráfica;
+- CSVs históricos separados dos parâmetros de simulação;
+- ausência de preços históricos fictícios na calibração inicial.
+
 ## Decisões ainda abertas
 
-- motor do protótipo e da versão final;
-- granularidade temporal;
-- unidade de carga;
-- modelo de preços relativos;
+- granularidade temporal final;
+- unidade física/abstrata de carga;
+- modelo de provisões e desgaste;
 - grau de controle direto do jogador sobre navio e tripulação;
-- escopo exato do protagonista e da campanha.
+- protagonista e enquadramento exato da campanha;
+- formato definitivo do mapa costeiro e nível de detalhe cartográfico.
 
-Essas decisões devem ser tomadas com protótipos pequenos, não por documentação especulativa.
+Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
