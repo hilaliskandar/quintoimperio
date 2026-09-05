@@ -19,6 +19,8 @@ Entregas já existentes:
 - validação automática dos CSVs;
 - lista explícita de lacunas bibliográficas.
 
+Todos os 20 nós da base inicial possuem agora uma âncora cartográfica explícita. Mpinda/Soyo e Sofala usam coordenadas provisórias de confiança `MEDIUM`, documentadas separadamente para não serem confundidas com localização arqueológica exata.
+
 A pesquisa continua refinando relações e cronologias sem bloquear o protótipo.
 
 ## Fase 1 — Protótipo econômico sem interface final
@@ -53,6 +55,7 @@ Implementado:
 - calendário do jogo;
 - fases gerais da monção de nordeste, sudoeste e transições;
 - distância geodésica entre nós com coordenadas disponíveis;
+- propagação da confiança espacial mínima da rota para distinguir âncoras `HIGH`, `MEDIUM` e `LOW`;
 - preservação de observações documentadas de viagem e divergências entre fontes;
 - primeira calibração de duração com Melinde–Calecute em 1498;
 - ruído determinístico de duração;
@@ -79,34 +82,40 @@ A implementação continua independente de Pygame.
 
 ## Fase 3 — Primeiro mapa e loop jogável
 
-Status: **mapa e serviços portuários v0.1 implementados; comércio jogável em construção**.
+Status: **mapa, cartografia, serviços portuários e comércio v0.1 implementados; integração do loop em construção**.
 
 Implementado:
 
 - `WorldMapModel` independente de Pygame;
-- projeção equiretangular simples de coordenadas reais de `nodes.csv`;
-- exclusão automática de nós sem coordenadas defensáveis;
+- projeção equiretangular simples de coordenadas de `nodes.csv`;
 - visibilidade de nós condicionada ao conhecimento geográfico do personagem/Coroa;
 - visibilidade de rotas sem revelar conexões classificadas como `UNKNOWN`;
 - linhas de rota tratadas como arestas do grafo, não como reconstrução do percurso navegado;
 - protótipo Pygame capaz de abrir janela ou renderizar PNG em modo headless;
-- ausência deliberada de costa até incorporar dado cartográfico real;
+- referência cartográfica programática com costa real e sem fronteiras políticas modernas;
+- estética náutica procedural sobre a geometria real: paleta de pergaminho, linhas de rumo e rosa-dos-ventos;
+- âncoras provisórias de Mpinda/Soyo e Sofala identificadas graficamente e documentadas;
 - serviços mínimos de reabastecimento e reparo a partir de `provisions` e `repair` de `nodes.csv`;
 - distinção operacional entre serviço desconhecido (`UNKNOWN`) e explicitamente ausente (`NONE`);
 - capacidades, limites e duração de serviços isolados em `simulation/port_rules.csv`;
 - serviços aplicados ao `VesselState` com avanço do calendário;
-- smoke test cartográfico e suíte de 51 testes no GitHub Actions.
+- `CommercialState` imutável com capital, capacidade e inventário abstratos;
+- compra e venda somente quando a relação porto–mercadoria está documentada no período;
+- bloqueio por falta de capital, capacidade ou inventário;
+- spread de compra/venda isolado em `simulation/trade_rules.csv`;
+- testes automatizados e smoke tests no GitHub Actions.
 
 Próximo incremento do loop:
 
-1. estado comercial do jogador e capacidade de carga abstrata;
-2. consulta de mercado condicionada ao conhecimento comercial;
-3. compra e venda apenas de bens documentados no nó/período;
-4. seleção de destino navegável no mapa;
-5. viagem utilizando o `TravelModel`;
-6. chegada, venda e atualização do conhecimento.
+1. criar um `GameSessionState` que reúna data, localização, navio, estado comercial e conhecimento;
+2. consultar mercado do porto atual filtrado pelo conhecimento comercial;
+3. comprar carga;
+4. selecionar destino navegável no mapa;
+5. executar a viagem via `TravelModel`;
+6. chegar ao porto de destino, vender e atualizar conhecimento;
+7. expor esse ciclo em uma interface Pygame mínima, sem tentar ainda reproduzir a interface final.
 
-A costa de fundo só pode ser incorporada a partir de dados cartográficos reais, com origem, licença e versão documentadas. Não usar mapas geográficos inventados por IA.
+A cartografia visual deve continuar programática e reprodutível. Elementos decorativos podem evocar cartas náuticas, mas não podem alterar costa, coordenadas ou trajetos do grafo.
 
 ## Fase 4 — Portos, instituições e relações
 
@@ -151,24 +160,30 @@ Somente após estabilizar o núcleo:
 - CSVs históricos separados dos parâmetros de simulação;
 - ausência de preços históricos fictícios na calibração inicial;
 - distância de rota calculada como geodésica de referência, não confundida com percurso histórico efetivo;
+- confiança espacial da rota acompanha a menor confiança entre seus pontos extremos;
 - conhecimento dividido em quatro dimensões e separado entre personagem e Coroa;
 - provisões representadas provisoriamente por dias-equivalentes, não por unidades físicas inventadas;
 - desgaste representado provisoriamente por escala abstrata de condição;
 - piloto documentado habilita rota específica sem bônus quantitativo não sustentado;
-- primeiro mapa usa somente coordenadas reais disponíveis e não inventa costa;
+- todos os nós da base inicial possuem âncora cartográfica, com incerteza explicitamente marcada quando necessário;
+- mapa de referência usa costa real e não desenha fronteiras políticas modernas;
+- estética histórica do mapa é procedural e separada da geometria;
 - linhas do mapa representam conexões abstratas do grafo, não derrotas históricas;
 - serviço portuário desconhecido não é convertido silenciosamente em serviço ausente ou disponível;
-- reabastecimento e reparo usam efeitos abstratos de simulação enquanto faltarem parâmetros históricos defensáveis.
+- reabastecimento e reparo usam efeitos abstratos de simulação enquanto faltarem parâmetros históricos defensáveis;
+- comércio v0.1 usa capital, carga e preço como índices de simulação e não como unidades históricas;
+- uma mercadoria ausente de `node_goods.csv` não é criada artificialmente no mercado.
 
 ## Decisões ainda abertas
 
 - granularidade temporal final do loop jogável;
-- unidade física/abstrata de carga;
+- unidade física/abstrata de carga definitiva;
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
-- conjunto cartográfico real e nível de detalhe da costa;
+- refinamento arqueológico/cartográfico de Mpinda/Soyo e Sofala;
 - modelo de eventos marítimos e avarias;
-- unidade monetária/contábil do primeiro protótipo comercial.
+- unidade monetária/contábil histórica ou abstrata da versão posterior ao protótipo;
+- modelo de conhecimento adquirido após visitas, conversas e viagens.
 
 Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
