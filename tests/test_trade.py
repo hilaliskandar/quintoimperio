@@ -23,6 +23,13 @@ class TradeModelTests(unittest.TestCase):
         self.assertIn("GOOD_NOT_DOCUMENTED_IN_MARKET", result.reasons)
         self.assertEqual(result.state_after, before)
 
+    def test_restricted_good_is_blocked_independently_of_port_access_layer(self):
+        before = CommercialState(capital_index=1000.0, capacity_total=100.0)
+        result = self.model.buy(before, "ARG", "GOLD", 1.0, year=1498, seed=7)
+        self.assertFalse(result.executed)
+        self.assertIn("GOOD_RESTRICTED_BY_HISTORICAL_ACCESS_REGIME", result.reasons)
+        self.assertEqual(result.state_after, before)
+
     def test_capacity_is_based_on_bulk_index(self):
         before = CommercialState(capital_index=1000.0, capacity_total=5.0)
         result = self.model.buy(before, "CAL", "PEPPER", 2.0, year=1498, seed=7)
