@@ -2,7 +2,7 @@
 
 Este diretório contém **parâmetros de balanceamento**, não dados históricos.
 
-Os arquivos em `data/` registram evidência histórica e inferências explicitamente marcadas. Os arquivos em `simulation/` traduzem essa estrutura em índices e regras para testar economia, navegação, conhecimento, viagem e serviços portuários. Nenhum número deste diretório deve ser citado como preço, produção, alíquota, frete, velocidade, consumo, desgaste, capacidade portuária ou probabilidade histórica.
+Os arquivos em `data/` registram evidência histórica e inferências explicitamente marcadas. Os arquivos em `simulation/` traduzem essa estrutura em índices e regras para testar economia, navegação, conhecimento, viagem, serviços portuários e comércio. Nenhum número deste diretório deve ser citado como preço, produção, alíquota, frete, velocidade, consumo, desgaste, capacidade portuária, margem comercial ou probabilidade histórica.
 
 ## Escalas
 
@@ -20,6 +20,8 @@ Para conhecimento, os índices `0..4` significam intensidade crescente: desconhe
 
 A condição do navio usa uma escala abstrata `0..100`. Provisões são expressas em **dias-equivalentes de viagem**, sem conversão para rações, barris, peso ou volume histórico enquanto o corpus não sustentar essas relações.
 
+Capital, capacidade de carga e quantidades comerciais também são índices abstratos na v0.1. Não equivalem a cruzados, xerafins, toneladas, tonéis, quintais ou outras unidades históricas.
+
 ## Arquivos
 
 - `goods_params.csv`: volume relativo, valor-base, importância estratégica, perecibilidade e função de troca por mercadoria.
@@ -28,6 +30,7 @@ A condição do navio usa uma escala abstrata `0..100`. Provisões são expressa
 - `knowledge_rules.csv`: mapeamento entre os estados textuais documentados em `nodes.csv` e quatro dimensões de conhecimento do personagem/Coroa.
 - `travel_rules.csv`: consumo em dias-equivalentes, desgaste abstrato por tipo de rota e condição mínima de partida. Esses valores existem somente para fazer o primeiro loop de viagem funcionar e permanecem separados da evidência histórica.
 - `port_rules.csv`: capacidades abstratas de reabastecimento, taxas abstratas de reparo, duração do serviço e limite provisório de provisões embarcadas. As categorias `LOW`, `MEDIUM` e `HIGH` vêm da base histórica; os valores numéricos que as tornam jogáveis pertencem apenas à simulação.
+- `trade_rules.csv`: multiplicadores abstratos de compra e venda usados para criar um spread mínimo de simulação. Não representam margens, impostos, comissão ou prática mercantil histórica.
 
 ## Princípio
 
@@ -38,3 +41,5 @@ Da mesma forma, a taxa diária derivada da viagem Melinde–Calecute serve apena
 Pilotos documentados não recebem automaticamente bônus numéricos. Na v0.1, um piloto habilita uma rota quando seu conhecimento específico está documentado; efeitos sobre velocidade, segurança, consumo ou desgaste só serão acrescentados com justificativa histórica ou marcados explicitamente como hipótese de balanceamento.
 
 Nos serviços portuários, campo histórico vazio continua `UNKNOWN`: a simulação não o converte em `LOW` e tampouco em `NONE`. Um serviço desconhecido permanece bloqueado até que a base histórica seja refinada.
+
+No comércio, ausência de uma relação porto–mercadoria em `data/node_goods.csv` permanece ausência de mercado no protótipo. O modelo não cria oferta ou demanda apenas para tornar uma rota jogável.
