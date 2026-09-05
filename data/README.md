@@ -11,6 +11,7 @@ Este diretorio contem tabelas pequenas, versionadas e legiveis que registram a b
 - Valores ausentes permanecem vazios; nao usar `0` para significar desconhecido.
 - Divergencias entre fontes sao preservadas em linhas distintas quando alteram um dado observavel.
 - Datas reconstruidas editorialmente em fontes primarias devem ser identificadas nas notas em vez de promovidas silenciosamente a certeza documental equivalente.
+- Atores e comunidades nao sao criados para preencher lacunas de jogabilidade: so entram nas tabelas quando o corpus permite identifica-los em no, papel e periodo adequados.
 
 ## Arquivos
 
@@ -21,7 +22,13 @@ Nos maritimos e portuarios. Inclui portos, feitorias, pracas militares, colonias
 Bens comerciais ordinarios. Pessoas escravizadas nao entram nesta tabela.
 
 ### `node_goods.csv`
-Relacoes entre nos e mercadorias, distinguindo producao, hinterland, importacao, exportacao, transito e demanda.
+Relacoes entre nos e mercadorias, distinguindo producao, hinterland, importacao, exportacao, transito e demanda. `restricted=TRUE` registra uma restricao especifica que nao e anulada por acesso portuario generico.
+
+### `actors.csv`
+Atores institucionais ou comunidades historicamente identificaveis que podem participar de relacoes com o personagem. O primeiro recorte normaliza a autoridade do Samudri Raja e os mercadores muculmanos/pardesi de Calecute, alem da autoridade local de Melinde em 1498. Um ator agregado nao deve ser interpretado como bloco politico homogeneo.
+
+### `node_actors.csv`
+Associacoes temporais entre atores, nos e papeis como `AUTHORITY` e `MERCHANT_COMMUNITY`. A ausencia de linha e uma lacuna de dados, nao autorizacao para criar um ator generico em tempo de execucao.
 
 ### `routes.csv`
 Conexoes navegaveis ou historicamente relevantes, sem pressupor que sejam conhecidas pelo jogador. Rotas com `route_origin=STRATEGIC_AGGREGATE` existem apenas para leitura de rede em escala ampla e nao devem ser executadas como uma unica perna quando ha itinerario historico segmentado.
