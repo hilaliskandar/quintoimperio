@@ -20,7 +20,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 A fundação histórica, a economia relativa, o núcleo de navegação/viagem, o primeiro mapa 2D, os serviços portuários mínimos e a referência cartográfica programática estão operacionais.
 
-A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 é preservada em linhas distintas.
+A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. Todos os 20 nós possuem agora uma âncora cartográfica explícita. **Mpinda/Soyo** e **Sofala** permanecem marcados como coordenadas provisórias de confiança `MEDIUM`, sem pretensão de localizar exatamente o cais medieval. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada em linhas distintas.
 
 O domínio já oferece:
 
@@ -39,6 +39,8 @@ O domínio já oferece:
 - capacidades e tempos de serviço isolados em `simulation/port_rules.csv`;
 - mapa 2D de runtime filtrado pelo conhecimento geográfico do personagem/Coroa;
 - referência cartográfica programática com costa real e sem fronteiras políticas modernas;
+- estética náutica procedural — paleta de pergaminho, linhas de rumo e rosa-dos-ventos — sem alterar a geometria real;
+- identificação gráfica de âncoras espaciais provisórias;
 - arestas de rota tratadas como relações do grafo, não como derrotas históricas;
 - testes automatizados e smoke tests dos mapas no GitHub Actions.
 
@@ -78,6 +80,7 @@ docs/
   sources.md
   evidence/
     pilot-malindi-1498.md
+    provisional-coordinates.md
   adr/
     0001-runtime-and-engine.md
 
@@ -160,7 +163,7 @@ O GitHub Actions executa essas verificações automaticamente.
 
 ## Fontes de dados
 
-As tabelas em `data/` mantêm campos de proveniência e grau de evidência. Os números em `simulation/` são índices de balanceamento e não devem ser apresentados como dados históricos. A costa usada pela ferramenta de referência pertence somente à camada cartográfica de desenvolvimento; a posição dos nós continua vindo de `data/nodes.csv`.
+As tabelas em `data/` mantêm campos de proveniência e grau de evidência. Os números em `simulation/` são índices de balanceamento e não devem ser apresentados como dados históricos. A costa usada pela ferramenta de referência pertence somente à camada cartográfica de desenvolvimento; a posição dos nós continua vindo de `data/nodes.csv`. A justificativa específica para as âncoras provisórias de Mpinda/Soyo e Sofala está em `docs/evidence/provisional-coordinates.md`.
 
 ## Licença
 
