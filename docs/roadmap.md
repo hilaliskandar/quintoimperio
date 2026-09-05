@@ -71,7 +71,6 @@ Implementado:
 Próximos aprofundamentos, sem bloquear a interface:
 
 - eventos de risco marítimo;
-- serviços portuários de reabastecimento e reparo;
 - regras para transformar conhecimento parcial em rotas rumoreadas, localizadas e navegáveis;
 - perfis direcionais de vento apenas quando documentados por trecho;
 - substituição progressiva das escalas abstratas por parâmetros históricos quando houver evidência suficiente.
@@ -80,7 +79,7 @@ A implementação continua independente de Pygame.
 
 ## Fase 3 — Primeiro mapa e loop jogável
 
-Status: **mapa v0.1 implementado; loop jogável em construção**.
+Status: **mapa e serviços portuários v0.1 implementados; comércio jogável em construção**.
 
 Implementado:
 
@@ -92,14 +91,18 @@ Implementado:
 - linhas de rota tratadas como arestas do grafo, não como reconstrução do percurso navegado;
 - protótipo Pygame capaz de abrir janela ou renderizar PNG em modo headless;
 - ausência deliberada de costa até incorporar dado cartográfico real;
-- smoke test cartográfico no GitHub Actions.
+- serviços mínimos de reabastecimento e reparo a partir de `provisions` e `repair` de `nodes.csv`;
+- distinção operacional entre serviço desconhecido (`UNKNOWN`) e explicitamente ausente (`NONE`);
+- capacidades, limites e duração de serviços isolados em `simulation/port_rules.csv`;
+- serviços aplicados ao `VesselState` com avanço do calendário;
+- smoke test cartográfico e suíte de 51 testes no GitHub Actions.
 
 Próximo incremento do loop:
 
-1. serviços portuários mínimos de reabastecimento e reparo;
-2. estado de porto e consulta de mercado;
-3. seleção de destino navegável no mapa;
-4. compra de carga dentro da capacidade;
+1. estado comercial do jogador e capacidade de carga abstrata;
+2. consulta de mercado condicionada ao conhecimento comercial;
+3. compra e venda apenas de bens documentados no nó/período;
+4. seleção de destino navegável no mapa;
 5. viagem utilizando o `TravelModel`;
 6. chegada, venda e atualização do conhecimento.
 
@@ -153,7 +156,9 @@ Somente após estabilizar o núcleo:
 - desgaste representado provisoriamente por escala abstrata de condição;
 - piloto documentado habilita rota específica sem bônus quantitativo não sustentado;
 - primeiro mapa usa somente coordenadas reais disponíveis e não inventa costa;
-- linhas do mapa representam conexões abstratas do grafo, não derrotas históricas.
+- linhas do mapa representam conexões abstratas do grafo, não derrotas históricas;
+- serviço portuário desconhecido não é convertido silenciosamente em serviço ausente ou disponível;
+- reabastecimento e reparo usam efeitos abstratos de simulação enquanto faltarem parâmetros históricos defensáveis.
 
 ## Decisões ainda abertas
 
@@ -163,6 +168,7 @@ Somente após estabilizar o núcleo:
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
 - conjunto cartográfico real e nível de detalhe da costa;
-- modelo de eventos marítimos e avarias.
+- modelo de eventos marítimos e avarias;
+- unidade monetária/contábil do primeiro protótipo comercial.
 
 Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
