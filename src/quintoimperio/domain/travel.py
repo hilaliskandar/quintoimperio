@@ -1,4 +1,4 @@
-"""Estado de viagem, provisoes abstratas, desgaste e pilotos v0.1."""
+"""Estado de viagem, provisoes abstratas, desgaste, pilotos e comando v0.1."""
 
 from __future__ import annotations
 
@@ -16,10 +16,11 @@ from .navigation import NavigationModel
 
 
 class NavigationBasis(str, Enum):
-    """Base pela qual o personagem consegue operar uma rota."""
+    """Base pela qual o personagem participa da operacao de uma rota."""
 
     OWN_KNOWLEDGE = "OWN_KNOWLEDGE"
     PILOT = "PILOT"
+    FLEET_COMMAND = "FLEET_COMMAND"
 
 
 @dataclass(frozen=True)
@@ -63,12 +64,13 @@ class VoyagePlan:
 
 
 class TravelModel:
-    """Orquestra navegacao, recursos abstratos e conhecimento de rota.
+    """Orquestra navegacao, recursos abstratos e bases de participacao na rota.
 
     Pilotos historicos podem habilitar uma rota quando o conhecimento nautico
-    do personagem ainda nao e operacional. Na v0.1, o piloto NAO concede bonus
-    quantitativo de velocidade, consumo ou desgaste: a fonte sustenta sua funcao
-    de guia na rota, mas nao uma taxa numerica para esses efeitos.
+    do personagem ainda nao e operacional. Uma expedicao ativa pode fornecer a
+    base institucional ``FLEET_COMMAND`` sem transformar o comando da armada em
+    conhecimento pessoal do personagem. Nenhuma dessas bases concede bonus
+    quantitativo de velocidade, consumo ou desgaste na v0.1.
     """
 
     def __init__(self, root: Path | None = None) -> None:
@@ -118,11 +120,14 @@ class TravelModel:
         on_date: date,
         origin_node: str,
         pilot_id: str | None = None,
+        fleet_command: bool = False,
     ) -> NavigationBasis | None:
         if nav_knowledge >= KnowledgeLevel.OPERATIONAL:
             return NavigationBasis.OWN_KNOWLEDGE
         if pilot_id and self.pilot_can_guide(pilot_id, route_id, on_date, origin_node):
             return NavigationBasis.PILOT
+        if fleet_command:
+            return NavigationBasis.FLEET_COMMAND
         return None
 
     def wear_per_day(self, route_id: str) -> float:
@@ -139,6 +144,7 @@ class TravelModel:
         route_id: str,
         nav_knowledge: KnowledgeLevel,
         pilot_id: str | None = None,
+        fleet_command: bool = False,
         seed: int = 0,
     ) -> VoyagePlan:
         route = self.routes[route_id]
@@ -168,10 +174,12 @@ class TravelModel:
             state.clock.current_date,
             state.location_node,
             pilot_id,
+            fleet_command,
         )
 
         blockers: list[str] = []
         if basis is None:
+            # Identificador preservado por compatibilidade com testes/telemetria v0.1.
             blockers.append("NAVIGATION_KNOWLEDGE_OR_PILOT_REQUIRED")
         if state.provision_days < provisions_required:
             blockers.append("INSUFFICIENT_PROVISIONS")
