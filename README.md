@@ -18,7 +18,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, a economia relativa, navegação/viagem, serviços portuários, comércio, cartografia e o **primeiro estado de sessão integrado v0.1** estão operacionais.
+A fundação histórica, a economia relativa, navegação/viagem, serviços portuários, comércio, cartografia, sessão integrada e a **primeira interface jogável Pygame v0.1** estão operacionais.
 
 A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. Todos os 20 nós possuem uma âncora cartográfica explícita. **Mpinda/Soyo** e **Sofala** permanecem marcados como coordenadas provisórias de confiança `MEDIUM`, sem pretensão de localizar exatamente o cais medieval. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada em linhas distintas.
 
@@ -37,16 +37,19 @@ O domínio já oferece:
 - compra e venda somente em mercados documentados em `node_goods.csv`;
 - `GameSessionState` imutável reunindo navio, comércio e conhecimento;
 - mercado condicionado ao `market_knowledge`;
-- viagem condicionada ao conhecimento **da rota** ou a piloto competente;
+- viagem condicionada ao conhecimento da rota ou a piloto competente;
 - aprendizagem explícita por chegada e por conclusão de rota;
 - cenário técnico determinístico que executa `mercado → compra → viagem → chegada → venda` sem ser apresentado como estado histórico inicial;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real e sem fronteiras políticas modernas;
 - estética náutica procedural sem alterar a geometria real;
-- testes automatizados e smoke tests no GitHub Actions.
+- interface Pygame com mapa conhecido, porto atual, data, navio, capital, carga, mercado e rotas de saída;
+- compra, venda e viagem acionadas pela interface sem duplicar regras de domínio;
+- modo `HISTORICAL`, que preserva bloqueios reais da base atual, e modo `TECHNICAL`, explicitamente marcado como cenário de integração não histórico;
+- testes automatizados, smoke tests e capturas de interface no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: expor o `GameSessionState` em uma **interface Pygame mínima**, conectando mapa, painel do porto, mercado, carga e seleção de viagem sem duplicar regras de domínio.
+Próximo incremento: refinar o loop jogável sem esconder lacunas históricas — principalmente a forma institucional pela qual o personagem participa da armada de 1497 quando seu conhecimento náutico individual não é operacional, além de integrar serviços portuários e aquisição de informação à sessão.
 
 ## Estrutura
 
@@ -81,6 +84,7 @@ docs/
   port-method.md
   trade-method.md
   session-method.md
+  interface-method.md
   roadmap.md
   sources.md
   evidence/
@@ -111,6 +115,7 @@ prototype/
   trade.py
   travel.py
   map.py
+  game.py
 
 tools/
   render_cartographic_map.py
@@ -161,6 +166,27 @@ python prototype/session.py
 python prototype/map.py
 ```
 
+Primeira interface interativa, preservando o estado histórico inicial:
+
+```bash
+python prototype/game.py --scenario HISTORICAL
+```
+
+Cenário técnico jogável de integração, explicitamente não histórico:
+
+```bash
+python prototype/game.py --scenario TECHNICAL
+```
+
+Na interface, `R` reinicia o cenário, `Tab` alterna entre os dois modos e `Esc` encerra.
+
+Smoke test da interface sem janela:
+
+```bash
+SDL_VIDEODRIVER=dummy python prototype/game.py --scenario HISTORICAL --output /tmp/game-historical.png
+SDL_VIDEODRIVER=dummy python prototype/game.py --scenario TECHNICAL --output /tmp/game-technical.png
+```
+
 Mapa de runtime sem janela interativa:
 
 ```bash
@@ -173,7 +199,7 @@ Referência cartográfica programática:
 python tools/render_cartographic_map.py --perspective REFERENCE --output build/map-reference.png
 ```
 
-O GitHub Actions executa essas verificações automaticamente.
+O GitHub Actions executa essas verificações automaticamente e publica as capturas da interface jogável como artefato do workflow.
 
 ## Fontes de dados
 
