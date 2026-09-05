@@ -117,6 +117,10 @@ class PlayablePrototype:
         self.selected_route = None
         self.message = "Sessão reiniciada."
 
+    def visible_relationships(self):
+        """Retorna somente atores já contatados pelo personagem."""
+        return self.session.contacted_relationships(self.state)
+
     def visible_points(self) -> list[MapPoint]:
         points: list[MapPoint] = []
         for record in self.state.node_knowledge:
@@ -294,6 +298,37 @@ class PlayablePrototype:
             lines.append(current)
         return lines
 
+    @staticmethod
+    def _place_map_label(
+        label: pygame.Surface,
+        x: int,
+        y: int,
+        occupied: list[pygame.Rect],
+    ) -> pygame.Rect:
+        """Posiciona rótulos sem alterar coordenadas dos nós."""
+        width, height = label.get_size()
+        offsets = [
+            (8, -8),
+            (8, 10),
+            (8, -26),
+            (8, 28),
+            (8, -44),
+            (8, 46),
+            (-width - 8, -8),
+            (-width - 8, 10),
+            (-width - 8, -26),
+            (-width - 8, 28),
+        ]
+        bounds = MAP_RECT.inflate(-8, -8)
+        fallback = label.get_rect(topleft=(x + 8, y - 8))
+        fallback.clamp_ip(bounds)
+        for dx, dy in offsets:
+            candidate = label.get_rect(topleft=(x + dx, y + dy))
+            candidate.clamp_ip(bounds)
+            if not any(candidate.colliderect(rect.inflate(4, 2)) for rect in occupied):
+                return candidate
+        return fallback
+
     def _draw_map(self, surface: pygame.Surface, small: pygame.font.Font) -> None:
         pygame.draw.rect(surface, SEA, MAP_RECT, border_radius=4)
         pygame.draw.rect(surface, LINE, MAP_RECT, width=1, border_radius=4)
@@ -330,6 +365,7 @@ class PlayablePrototype:
             p2 = (p2[0] + MAP_RECT.left, p2[1] + MAP_RECT.top)
             pygame.draw.line(surface, (125, 119, 101), p1, p2, 2)
 
+        occupied_labels: list[pygame.Rect] = []
         for point in points:
             x, y = self.world.project(point, extent, MAP_RECT.width, MAP_RECT.height, 35)
             x += MAP_RECT.left
@@ -338,7 +374,18 @@ class PlayablePrototype:
             radius = 8 if point.node_id == self.state.vessel.location_node else 5
             pygame.draw.circle(surface, color, (x, y), radius)
             label = small.render(point.label, True, INK)
-            surface.blit(label, (x + 8, y - 8))
+            label_rect = self._place_map_label(label, x, y, occupied_labels)
+            if abs(label_rect.centery - y) > 10 or label_rect.left < x:
+                anchor_x = label_rect.left if label_rect.centerx >= x else label_rect.right
+                pygame.draw.line(
+                    surface,
+                    LINE,
+                    (x, y),
+                    (anchor_x, label_rect.centery),
+                    1,
+                )
+            surface.blit(label, label_rect)
+            occupied_labels.append(label_rect)
 
             for route_id in self.outgoing_routes():
                 route = self.session.routes[route_id]
@@ -499,6 +546,17 @@ class PlayablePrototype:
             info_x += width + 6
         y += 31
 
+        contacts = self.visible_relationships()
+        if contacts:
+            self._draw_text(surface, tiny, "Relações estabelecidas", (x, y), MUTED)
+            y += 17
+            for actor in contacts[:2]:
+                lines = self._wrap(micro, actor.label, SIDE_RECT.width - 50)
+                if lines:
+                    self._draw_text(surface, micro, f"- {lines[0]}", (x + 8, y), INK)
+                    y += 15
+            y += 2
+
         self._draw_text(surface, body, "Carga", (x, y))
         y += 21
         if self.state.commerce.cargo:
@@ -593,7 +651,7 @@ class PlayablePrototype:
             y += 15
 
         note_y = SIDE_RECT.bottom - 33
-        note = "Acesso, informação, eventos e índices são simulação; nenhuma taxa/presente é presumida."
+        note = "Acesso, informação, relações, eventos e índices são simulação; nenhuma taxa/presente é presumida."
         for line in self._wrap(micro, note, SIDE_RECT.width - 34)[:2]:
             self._draw_text(surface, micro, line, (x, note_y), MUTED)
             note_y += 14
