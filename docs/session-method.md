@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Compor os módulos já existentes em um primeiro ciclo contínuo de jogo sem antecipar a interface final. `GameSessionModel` não cria nova evidência histórica: ele coordena conhecimento, comércio e viagem e aplica somente regras explícitas de simulação.
+Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameSessionModel` não cria nova evidência histórica: ele coordena conhecimento, comércio, serviços portuários e viagem e aplica somente regras explícitas de simulação.
 
 ## Estado
 
@@ -32,6 +32,23 @@ O mercado do porto atual só é operacional quando `market_knowledge >= OPERATIO
 
 Quando operacional, a sessão delega cotações e operações ao `TradeModel`; nenhuma mercadoria ausente de `node_goods.csv` é criada para completar o loop.
 
+## Serviços portuários
+
+`GameSessionModel` também compõe `PortServiceModel`. A sessão expõe a disponibilidade documentada de provisões e reparo no porto atual e devolve um novo `GameSessionState` quando uma ação é executada.
+
+As regras continuam as mesmas do módulo portuário:
+
+- campo histórico vazio permanece `UNKNOWN`;
+- `UNKNOWN` não é convertido em `NONE` nem em serviço disponível;
+- `NONE` é ausência explicitamente registrada;
+- `LOW`, `MEDIUM` e `HIGH` podem ser transformados em capacidades ou taxas somente pelas regras de simulação de `port_rules.csv`;
+- reabastecimento altera provisões e calendário;
+- reparo altera condição e calendário;
+- o estado comercial e o conhecimento permanecem inalterados por esses serviços na v0.1;
+- nenhum custo monetário é inventado enquanto o corpus não sustentar uma regra histórica ou uma hipótese de balanceamento separada.
+
+`SessionPortServiceResult` preserva o estado antes/depois, bloqueios, efeito e dias gastos.
+
 ## Viagem e piloto
 
 A sessão delega planejamento e execução ao `TravelModel`, usando o conhecimento **da rota**. Um piloto histórico pode habilitar a viagem mesmo quando o personagem ainda não possui conhecimento operacional.
@@ -60,6 +77,12 @@ mercado → compra → viagem → chegada → venda
 
 Ele **não representa o estado histórico inicial do personagem** e não altera os valores iniciais de `nodes.csv` ou `routes.csv`.
 
+## Interface
+
+A interface Pygame chama diretamente os métodos desta sessão para mercado, compra, venda, reabastecimento, reparo, planejamento e execução de viagem. Regras de domínio não são reproduzidas na camada gráfica.
+
+O estado `HISTORICAL` preserva os bloqueios do modelo atual. O cenário `TECHNICAL` é identificado visualmente como não histórico.
+
 ## Próximo passo
 
-Depois de estabilizado este estado de sessão, a interface Pygame deve apenas apresentar e acionar essas operações. Regras de mercado, viagem ou aprendizagem não devem ser duplicadas na camada gráfica.
+O principal bloqueio conceitual deixou de ser técnico e passou a ser institucional: a campanha de 1497 precisa representar como um personagem participa de uma armada comandada pela Coroa quando seu próprio conhecimento náutico não é suficiente para operar autonomamente a rota. Essa camada deve distinguir ordem/cadeia de comando, piloto, conhecimento institucional e conhecimento individual sem conceder onisciência ao personagem.
