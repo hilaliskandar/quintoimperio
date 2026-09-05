@@ -37,19 +37,20 @@ O domínio já oferece:
 - compra e venda somente em mercados documentados em `node_goods.csv`;
 - `GameSessionState` imutável reunindo navio, comércio e conhecimento;
 - mercado condicionado ao `market_knowledge`;
+- serviços portuários integrados ao mesmo estado de sessão, alterando navio e calendário sem inventar custo monetário;
 - viagem condicionada ao conhecimento da rota ou a piloto competente;
 - aprendizagem explícita por chegada e por conclusão de rota;
 - cenário técnico determinístico que executa `mercado → compra → viagem → chegada → venda` sem ser apresentado como estado histórico inicial;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real e sem fronteiras políticas modernas;
 - estética náutica procedural sem alterar a geometria real;
-- interface Pygame com mapa conhecido, porto atual, data, navio, capital, carga, mercado e rotas de saída;
-- compra, venda e viagem acionadas pela interface sem duplicar regras de domínio;
+- interface Pygame com mapa conhecido, porto atual, data, navio, capital, carga, serviços, mercado e rotas de saída;
+- compra, venda, reabastecimento, reparo e viagem acionados pela interface sem duplicar regras de domínio;
 - modo `HISTORICAL`, que preserva bloqueios reais da base atual, e modo `TECHNICAL`, explicitamente marcado como cenário de integração não histórico;
 - testes automatizados, smoke tests e capturas de interface no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: refinar o loop jogável sem esconder lacunas históricas — principalmente a forma institucional pela qual o personagem participa da armada de 1497 quando seu conhecimento náutico individual não é operacional, além de integrar serviços portuários e aquisição de informação à sessão.
+Próximo incremento: modelar a participação institucional do personagem numa armada comandada pela Coroa, distinguindo conhecimento individual, conhecimento institucional, piloto e cadeia de comando sem conceder onisciência ao personagem. Em seguida, ampliar a aquisição de informação por rumor, contato, carta e interação mercantil.
 
 ## Estrutura
 
