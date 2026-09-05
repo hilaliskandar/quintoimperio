@@ -50,7 +50,7 @@ Implementado:
 - `ChronologyMode.GUIDED` e `COUNTERFACTUAL` para separar reprodução temporal da campanha de trajetórias divergentes;
 - bloqueio de partida antes da data documentada numa escala guiada;
 - espera explícita até a partida sem efeitos materiais automáticos;
-- serviços portuários consumindo o mesmo calendário da permanência;
+- serviços portuários e interações informativas consumindo o mesmo calendário da permanência;
 - ruído determinístico somente quando não há observação exata da partida;
 - quatro dimensões de conhecimento por nó;
 - conhecimento náutico de rota separado de conhecimento de nó;
@@ -79,12 +79,17 @@ Implementado:
 - serviços portuários com `UNKNOWN` distinto de `NONE`;
 - estado comercial imutável;
 - compra/venda apenas em mercados documentados;
-- `GameSessionState` reunindo navio, comércio, conhecimento, expedição ativa, cronologia e escala ativa;
+- `GameSessionState` reunindo navio, comércio, conhecimento, histórico de informação, expedição ativa, cronologia e escala ativa;
 - mercado bloqueado até conhecimento operacional;
 - reabastecimento/reparo integrados à sessão;
 - aprendizagem por chegada e conclusão de rota;
+- aquisição ativa de informação por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`;
+- oportunidades informativas limitadas à rede documentada e nunca derivadas por cópia do estado da Coroa;
+- canais limitados abaixo de `OPERATIONAL` para que rumor/consulta não substituam experiência efetiva;
+- cada oportunidade informativa utilizável uma vez por sessão e seleção determinística por semente;
 - cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → venda`;
-- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, mercado, armada ativa, escala, espera e rotas;
+- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, informação, mercado, armada ativa, escala, espera e rotas;
+- botões de informação que não revelam o alvo antes da interação;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497` e cronologia `GUIDED`;
 - modo `TECHNICAL` claramente identificado como não histórico e `COUNTERFACTUAL`;
 - `FLEET_COMMAND` visível sem elevar conhecimento pessoal;
@@ -97,14 +102,14 @@ Implementado:
 
 Próximos incrementos do loop:
 
-1. introduzir aquisição de informação por rumor, conversa, carta, piloto e contato mercantil;
-2. expor diferença entre conhecimento pessoal e institucional sem revelar informação oculta;
-3. acrescentar eventos/avarias com regras auditáveis;
+1. acrescentar eventos marítimos/avarias com regras auditáveis;
+2. expor melhor, sem vazamento, a diferença entre conhecimento pessoal, rumor e informação institucional;
+3. introduzir relações/reputação e negociação de acesso;
 4. refinar a interface sem sacrificar a separação entre cartografia e domínio.
 
 ## Fase 4 — Portos, instituições e relações
 
-Status: **fundação institucional iniciada**.
+Status: **fundação institucional e informacional iniciada**.
 
 Já implementado:
 
@@ -114,16 +119,21 @@ Já implementado:
 - comando institucional como base de viagem específica;
 - piloto como competência distinta do comando;
 - serviços portuários mínimos;
-- permanência histórica sem efeitos materiais automáticos.
+- permanência histórica sem efeitos materiais automáticos;
+- rumor como canal de conhecimento não operacional;
+- contato mercantil condicionado à disponibilidade de intermediários;
+- consulta a piloto condicionada a competência histórica de rota;
+- histórico de oportunidades informativas usadas por sessão.
 
 Ainda por implementar:
 
 - regimes de acesso e negociação;
-- intermediários e comunidades mercantis;
+- intermediários e comunidades mercantis como agentes mais ricos que um simples campo de disponibilidade;
 - reputação com autoridades e grupos comerciais;
 - impostos, monopólios, privilégios e presentes diplomáticos;
 - contratos e crédito;
-- aquisição/transferência de informação;
+- cartas persistentes, mensagens e redes pessoais de informação;
+- desinformação/qualidade de informantes somente se necessária ao jogo;
 - hierarquia mais detalhada de capitães, mestres, pilotos, escrivães, marinheiros e soldados, apenas se necessária ao jogo e sustentada pela documentação.
 
 ## Fase 5 — Campanha 1497–1505
@@ -160,6 +170,11 @@ Somente após estabilizar o núcleo:
 - linhas do mapa são arestas do grafo, não derrotas;
 - conhecimento de nó, conhecimento de rota e comando institucional são estados distintos;
 - personagem e Coroa possuem estados de conhecimento separados;
+- aquisição de informação não copia silenciosamente o estado da Coroa;
+- rumor não produz conhecimento operacional;
+- contato mercantil melhora conhecimento comercial/geográfico sem conferir navegação operacional;
+- consulta a piloto fica limitada a `PARTIAL` e não substitui pilotagem/experiência;
+- alvos informativos provêm apenas de rotas/nós documentados e excluem `STRATEGIC_AGGREGATE`;
 - piloto documentado não recebe bônus quantitativo não sustentado;
 - `FLEET_COMMAND` não aumenta conhecimento pessoal antes da viagem;
 - observação exata de viagem tem precedência sobre ruído/extrapolação;
@@ -182,7 +197,7 @@ Somente após estabilizar o núcleo:
 - protagonista e enquadramento exato da campanha;
 - eventos marítimos e avarias;
 - unidade monetária posterior ao protótipo;
-- aquisição de informação por conversa, contrato, rumor, carta e espionagem;
+- cartas, contratos informacionais, espionagem e desinformação;
 - desenho visual definitivo da interface.
 
 Essas decisões devem ser tomadas com protótipos pequenos e testes, não por documentação especulativa.
