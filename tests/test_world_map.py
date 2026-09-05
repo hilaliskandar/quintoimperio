@@ -13,11 +13,28 @@ class WorldMapTests(unittest.TestCase):
         self.assertIn("LIS", visible)
         self.assertIn("CGH", visible)
         self.assertIn("CAL", visible)
+        self.assertIn("MPI", visible)
         self.assertNotIn("MAL", visible)
         self.assertNotIn("MOZ", visible)
+        self.assertNotIn("SOF", visible)
 
-    def test_missing_coordinates_are_not_fabricated(self):
-        self.assertIsNone(self.model.point_for_node("MPI", "PLAYER"))
+    def test_all_current_nodes_have_explicit_coordinate_anchors(self):
+        for node_id, row in self.model.nodes.items():
+            with self.subTest(node_id=node_id):
+                self.assertTrue(row["latitude"])
+                self.assertTrue(row["longitude"])
+
+    def test_provisional_anchor_coordinates_are_explicit(self):
+        mpinda = self.model.point_for_node("MPI", "PLAYER")
+        sofal = self.model.point_for_node("SOF", "CROWN")
+        self.assertIsNotNone(mpinda)
+        self.assertIsNotNone(sofal)
+        self.assertAlmostEqual(mpinda.latitude, -6.1981, places=4)
+        self.assertAlmostEqual(mpinda.longitude, 12.3933, places=4)
+        self.assertAlmostEqual(sofal.latitude, -20.1562, places=4)
+        self.assertAlmostEqual(sofal.longitude, 34.7383, places=4)
+        self.assertEqual(self.model.nodes["MPI"]["coordinate_confidence"], "MEDIUM")
+        self.assertEqual(self.model.nodes["SOF"]["coordinate_confidence"], "MEDIUM")
 
     def test_calicut_is_visible_as_partial_geographic_knowledge(self):
         point = self.model.point_for_node("CAL", "PLAYER")
