@@ -29,6 +29,11 @@ class NavigationTests(unittest.TestCase):
         self.assertGreater(self.model.reference_daily_nm, 50.0)
         self.assertLess(self.model.reference_daily_nm, 120.0)
 
+    def test_reference_route_base_duration_is_mean_of_preserved_observations(self):
+        base = self.model.base_duration_days("R_MAL_CAL", date(1498, 4, 24))
+        self.assertIsNotNone(base)
+        self.assertAlmostEqual(base, 26.5, places=6)
+
     def test_april_estimate_matches_reference_order_of_magnitude(self):
         days = self.model.estimate_duration_days(
             "R_MAL_CAL", date(1498, 4, 24), seed=1498
