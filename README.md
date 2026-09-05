@@ -18,38 +18,35 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, a economia relativa, o núcleo de navegação/viagem, o primeiro mapa 2D, os serviços portuários mínimos, o estado comercial v0.1 e a referência cartográfica programática estão operacionais.
+A fundação histórica, a economia relativa, navegação/viagem, serviços portuários, comércio, cartografia e o **primeiro estado de sessão integrado v0.1** estão operacionais.
 
-A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. Todos os 20 nós possuem agora uma âncora cartográfica explícita. **Mpinda/Soyo** e **Sofala** permanecem marcados como coordenadas provisórias de confiança `MEDIUM`, sem pretensão de localizar exatamente o cais medieval. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada em linhas distintas.
+A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias, 2 observações de viagem e o primeiro piloto histórico normalizado. Todos os 20 nós possuem uma âncora cartográfica explícita. **Mpinda/Soyo** e **Sofala** permanecem marcados como coordenadas provisórias de confiança `MEDIUM`, sem pretensão de localizar exatamente o cais medieval. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada em linhas distintas.
 
 O domínio já oferece:
 
 - economia relativa com estoques estruturais e de trânsito;
-- calendário e fases gerais da monção;
-- distâncias geodésicas de referência sem confundi-las com distâncias históricas navegadas;
-- duração de viagem determinística por semente;
-- calibração inicial Melinde–Calecute;
-- quatro dimensões independentes de conhecimento do personagem e da Coroa;
-- pilotos históricos associados a rotas e períodos específicos;
-- bloqueio de rotas sem conhecimento náutico operacional ou piloto competente;
-- estado imutável do navio, dias-equivalentes de provisões e condição abstrata 0–100;
-- planejamento e execução de viagem com consumo de provisões e desgaste;
-- reabastecimento e reparo baseados nos campos históricos de `nodes.csv`;
-- distinção explícita entre serviço `UNKNOWN` e `NONE`;
-- capacidades e tempos de serviço isolados em `simulation/port_rules.csv`;
-- capital, capacidade de carga e inventário em escalas abstratas de simulação;
-- compra e venda bloqueadas quando a relação porto–mercadoria não está documentada em `node_goods.csv`;
-- spread de compra/venda isolado em `simulation/trade_rules.csv`, sem pretensão de representar margem histórica;
-- mapa 2D de runtime filtrado pelo conhecimento geográfico do personagem/Coroa;
-- referência cartográfica programática com costa real e sem fronteiras políticas modernas;
-- estética náutica procedural — paleta de pergaminho, linhas de rumo e rosa-dos-ventos — sem alterar a geometria real;
-- identificação gráfica de âncoras espaciais provisórias;
-- arestas de rota tratadas como relações do grafo, não como derrotas históricas;
-- testes automatizados e smoke tests dos protótipos no GitHub Actions.
+- calendário, monções, distâncias geodésicas e duração determinística por semente;
+- calibração inicial Melinde–Calecute e propagação da confiança espacial da rota;
+- quatro dimensões independentes de conhecimento por nó;
+- conhecimento náutico de rota separado do conhecimento do porto;
+- estados separados para personagem e Coroa;
+- piloto histórico guzerate de Melinde associado somente à rota documentada até Calecute;
+- estado imutável do navio, provisões abstratas e condição 0–100;
+- reabastecimento e reparo com distinção entre `UNKNOWN` e `NONE`;
+- capital, capacidade de carga e inventário abstratos;
+- compra e venda somente em mercados documentados em `node_goods.csv`;
+- `GameSessionState` imutável reunindo navio, comércio e conhecimento;
+- mercado condicionado ao `market_knowledge`;
+- viagem condicionada ao conhecimento **da rota** ou a piloto competente;
+- aprendizagem explícita por chegada e por conclusão de rota;
+- cenário técnico determinístico que executa `mercado → compra → viagem → chegada → venda` sem ser apresentado como estado histórico inicial;
+- mapa de runtime em Pygame e referência cartográfica programática com costa real e sem fronteiras políticas modernas;
+- estética náutica procedural sem alterar a geometria real;
+- testes automatizados e smoke tests no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próximo incremento: ligar mapa, porto, mercado, inventário e viagem em uma primeira sessão jogável contínua, mantendo a interface ainda mínima.
+Próximo incremento: expor o `GameSessionState` em uma **interface Pygame mínima**, conectando mapa, painel do porto, mercado, carga e seleção de viagem sem duplicar regras de domínio.
 
 ## Estrutura
 
@@ -71,6 +68,8 @@ simulation/
   rules.csv
   navigation_rules.csv
   knowledge_rules.csv
+  route_knowledge_rules.csv
+  session_rules.csv
   travel_rules.csv
   port_rules.csv
   trade_rules.csv
@@ -81,6 +80,7 @@ docs/
   map-method.md
   port-method.md
   trade-method.md
+  session-method.md
   roadmap.md
   sources.md
   evidence/
@@ -97,6 +97,8 @@ src/quintoimperio/
     knowledge.py
     navigation.py
     port.py
+    route_knowledge.py
+    session.py
     trade.py
     travel.py
     world_map.py
@@ -105,6 +107,7 @@ prototype/
   economy.py
   navigation.py
   port.py
+  session.py
   trade.py
   travel.py
   map.py
@@ -118,6 +121,7 @@ tests/
   test_navigation.py
   test_port.py
   test_port_data.py
+  test_session.py
   test_trade.py
   test_travel.py
   test_world_map.py
@@ -125,19 +129,19 @@ tests/
 
 ## Desenvolvimento
 
-Instalação do núcleo sem dependências gráficas:
+Instalação do núcleo:
 
 ```bash
 python -m pip install -e .
 ```
 
-Instalação com a camada de protótipo em Pygame:
+Com Pygame:
 
 ```bash
 python -m pip install -e ".[game]"
 ```
 
-Instalação das ferramentas cartográficas de desenvolvimento:
+Com ferramentas cartográficas:
 
 ```bash
 python -m pip install -e ".[cartography]"
@@ -153,6 +157,7 @@ python prototype/navigation.py
 python prototype/travel.py
 python prototype/port.py
 python prototype/trade.py
+python prototype/session.py
 python prototype/map.py
 ```
 
