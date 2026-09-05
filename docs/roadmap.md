@@ -52,6 +52,9 @@ Implementado:
 - espera explícita até a partida sem efeitos materiais automáticos;
 - serviços portuários e interações informativas consumindo o mesmo calendário da permanência;
 - ruído determinístico somente quando não há observação exata da partida;
+- eventos marítimos genéricos determinísticos por semente, limitados a atraso e perda abstrata de condição;
+- observação histórica exata suprimindo eventos aleatórios em cronologia `GUIDED`;
+- possibilidade de a mesma rota/data receber evento em cronologia `COUNTERFACTUAL`;
 - quatro dimensões de conhecimento por nó;
 - conhecimento náutico de rota separado de conhecimento de nó;
 - estados separados para personagem e Coroa;
@@ -62,10 +65,10 @@ Implementado:
 
 Próximos aprofundamentos:
 
-1. eventos de risco marítimo;
-2. perfis direcionais de vento apenas quando documentados por trecho;
-3. substituir escalas abstratas somente quando houver evidência suficiente;
-4. refinar cronologias editoriais do `Roteiro` quando novas edições/fontes permitirem.
+1. perfis direcionais de vento apenas quando documentados por trecho;
+2. substituir escalas abstratas somente quando houver evidência suficiente;
+3. refinar cronologias editoriais do `Roteiro` quando novas edições/fontes permitirem;
+4. somente depois avaliar doença, perdas materiais, encalhe/naufrágio e outros riscos com modelos próprios.
 
 ## Fase 3 — Primeiro mapa e loop jogável
 
@@ -79,7 +82,7 @@ Implementado:
 - serviços portuários com `UNKNOWN` distinto de `NONE`;
 - estado comercial imutável;
 - compra/venda apenas em mercados documentados;
-- `GameSessionState` reunindo navio, comércio, conhecimento, histórico de informação, expedição ativa, cronologia e escala ativa;
+- `GameSessionState` reunindo navio, comércio, conhecimento, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
 - mercado bloqueado até conhecimento operacional;
 - reabastecimento/reparo integrados à sessão;
 - aprendizagem por chegada e conclusão de rota;
@@ -87,8 +90,9 @@ Implementado:
 - oportunidades informativas limitadas à rede documentada e nunca derivadas por cópia do estado da Coroa;
 - canais limitados abaixo de `OPERATIONAL` para que rumor/consulta não substituam experiência efetiva;
 - cada oportunidade informativa utilizável uma vez por sessão e seleção determinística por semente;
+- eventos de viagem registrados no plano e no histórico da sessão para auditoria;
 - cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → venda`;
-- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, informação, mercado, armada ativa, escala, espera e rotas;
+- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, informação, mercado, armada ativa, escala, espera, rotas e último evento `SIM` quando houver;
 - botões de informação que não revelam o alvo antes da interação;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497` e cronologia `GUIDED`;
 - modo `TECHNICAL` claramente identificado como não histórico e `COUNTERFACTUAL`;
@@ -102,14 +106,14 @@ Implementado:
 
 Próximos incrementos do loop:
 
-1. acrescentar eventos marítimos/avarias com regras auditáveis;
+1. introduzir regimes de acesso e primeira negociação institucional;
 2. expor melhor, sem vazamento, a diferença entre conhecimento pessoal, rumor e informação institucional;
-3. introduzir relações/reputação e negociação de acesso;
+3. introduzir relações/reputação com atores mercantis e autoridades;
 4. refinar a interface sem sacrificar a separação entre cartografia e domínio.
 
 ## Fase 4 — Portos, instituições e relações
 
-Status: **fundação institucional e informacional iniciada**.
+Status: **fundação institucional e informacional iniciada; próxima frente do loop**.
 
 Já implementado:
 
@@ -123,7 +127,8 @@ Já implementado:
 - rumor como canal de conhecimento não operacional;
 - contato mercantil condicionado à disponibilidade de intermediários;
 - consulta a piloto condicionada a competência histórica de rota;
-- histórico de oportunidades informativas usadas por sessão.
+- histórico de oportunidades informativas usadas por sessão;
+- risco marítimo genérico separado de incidentes históricos documentados.
 
 Ainda por implementar:
 
@@ -177,7 +182,10 @@ Somente após estabilizar o núcleo:
 - alvos informativos provêm apenas de rotas/nós documentados e excluem `STRATEGIC_AGGREGATE`;
 - piloto documentado não recebe bônus quantitativo não sustentado;
 - `FLEET_COMMAND` não aumenta conhecimento pessoal antes da viagem;
-- observação exata de viagem tem precedência sobre ruído/extrapolação;
+- observação exata de viagem tem precedência sobre ruído/extrapolação e sobre evento aleatório em cronologia `GUIDED`;
+- eventos marítimos v0.1 são `SIMULATION`, no máximo um por viagem e limitados a tempo/provisões/condição;
+- evento genérico não representa calmaria, tempestade ou avaria histórica específica;
+- em `COUNTERFACTUAL`, uma rota/data historicamente observada pode receber evento de simulação;
 - itinerário Lisboa–Moçambique é segmentado para execução e as conexões agregadas ficam apenas como camada estratégica;
 - ancoradouro logístico não é convertido automaticamente em mercado;
 - datas editoriais do `Roteiro` são marcadas como reconstruções;
@@ -195,7 +203,7 @@ Somente após estabilizar o núcleo:
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
 - protagonista e enquadramento exato da campanha;
-- eventos marítimos e avarias;
+- doenças, perdas de carga/tripulação, encalhe, naufrágio e combate marítimo;
 - unidade monetária posterior ao protótipo;
 - cartas, contratos informacionais, espionagem e desinformação;
 - desenho visual definitivo da interface.
