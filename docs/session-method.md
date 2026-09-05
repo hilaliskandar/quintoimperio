@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameSessionModel` não cria nova evidência histórica: ele coordena conhecimento, aquisição de informação, comércio, serviços portuários, expedições, permanências e viagem e aplica somente regras explícitas de simulação.
+Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameSessionModel` não cria nova evidência histórica: ele coordena conhecimento, aquisição de informação, comércio, serviços portuários, expedições, permanências, eventos marítimos de simulação e viagem e aplica somente regras explícitas de simulação.
 
 ## Estado
 
@@ -13,6 +13,7 @@ Compor os módulos já existentes em um primeiro ciclo contínuo de jogo. `GameS
 - conhecimento do personagem por nó;
 - conhecimento náutico do personagem por rota;
 - `information_history`, com oportunidades informativas já consumidas;
+- `voyage_event_history`, com eventos de simulação efetivamente aplicados às viagens;
 - expedição ativa opcional e número da perna corrente;
 - `chronology_mode` (`GUIDED` ou `COUNTERFACTUAL`);
 - `active_stop_id`, quando a chegada corresponde a uma permanência documentada.
@@ -75,13 +76,21 @@ O mercado do porto atual só é operacional quando `market_knowledge >= OPERATIO
 
 O limite máximo abstrato de provisões foi ampliado para comportar a perna observada São Thiago–baía de Santa Helena. Esse valor não representa tonelagem, ração diária, água por tripulante ou capacidade histórica de uma embarcação.
 
-## Navegação e observações históricas
+## Navegação, observações e eventos marítimos
 
 A sessão delega duração e execução ao `TravelModel`/`NavigationModel`. Observações documentadas para a rota e data exatas têm precedência sobre extrapolações geodésicas.
 
 A partida histórica inicial é `R_LIS_STG`: 8 de julho de 1497 até São Thiago/baía de Santa Maria. O itinerário segue depois por baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais e Moçambique. Datas reconstruídas entre colchetes pela edição Ravenstein do `Roteiro` são marcadas como editoriais nas notas de evidência.
 
 A observação agregada Lisboa–Cabo de Subrahmanyam continua preservada para comparação historiográfica, mas `R_LIS_CGH` não é executável como uma única viagem.
+
+`GameSessionModel.plan_voyage()` conecta explicitamente cronologia e risco marítimo:
+
+- em `GUIDED`, `preserve_observed_timing=True`; se rota/data tiver observação exata, `TravelModel` marca `events_suppressed_by_observation=True` e não aplica evento aleatório;
+- em `COUNTERFACTUAL`, `preserve_observed_timing=False`; mesmo uma rota/data historicamente observada pode receber evento de simulação, porque a sessão já não está obrigada a reproduzir a cronologia documental;
+- quando não há observação exata, eventos podem ocorrer em ambos os modos.
+
+Os eventos vêm de `VoyageEventModel` e `simulation/voyage_event_rules.csv`. A v0.1 permite somente tempo adicional, consumo correspondente de provisões e perda abstrata de condição. O plano registra os eventos e a sessão os acrescenta a `voyage_event_history`. Eles permanecem marcados como `simulation_only=True`; não são tratados como tempestades, calmarias ou avarias historicamente atestadas. Ver `docs/voyage-event-method.md`.
 
 ## Aprendizagem por experiência
 
@@ -99,8 +108,8 @@ Esses níveis continuam distintos dos canais de informação: experiência físi
 
 O protótipo também executa Calecute → Aden com conhecimento operacional concedido explicitamente por métodos `scenario_*`. Esse cenário existe somente para testar a cadeia `mercado → compra → viagem → chegada → venda` e não representa o estado histórico inicial do personagem.
 
-A interface Pygame chama diretamente os métodos desta sessão para informação, mercado, compra, venda, reabastecimento, reparo, espera, planejamento e execução de viagem. No modo `HISTORICAL`, a sessão começa em 8 de julho de 1497 associada a `EXP_GAMA_1497`; no modo `TECHNICAL`, continua explicitamente contrafactual.
+A interface Pygame chama diretamente os métodos desta sessão para informação, mercado, compra, venda, reabastecimento, reparo, espera, planejamento e execução de viagem. No modo `HISTORICAL`, a sessão começa em 8 de julho de 1497 associada a `EXP_GAMA_1497`; no modo `TECHNICAL`, continua explicitamente contrafactual. Quando uma viagem recebe evento de simulação, a mensagem de chegada e o painel podem exibir o último evento como `SIM`; quando a observação histórica suprimiu a aleatoriedade, a mensagem de chegada explicita essa precedência.
 
 ## Próximos passos
 
-Com itinerário, permanências e aquisição básica de informação integrados, o próximo incremento do loop é risco marítimo/avarias. Cartas persistentes, desinformação e redes pessoais de confiança ficam para uma camada informacional posterior.
+Com itinerário, permanências, aquisição básica de informação e risco marítimo inicial integrados, a próxima camada do loop é regime de acesso/negociação institucional e reputação. Cartas persistentes, desinformação, perdas materiais severas, tripulação, combate e naufrágio ficam para camadas posteriores.
