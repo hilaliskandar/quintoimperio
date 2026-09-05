@@ -101,11 +101,12 @@ class InformationModel:
         )
 
     def _generic_interaction_available(self, node_id: str) -> bool:
-        node = self.nodes[node_id]
-        return (
-            node.get("node_type") != "NAVIGATION_POINT"
-            and node.get("market_scale") not in {"", "NONE"}
-        )
+        """Rumor pode ocorrer em porto/ancoradouro, mas não num marco náutico puro.
+
+        Isso não converte o nó em mercado: representa conversa genérica com
+        tripulação ou contatos costeiros e continua sendo regra de simulação.
+        """
+        return self.nodes[node_id].get("node_type") != "NAVIGATION_POINT"
 
     def _merchant_contact_available(self, node_id: str) -> bool:
         return self.nodes[node_id].get("broker_availability") in {"LOW", "MEDIUM", "HIGH"}
