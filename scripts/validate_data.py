@@ -18,6 +18,7 @@ EVIDENCE = {"A", "B", "C", "D"}
 EVIDENCE_SCOPE = {"NODE_DIRECT", "REGIONAL", "NETWORK", "LATER_PERIOD_ANALOGY"}
 BOOLS = {"", "TRUE", "FALSE"}
 KNOWLEDGE_PERSPECTIVES = {"PLAYER", "CROWN"}
+PILOT_COMPETENCE = {"CONFIRMED"}
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -239,6 +240,59 @@ def validate_navigation_rules(rows: list[dict[str, str]], route_ids: set[str]) -
         fail("simulation/navigation_rules.csv: exactly one REFERENCE_ROUTE with value=1 is required")
 
 
+def validate_pilots(
+    pilots: list[dict[str, str]],
+    pilot_routes: list[dict[str, str]],
+    node_ids: set[str],
+    route_ids: set[str],
+) -> None:
+    pilot_ids = unique(pilots, "pilot_id", "pilots.csv")
+    for row in pilots:
+        if row["available_node"] not in node_ids:
+            fail(f"pilots.csv:{row['__line__']}: unknown available_node={row['available_node']}")
+
+    seen_pairs: set[tuple[str, str, str, str]] = set()
+    for row in pilot_routes:
+        line = row["__line__"]
+        if row["pilot_id"] not in pilot_ids:
+            fail(f"pilot_routes.csv:{line}: unknown pilot_id={row['pilot_id']}")
+        if row["route_id"] not in route_ids:
+            fail(f"pilot_routes.csv:{line}: unknown route_id={row['route_id']}")
+        if row["competence"] not in PILOT_COMPETENCE:
+            fail(f"pilot_routes.csv:{line}: invalid competence={row['competence']}")
+        key = (row["pilot_id"], row["route_id"], row["period_from"], row["period_to"])
+        if key in seen_pairs:
+            fail(f"pilot_routes.csv:{line}: duplicate pilot-route period {key}")
+        seen_pairs.add(key)
+
+
+def validate_travel_rules(rows: list[dict[str, str]]) -> None:
+    required = {
+        ("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY"),
+        ("WEAR", "OCEANIC_PER_DAY"),
+        ("WEAR", "COASTAL_OCEANIC_PER_DAY"),
+        ("WEAR", "DEFAULT_PER_DAY"),
+        ("DEPARTURE", "MIN_CONDITION"),
+    }
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        line = row["__line__"]
+        key = (row["rule_type"], row["key"])
+        if key in seen:
+            fail(f"simulation/travel_rules.csv:{line}: duplicate rule {key}")
+        seen.add(key)
+        try:
+            value = float(row["value"])
+        except ValueError:
+            fail(f"simulation/travel_rules.csv:{line}: value must be numeric")
+            continue
+        if value < 0:
+            fail(f"simulation/travel_rules.csv:{line}: negative value")
+    missing = required - seen
+    for key in sorted(missing):
+        fail(f"simulation/travel_rules.csv: missing required rule {key}")
+
+
 def main() -> int:
     nodes = read_csv("nodes.csv")
     goods = read_csv("goods.csv")
@@ -246,8 +300,11 @@ def main() -> int:
     routes = read_csv("routes.csv")
     route_goods = read_csv("route_goods.csv")
     voyage_observations = read_csv("voyage_observations.csv")
+    pilots = read_csv("pilots.csv")
+    pilot_routes = read_csv("pilot_routes.csv")
     navigation_rules = read_csv("navigation_rules.csv", SIMULATION)
     knowledge_rules = read_csv("knowledge_rules.csv", SIMULATION)
+    travel_rules = read_csv("travel_rules.csv", SIMULATION)
 
     node_ids = unique(nodes, "node_id", "nodes.csv")
     good_ids = unique(goods, "good_id", "goods.csv")
@@ -268,6 +325,8 @@ def main() -> int:
         ("routes.csv", routes),
         ("route_goods.csv", route_goods),
         ("voyage_observations.csv", voyage_observations),
+        ("pilots.csv", pilots),
+        ("pilot_routes.csv", pilot_routes),
     ):
         validate_evidence(rows, table)
         validate_sources(rows, table, known_sources)
@@ -311,6 +370,8 @@ def main() -> int:
     validate_voyage_observations(voyage_observations, node_ids, route_by_id)
     validate_navigation_rules(navigation_rules, route_ids)
     validate_knowledge_rules(knowledge_rules, nodes)
+    validate_pilots(pilots, pilot_routes, node_ids, route_ids)
+    validate_travel_rules(travel_rules)
 
     for message in warnings:
         print(f"WARNING: {message}")
@@ -325,7 +386,8 @@ def main() -> int:
         "validation OK: "
         f"{len(nodes)} nodes, {len(goods)} goods, {len(node_goods)} node-goods, "
         f"{len(routes)} routes, {len(route_goods)} route-goods, "
-        f"{len(voyage_observations)} voyage observations; "
+        f"{len(voyage_observations)} voyage observations, "
+        f"{len(pilots)} pilots, {len(pilot_routes)} pilot-routes; "
         f"{len(warnings)} warning(s)"
     )
     return 0
