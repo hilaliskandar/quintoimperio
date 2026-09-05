@@ -19,7 +19,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
+A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
 
 A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas e 5 permanências logísticas documentadas**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
 
@@ -35,19 +35,22 @@ O domínio já oferece:
 - `ChronologyMode.GUIDED` e `ChronologyMode.COUNTERFACTUAL`, distinguindo campanha ainda alinhada à cronologia documentada de trajetória já divergente;
 - bloqueio de partida antes da data documentada quando há escala guiada ativa;
 - ação explícita de espera até a partida documentada, sem conceder automaticamente provisões, reparos, carga ou dinheiro;
-- serviços portuários consumindo o mesmo calendário da permanência;
+- serviços portuários e interações informativas consumindo o mesmo calendário da permanência;
 - quatro dimensões de conhecimento por nó e conhecimento náutico separado por rota;
 - estados separados para personagem e Coroa;
+- aquisição ativa por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`, sem copiar silenciosamente o conhecimento institucional;
+- rumor limitado a `RUMORED`, contato mercantil sem navegação operacional e consulta a piloto limitada a `PARTIAL`;
+- oportunidades de informação derivadas apenas de nós/rotas documentados, com repetição bloqueada por sessão e seleção determinística por semente;
 - piloto guzerate de Melinde associado somente à rota documentada até Calecute;
 - `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
 - `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
 - `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND` como bases distintas de viagem;
-- `GameSessionState` imutável reunindo navio, comércio, conhecimento, expedição ativa, cronologia e escala ativa;
+- `GameSessionState` imutável reunindo navio, comércio, conhecimento, histórico de informação, expedição ativa, cronologia e escala ativa;
 - provisões/condição abstratas, reabastecimento e reparo;
 - compra/venda somente em mercados documentados;
 - aprendizagem explícita por chegada e conclusão de rota;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
-- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, mercado, armada ativa, escala histórica, espera e rotas;
+- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, informação, mercado, armada ativa, escala histórica, espera e rotas;
 - modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
 - modo `TECHNICAL` separado para testes de integração;
 - testes automatizados, smoke tests e capturas de interface no GitHub Actions.
@@ -58,7 +61,9 @@ A segmentação do itinerário corrige um problema importante da primeira versã
 
 A permanência em escala também não produz efeitos materiais por simples passagem do tempo. Uma atividade documentada como `WATER`, `CARENING` ou `MAST_REPAIR` registra evidência; seus efeitos jogáveis continuam exigindo ação explícita. Se o jogador ultrapassa a data documentada de partida e prossegue, a sessão passa para cronologia contrafactual em vez de forçar artificialmente o calendário histórico.
 
-Próximos sistemas: aquisição de informação por rumor, conversa, carta, piloto e contato mercantil; depois, eventos marítimos e relações institucionais mais detalhadas.
+A informação passou a ser um recurso acionável, mas de forma conservadora. Os canais genéricos de rumor e contato mercantil são mecânicas de simulação, não diálogos históricos inventados. Consulta a piloto só existe onde `pilots.csv`/`pilot_routes.csv` sustentam a competência. Nenhum desses canais torna automaticamente uma rota operacional.
+
+Próximos sistemas: eventos marítimos/avarias e relações institucionais mais detalhadas; cartas persistentes, desinformação e redes pessoais de confiança permanecem para incrementos posteriores.
 
 ## Estrutura
 
@@ -84,6 +89,7 @@ simulation/
   navigation_rules.csv
   knowledge_rules.csv
   route_knowledge_rules.csv
+  information_rules.csv
   session_rules.csv
   travel_rules.csv
   port_rules.csv
@@ -97,6 +103,7 @@ docs/
   trade-method.md
   session-method.md
   stop-method.md
+  information-method.md
   interface-method.md
   roadmap.md
   sources.md
@@ -111,6 +118,7 @@ src/quintoimperio/domain/
   calendar.py
   economy.py
   expedition.py
+  information.py
   knowledge.py
   navigation.py
   port.py
@@ -138,6 +146,7 @@ tests/
   test_economy.py
   test_expedition.py
   test_expedition_data.py
+  test_information.py
   test_knowledge.py
   test_navigation.py
   test_port.py
@@ -183,7 +192,7 @@ Cenário técnico de integração:
 python prototype/game.py --scenario TECHNICAL
 ```
 
-`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente.
+`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação.
 
 Renderização sem janela:
 
