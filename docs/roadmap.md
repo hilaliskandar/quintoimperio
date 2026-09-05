@@ -99,13 +99,15 @@ Implementado:
 - `RouteKnowledgeModel` separado de `KnowledgeModel`;
 - `GameSessionState` reunindo navio, estado comercial, conhecimento por nó e conhecimento por rota;
 - mercado do porto atual bloqueado até `market_knowledge >= OPERATIONAL`;
+- `PortServiceModel` integrado ao `GameSessionModel`, preservando imutabilidade e a distinção entre serviço desconhecido e ausente;
+- reabastecimento e reparo acionáveis pela mesma sessão, com efeito sobre navio/calendário e sem custo monetário inventado;
 - planejamento de viagem usando conhecimento da rota ou piloto historicamente documentado;
 - aprendizagem por chegada e por conclusão de rota definida em `simulation/session_rules.csv`;
 - teste histórico de aprendizagem Melinde → Calecute com piloto guzerate;
 - cenário técnico determinístico Calecute → Aden capaz de executar `mercado → compra → viagem → chegada → venda`;
 - cenário técnico explicitamente separado do estado histórico inicial;
-- interface `prototype/game.py` mostrando mapa conhecido, porto, data, navio, capital, carga, mercado e rotas de saída;
-- compra e venda unitárias abstratas acionáveis por clique;
+- interface `prototype/game.py` mostrando mapa conhecido, porto, data, navio, capital, carga, serviços, mercado e rotas de saída;
+- reabastecimento, reparo, compra e venda acionáveis por clique;
 - seleção de rota pela lista ou pelo destino no mapa;
 - execução de viagem delegada ao `GameSessionModel`;
 - busca automática somente de piloto documentado, ativo no porto/período/rota;
@@ -116,18 +118,17 @@ Implementado:
 
 Próximos incrementos do loop:
 
-1. integrar reabastecimento e reparo ao `GameSessionModel`, para que serviços portuários sejam acionáveis pela mesma sessão;
-2. modelar a forma institucional de participação do personagem numa armada comandada pela Coroa, evitando transformar conhecimento náutico individual em requisito para toda viagem histórica;
-3. introduzir aquisição de informação por conversa, rumor, carta, piloto e contato mercantil;
-4. expor diferenças entre conhecimento do personagem e conhecimento institucional da Coroa sem revelar informação oculta diretamente;
-5. acrescentar eventos marítimos e avarias somente depois de estabelecer regras auditáveis;
-6. refinar a interface e incorporar, quando tecnicamente adequado, a costa real também ao runtime sem criar dependência cartográfica pesada no núcleo.
+1. modelar a forma institucional de participação do personagem numa armada comandada pela Coroa, evitando transformar conhecimento náutico individual em requisito para toda viagem histórica;
+2. introduzir aquisição de informação por conversa, rumor, carta, piloto e contato mercantil;
+3. expor diferenças entre conhecimento do personagem e conhecimento institucional da Coroa sem revelar informação oculta diretamente;
+4. acrescentar eventos marítimos e avarias somente depois de estabelecer regras auditáveis;
+5. refinar a interface e incorporar, quando tecnicamente adequado, a costa real também ao runtime sem criar dependência cartográfica pesada no núcleo.
 
 A cartografia visual deve continuar programática e reprodutível. Elementos decorativos podem evocar cartas náuticas, mas não podem alterar costa, coordenadas ou trajetos do grafo.
 
 ## Fase 4 — Portos, instituições e relações
 
-Status: **fundação conceitual pronta; implementação ainda não iniciada como sistema integrado**.
+Status: **fundação conceitual pronta; implementação institucional é o próximo eixo**.
 
 Sistemas:
 
@@ -182,6 +183,8 @@ Somente após estabilizar o núcleo:
 - estética histórica do mapa é procedural e separada da geometria;
 - linhas do mapa representam conexões abstratas do grafo, não derrotas históricas;
 - serviço portuário desconhecido não é convertido silenciosamente em serviço ausente ou disponível;
+- serviços portuários usam o mesmo estado integrado de sessão;
+- reabastecimento/reparo não consomem capital enquanto não houver regra historicamente sustentada ou parâmetro de balanceamento explícito;
 - comércio v0.1 usa capital, carga e preço como índices de simulação;
 - mercadoria ausente de `node_goods.csv` não é criada artificialmente no mercado;
 - presença física em porto e conclusão de rota produzem aprendizado apenas por regras explícitas de simulação;
