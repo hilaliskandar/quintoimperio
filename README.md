@@ -18,13 +18,23 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica v0.1 e o primeiro protótipo econômico estão operacionais.
+A fundação histórica, a economia relativa e a primeira camada de navegação/conhecimento v0.1 estão operacionais.
 
-A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas e 15 fluxos de mercadorias. O protótipo econômico possui oito testes determinísticos e mantém parâmetros de balanceamento separados da evidência histórica.
+A base validada contém 20 nós, 14 bens, 41 relações nó–bem, 12 rotas, 15 fluxos de mercadorias e 2 observações de viagem para calibração. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 é preservada em linhas distintas.
+
+O domínio já oferece:
+
+- economia relativa com estoques estruturais e de trânsito;
+- calendário e fases gerais da monção;
+- distâncias geodésicas de referência sem confundi-las com distâncias históricas navegadas;
+- duração de viagem determinística por semente;
+- calibração inicial Melinde–Calecute;
+- quatro dimensões independentes de conhecimento do personagem e da Coroa;
+- validação automática e suíte de testes no GitHub Actions.
 
 A arquitetura do primeiro jogável foi definida no ADR 0001: **Python 3.12 + pygame-ce**, com núcleo de domínio independente da interface gráfica.
 
-Próxima fase: navegação, calendário, monções e conhecimento do jogador, seguida por um mapa 2D mínimo construído a partir de coordenadas reais.
+Próximo incremento: provisões, desgaste, pilotos e estado de viagem; depois, um mapa 2D mínimo construído a partir de coordenadas e dados cartográficos reais.
 
 ## Estrutura
 
@@ -36,14 +46,18 @@ data/
   node_goods.csv
   routes.csv
   route_goods.csv
+  voyage_observations.csv
 
 simulation/
   README.md
   goods_params.csv
   rules.csv
+  navigation_rules.csv
+  knowledge_rules.csv
 
 docs/
   historical-method.md
+  navigation-method.md
   roadmap.md
   sources.md
   adr/
@@ -52,12 +66,19 @@ docs/
 src/quintoimperio/
   data/
   domain/
+    calendar.py
+    economy.py
+    knowledge.py
+    navigation.py
 
 prototype/
   economy.py
+  navigation.py
 
 tests/
   test_economy.py
+  test_knowledge.py
+  test_navigation.py
 ```
 
 ## Desenvolvimento
@@ -80,6 +101,7 @@ Validação manual:
 python scripts/validate_data.py
 python -m unittest discover -s tests -v
 python prototype/economy.py
+python prototype/navigation.py
 ```
 
 O GitHub Actions executa essas verificações automaticamente.
