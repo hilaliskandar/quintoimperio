@@ -2,6 +2,7 @@ import unittest
 from datetime import date
 
 from quintoimperio.domain import (
+    AccessStatus,
     GameSessionModel,
     KnowledgeLevel,
     KnowledgeState,
@@ -43,6 +44,9 @@ class GameSessionTests(unittest.TestCase):
         self.assertEqual(calicut.market, KnowledgeLevel.RUMORED)
         self.assertEqual(
             self.model.route_nav(state, "R_CAL_ADE"), KnowledgeLevel.UNKNOWN
+        )
+        self.assertEqual(
+            self.model.access_status(state, "CAL"), AccessStatus.NEGOTIATION_REQUIRED
         )
 
     def test_market_is_not_actionable_without_operational_knowledge(self):
@@ -98,7 +102,7 @@ class GameSessionTests(unittest.TestCase):
         self.assertIn("SERVICE_AVAILABILITY_UNKNOWN", result.reasons)
         self.assertEqual(result.state_after, state)
 
-    def test_documented_malindi_pilot_teaches_route_and_destination(self):
+    def test_documented_malindi_pilot_teaches_route_destination_but_not_access(self):
         state = self.model.initial_state(
             location_node="MAL",
             start_date=date(1498, 4, 24),
@@ -123,9 +127,14 @@ class GameSessionTests(unittest.TestCase):
         self.assertGreaterEqual(
             self.model.node_state(arrived, "CAL").market, KnowledgeLevel.OPERATIONAL
         )
-        self.assertTrue(self.model.market_view(arrived, seed=1498).actionable)
+        view = self.model.market_view(arrived, seed=1498)
+        self.assertFalse(view.actionable)
+        self.assertEqual(view.access_status, AccessStatus.NEGOTIATION_REQUIRED)
+        negotiated = self.model.negotiate_access(arrived)
+        self.assertTrue(negotiated.executed)
+        self.assertTrue(self.model.market_view(negotiated.state_after, seed=1498).actionable)
 
-    def test_technical_scenario_completes_buy_travel_sell_cycle(self):
+    def test_technical_scenario_completes_buy_travel_negotiate_sell_cycle(self):
         # Cenário de integração deliberadamente não-histórico como estado inicial.
         state = self.model.initial_state(
             location_node="CAL",
@@ -148,6 +157,7 @@ class GameSessionTests(unittest.TestCase):
         state = self.model.scenario_set_route_knowledge(
             state, "R_CAL_ADE", KnowledgeLevel.OPERATIONAL
         )
+        state = self.model.scenario_set_access(state, "CAL", AccessStatus.NEGOTIATED)
 
         bought = self.model.buy(state, "PEPPER", 2.0, seed=1498)
         self.assertTrue(bought.executed)
@@ -163,8 +173,11 @@ class GameSessionTests(unittest.TestCase):
             self.model.node_state(arrived, "ADE").market,
             KnowledgeLevel.OPERATIONAL,
         )
+        self.assertFalse(self.model.market_view(arrived, seed=1498).actionable)
 
-        sold = self.model.sell(arrived, "PEPPER", 2.0, seed=1498)
+        access = self.model.negotiate_access(arrived)
+        self.assertTrue(access.executed)
+        sold = self.model.sell(access.state_after, "PEPPER", 2.0, seed=1498)
         self.assertTrue(sold.executed)
         self.assertEqual(sold.state_after.commerce.quantity_of("PEPPER"), 0.0)
         self.assertGreater(
