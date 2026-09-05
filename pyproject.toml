@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quintoimperio"
+version = "0.1.0.dev0"
+description = "Jogo histórico de comércio e navegação baseado na expansão portuguesa e nas redes atlânticas e do Índico."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "GPL-3.0-only" }
+authors = [
+  { name = "Carlos Alexandre Gomes" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+game = [
+  "pygame-ce>=2.5,<3"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
