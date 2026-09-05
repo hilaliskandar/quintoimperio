@@ -47,6 +47,10 @@ Implementado:
 - itinerário inicial de Gama segmentado em pernas operacionais entre Lisboa, São Thiago, baía de Santa Helena, Cabo, São Brás, Rio do Cobre, Rio dos Bons Sinais, Moçambique, Mombaça, Melinde e Calecute;
 - conexões Lisboa–Cabo e Cabo–Moçambique mantidas apenas como `STRATEGIC_AGGREGATE`, bloqueadas para execução;
 - permanências logísticas registradas separadamente do tempo de navegação;
+- `ChronologyMode.GUIDED` e `COUNTERFACTUAL` para separar reprodução temporal da campanha de trajetórias divergentes;
+- bloqueio de partida antes da data documentada numa escala guiada;
+- espera explícita até a partida sem efeitos materiais automáticos;
+- serviços portuários consumindo o mesmo calendário da permanência;
 - ruído determinístico somente quando não há observação exata da partida;
 - quatro dimensões de conhecimento por nó;
 - conhecimento náutico de rota separado de conhecimento de nó;
@@ -58,10 +62,10 @@ Implementado:
 
 Próximos aprofundamentos:
 
-1. integrar as permanências históricas ao calendário e às ações do loop sem inventar quantidades físicas;
-2. eventos de risco marítimo;
-3. perfis direcionais de vento apenas quando documentados por trecho;
-4. substituir escalas abstratas somente quando houver evidência suficiente.
+1. eventos de risco marítimo;
+2. perfis direcionais de vento apenas quando documentados por trecho;
+3. substituir escalas abstratas somente quando houver evidência suficiente;
+4. refinar cronologias editoriais do `Roteiro` quando novas edições/fontes permitirem.
 
 ## Fase 3 — Primeiro mapa e loop jogável
 
@@ -75,27 +79,28 @@ Implementado:
 - serviços portuários com `UNKNOWN` distinto de `NONE`;
 - estado comercial imutável;
 - compra/venda apenas em mercados documentados;
-- `GameSessionState` reunindo navio, comércio, conhecimento e expedição ativa;
+- `GameSessionState` reunindo navio, comércio, conhecimento, expedição ativa, cronologia e escala ativa;
 - mercado bloqueado até conhecimento operacional;
 - reabastecimento/reparo integrados à sessão;
 - aprendizagem por chegada e conclusão de rota;
 - cenário técnico Calecute → Aden para integração `mercado → compra → viagem → chegada → venda`;
-- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, mercado, armada ativa e rotas;
-- modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
-- modo `TECHNICAL` claramente identificado como não histórico;
+- interface `prototype/game.py` com mapa, porto, data, navio, capital, carga, serviços, mercado, armada ativa, escala, espera e rotas;
+- modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497` e cronologia `GUIDED`;
+- modo `TECHNICAL` claramente identificado como não histórico e `COUNTERFACTUAL`;
 - `FLEET_COMMAND` visível sem elevar conhecimento pessoal;
 - piloto documentado preservado como base específica quando aplicável;
 - primeira perna histórica executável Lisboa → São Thiago;
 - rotas estratégicas agregadas bloqueadas no domínio;
+- escalas guiadas impedindo partida precoce e oferecendo espera apenas pelo tempo restante;
+- mudança para cronologia contrafactual quando o jogador ultrapassa a partida histórica e prossegue;
 - smoke tests e capturas no GitHub Actions.
 
 Próximos incrementos do loop:
 
-1. transformar as permanências documentadas da armada em tempo/ações jogáveis auditáveis;
-2. introduzir aquisição de informação por rumor, conversa, carta, piloto e contato mercantil;
-3. expor diferença entre conhecimento pessoal e institucional sem revelar informação oculta;
-4. acrescentar eventos/avarias com regras auditáveis;
-5. refinar a interface sem sacrificar a separação entre cartografia e domínio.
+1. introduzir aquisição de informação por rumor, conversa, carta, piloto e contato mercantil;
+2. expor diferença entre conhecimento pessoal e institucional sem revelar informação oculta;
+3. acrescentar eventos/avarias com regras auditáveis;
+4. refinar a interface sem sacrificar a separação entre cartografia e domínio.
 
 ## Fase 4 — Portos, instituições e relações
 
@@ -108,7 +113,8 @@ Já implementado:
 - permanências logísticas documentadas separadas de mercados;
 - comando institucional como base de viagem específica;
 - piloto como competência distinta do comando;
-- serviços portuários mínimos.
+- serviços portuários mínimos;
+- permanência histórica sem efeitos materiais automáticos.
 
 Ainda por implementar:
 
@@ -160,6 +166,9 @@ Somente após estabilizar o núcleo:
 - itinerário Lisboa–Moçambique é segmentado para execução e as conexões agregadas ficam apenas como camada estratégica;
 - ancoradouro logístico não é convertido automaticamente em mercado;
 - datas editoriais do `Roteiro` são marcadas como reconstruções;
+- `observed_stay_days` permanece distinto da diferença aritmética entre datas editoriais;
+- espera histórica avança apenas o relógio e não concede recursos automaticamente;
+- atraso além da partida documentada converte a sessão em cronologia contrafactual em vez de forçar datas históricas;
 - limite de provisões continua parâmetro abstrato mesmo quando calibrado para acomodar uma perna histórica longa;
 - serviço desconhecido não é tratado como ausente nem disponível;
 - cenários técnicos permanecem explicitamente separados do estado histórico;
@@ -167,7 +176,6 @@ Somente após estabilizar o núcleo:
 
 ## Decisões ainda abertas
 
-- forma de integrar permanências históricas ao calendário e às ações do jogador;
 - unidade física/abstrata de carga definitiva;
 - classes de navio e velocidades relativas;
 - grau de controle direto do jogador sobre navio e tripulação;
