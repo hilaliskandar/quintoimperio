@@ -1,0 +1,7 @@
+perspective,source_value,nav,notes
+PLAYER,MEDIUM,2,"Rota parcialmente conhecida pelo personagem; não basta para navegação autônoma na v0.1."
+PLAYER,UNKNOWN,0,"Rota sem conhecimento inicial utilizável pelo personagem."
+CROWN,HIGH,3,"Conhecimento institucional operacional da rota na escala v0.1."
+CROWN,LOW,1,"Conhecimento institucional tênue, insuficiente para operação autônoma."
+CROWN,INDIRECT,1,"Conhecimento institucional indireto da conexão, sem domínio náutico."
+CROWN,UNKNOWN,0,"Rota sem conhecimento institucional representado na base inicial."
