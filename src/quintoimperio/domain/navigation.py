@@ -12,6 +12,7 @@ from quintoimperio.data.loader import RepositoryData
 
 
 EARTH_RADIUS_NM = 3440.065
+COORDINATE_CONFIDENCE_RANK = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
 
 
 def great_circle_nm(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -36,10 +37,12 @@ def _parse_date(value: str) -> date:
 class NavigationModel:
     """Primeiro modelo determinístico de navegação, independente da interface.
 
-    As distâncias são geodésicas calculadas a partir das âncoras modernas em
+    As distâncias são geodésicas calculadas a partir das âncoras em
     ``nodes.csv``. Elas não são distâncias históricas efetivamente navegadas.
-    A taxa diária de referência é calibrada pela travessia Melinde–Calecute de
-    1498 e não deve ser interpretada como velocidade histórica universal.
+    A confiança espacial da rota é a menor confiança entre as duas âncoras e
+    deve acompanhar qualquer leitura dessas distâncias. A taxa diária de
+    referência é calibrada pela travessia Melinde–Calecute de 1498 e não deve
+    ser interpretada como velocidade histórica universal.
     """
 
     def __init__(self, root: Path | None = None) -> None:
@@ -56,6 +59,16 @@ class NavigationModel:
         self.navigation_rules: dict[tuple[str, str], str] = {}
         for row in repository.simulation("navigation_rules.csv"):
             self.navigation_rules[(row["rule_type"], row["key"])] = row["value"]
+
+    def route_coordinate_confidence(self, route_id: str) -> str | None:
+        """Retorna a menor confiança espacial entre as duas âncoras da rota."""
+        route = self.routes[route_id]
+        origin = self.nodes[route["origin_node"]]
+        destination = self.nodes[route["destination_node"]]
+        values = [origin.get("coordinate_confidence", ""), destination.get("coordinate_confidence", "")]
+        if any(value not in COORDINATE_CONFIDENCE_RANK for value in values):
+            return None
+        return min(values, key=lambda value: COORDINATE_CONFIDENCE_RANK[value])
 
     def route_geodesic_nm(self, route_id: str) -> float | None:
         route = self.routes[route_id]
@@ -135,7 +148,9 @@ class NavigationModel:
         A v0.1 usa distância geodésica, taxa de progresso calibrada e uma
         penalidade sazonal conservadora. Não infere automaticamente que uma
         direção específica é favorecida pela monção: isso exigirá evidência
-        regional por rota.
+        regional por rota. Quando a rota depende de âncora `MEDIUM` ou `LOW`, a
+        duração permanece utilizável apenas como hipótese de simulação e deve
+        ser acompanhada por ``route_coordinate_confidence``.
         """
         base_days = self.base_duration_days(route_id, departure)
         if base_days is None:
