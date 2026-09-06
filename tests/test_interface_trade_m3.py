@@ -50,6 +50,29 @@ class InterfaceTradeM3Tests(unittest.TestCase):
         self.assertIn("quantidade em posse insuficiente", app.message)
         self.assertNotIn("INSUFFICIENT_INVENTORY", app.message)
 
+    def test_session_access_and_knowledge_blocks_are_translated(self):
+        friendly = M3PlayablePrototype._friendly_reasons(
+            (
+                "MARKET_KNOWLEDGE_NOT_OPERATIONAL",
+                "PORT_ACCESS_NEGOTIATION_REQUIRED",
+                "PORT_ACCESS_RESTRICTED",
+                "PORT_HAS_NO_COMMERCIAL_ACCESS",
+                "PORT_ACCESS_UNKNOWN",
+                "PORT_ACCESS_NOT_GRANTED",
+            )
+        )
+        for internal_code in (
+            "MARKET_KNOWLEDGE_NOT_OPERATIONAL",
+            "PORT_ACCESS_NEGOTIATION_REQUIRED",
+            "PORT_ACCESS_RESTRICTED",
+            "PORT_HAS_NO_COMMERCIAL_ACCESS",
+            "PORT_ACCESS_UNKNOWN",
+            "PORT_ACCESS_NOT_GRANTED",
+        ):
+            self.assertNotIn(internal_code, friendly)
+        self.assertIn("conhecimento do mercado", friendly)
+        self.assertIn("exige negociação", friendly)
+
     def test_render_exposes_quantity_controls_and_capacity(self):
         app = M3PlayablePrototype("TECHNICAL")
         surface = pygame.Surface((1400, 820))
@@ -59,6 +82,17 @@ class InterfaceTradeM3Tests(unittest.TestCase):
         ]
         self.assertTrue(quantity_targets)
         self.assertTrue(any(target.value == "+1" for target in quantity_targets))
+
+    def test_plus_control_is_disabled_at_maximum(self):
+        app = M3PlayablePrototype("TECHNICAL")
+        app.trade_quantity = app.MAX_TRADE_QUANTITY
+        surface = pygame.Surface((1400, 820))
+        app.render(surface)
+        quantity_targets = [
+            target for target in app.targets if target.kind == "trade_quantity"
+        ]
+        self.assertFalse(any(target.value == "+1" for target in quantity_targets))
+        self.assertTrue(any(target.value == "-1" for target in quantity_targets))
 
     def test_reset_restores_trade_quantity(self):
         app = M3PlayablePrototype("TECHNICAL")
