@@ -224,7 +224,7 @@ class TravelModel:
         )
         if defer_events or not plan.feasible:
             return plan
-        return self.resolve_voyage(state, plan)
+        return self.resolve_voyage(state, plan, enforce_event_feasibility=True)
 
     def defer_plan(self, state: VesselState, plan: VoyagePlan) -> VoyagePlan:
         """Remove contingência já resolvida sem remover bloqueios externos à viagem."""
@@ -252,7 +252,13 @@ class TravelModel:
             blockers=tuple(blockers),
         )
 
-    def resolve_voyage(self, state: VesselState, plan: VoyagePlan) -> VoyagePlan:
+    def resolve_voyage(
+        self,
+        state: VesselState,
+        plan: VoyagePlan,
+        *,
+        enforce_event_feasibility: bool = False,
+    ) -> VoyagePlan:
         if not plan.feasible:
             raise ValueError(f"Plano de viagem bloqueado: {', '.join(plan.blockers)}")
         if state.location_node != plan.origin_node:
@@ -276,6 +282,10 @@ class TravelModel:
         required = travel_days * rate
         after_raw = state.provision_days - required + event_delta
         normal_wear = base_days * self.wear_per_day(plan.route_id)
+        blockers = list(plan.blockers)
+        if enforce_event_feasibility and after_raw < 0:
+            blockers.append("INSUFFICIENT_PROVISIONS")
+        blockers = list(dict.fromkeys(blockers))
         return replace(
             plan,
             arrival_date=state.clock.advance(travel_days).current_date,
@@ -290,6 +300,8 @@ class TravelModel:
                 plan.timing_events_suppressed_by_observation and not events
             ),
             events_resolved=True,
+            feasible=not blockers,
+            blockers=tuple(blockers),
         )
 
     def execute_voyage(self, state: VesselState, plan: VoyagePlan) -> VesselState:
