@@ -1,0 +1,73 @@
+name: Synthetic player archetypes stochastic 200 sessions
+
+on:
+  push:
+    branches:
+      - test/player-archetypes-200-v02
+    paths:
+      - "tools/simulate_player_archetype.py"
+      - "tools/simulate_synthetic_player.py"
+      - "tools/aggregate_archetype_playtest.py"
+      - ".github/workflows/synthetic-player-archetypes-v02.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  play:
+    name: archetype-${{ matrix.archetype }}-20-sessions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {archetype: GRAND_STRATEGIST, id_base: 0, seed_base: 11000}
+          - {archetype: SURVIVALIST, id_base: 20, seed_base: 12000}
+          - {archetype: MERCHANT, id_base: 40, seed_base: 13000}
+          - {archetype: SPEEDRUNNER, id_base: 60, seed_base: 14000}
+          - {archetype: ROGUELIKE, id_base: 80, seed_base: 15000}
+          - {archetype: ROLEPLAYER, id_base: 100, seed_base: 16000}
+          - {archetype: EXPLORER, id_base: 120, seed_base: 17000}
+          - {archetype: OPTIMIZER, id_base: 140, seed_base: 18000}
+          - {archetype: COMPLETIONIST, id_base: 160, seed_base: 19000}
+          - {archetype: CASUAL, id_base: 180, seed_base: 20000}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Run 20 sessions
+        run: |
+          mkdir -p build/archetypes/${{ matrix.archetype }}
+          for i in $(seq 1 20); do
+            player_id=$(( ${{ matrix.id_base }} + i ))
+            seed=$(( ${{ matrix.seed_base }} + i ))
+            python tools/simulate_player_archetype.py --player-id "$player_id" --archetype "${{ matrix.archetype }}" --seed "$seed" --output "build/archetypes/${{ matrix.archetype }}/player-${player_id}.json"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stochastic-archetype-${{ matrix.archetype }}-20
+          path: build/archetypes/${{ matrix.archetype }}/*.json
+
+  aggregate:
+    needs: play
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stochastic-archetype-*-20
+          path: build/archetype-results
+          merge-multiple: false
+      - name: Aggregate
+        run: python tools/aggregate_archetype_playtest.py --input-dir build/archetype-results --csv build/synthetic-player-archetypes-wave12.csv --summary build/synthetic-player-archetypes-wave12-summary.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-player-archetypes-wave12-results
+          path: |
+            build/synthetic-player-archetypes-wave12.csv
+            build/synthetic-player-archetypes-wave12-summary.json
