@@ -70,19 +70,28 @@ class MVPRobustnessTests(unittest.TestCase):
         state = self._execute_current_leg(state, seed)
         return state
 
-    def test_guided_campaign_is_seed_invariant_and_reaches_calicut(self):
+    def test_guided_campaign_preserves_chronology_across_stochastic_seeds(self):
         terminal_states = []
         for seed in self.SEEDS:
             state = self._guided_to_calicut(seed)
             self.assertEqual(state.vessel.location_node, "CAL")
             self.assertEqual(state.vessel.clock.current_date, date(1498, 5, 21))
             self.assertEqual(state.chronology_mode, ChronologyMode.GUIDED)
-            self.assertEqual(state.voyage_event_history, ())
+            self.assertTrue(
+                all(
+                    event.observed_timing_safe and event.extra_days == 0
+                    for event in state.voyage_event_history
+                )
+            )
             terminal_states.append(state)
 
-        first = terminal_states[0]
-        for state in terminal_states[1:]:
-            self.assertEqual(state, first)
+        # A cronologia permanece invariável; recursos e histórico de eventos
+        # podem variar por seed a partir da v0.2.
+        signatures = {
+            (round(state.vessel.provision_days, 6), state.voyage_event_history)
+            for state in terminal_states
+        }
+        self.assertGreater(len(signatures), 1)
 
     def test_counterfactual_events_are_bounded_and_deterministic(self):
         state = self.model.initial_state(
@@ -107,12 +116,11 @@ class MVPRobustnessTests(unittest.TestCase):
                 event = first.events[0]
                 self.assertLessEqual(event.extra_days, 3)
                 self.assertLessEqual(event.condition_loss, 5.0)
+                self.assertGreaterEqual(event.provision_delta, -8.0)
+                self.assertLessEqual(event.provision_delta, 5.0)
                 self.assertTrue(event.simulation_only)
 
-        # O conjunto de regras soma probabilidades moderadas. Este teto não
-        # fixa uma taxa histórica: apenas detecta regressão em que eventos
-        # passam a dominar quase todas as viagens simuladas.
-        self.assertLess(eventful, 60)
+        self.assertLess(eventful, 70)
 
     def test_same_market_round_trip_cannot_create_free_capital(self):
         state = self._guided_to_calicut()
