@@ -109,12 +109,17 @@ class HistoricalCampaignModel:
             and state.vessel.clock.current_date < expected
         )
 
-    def logistics_planning_view(self, state: GameSessionState) -> LogisticsPlanningView:
+    def logistics_planning_view(
+        self, state: GameSessionState, *, seed: int = 0
+    ) -> LogisticsPlanningView:
         """Expõe autonomia e margem de prudência sem automatizar decisões.
 
         Os 20 dias são uma heurística de robustez derivada dos playtests, não uma
-        ração, duração ou requisito histórico. A indicação de incerteza consulta
-        apenas o campo histórico de provisões do próximo destino.
+        ração, duração ou requisito histórico. Para cronologia guiada, o requisito
+        da próxima perna é calculado na data em que ela pode efetivamente partir,
+        evitando que o período de preparação introduza ruído artificial no plano.
+        A indicação de incerteza consulta apenas a evidência histórica de provisões
+        do próximo destino.
         """
         leg = self.current_leg(state)
         expected = self.guided_departure_date(state)
@@ -131,7 +136,23 @@ class HistoricalCampaignModel:
                 next_destination_provisions_evidence_indeterminate=False,
             )
 
-        plan = self.session.plan_voyage(state, leg.route_id, seed=1498)
+        planning_state = state
+        if expected is not None and state.vessel.clock.current_date < expected:
+            days = (expected - state.vessel.clock.current_date).days
+            planning_state = replace(
+                state,
+                vessel=replace(
+                    state.vessel,
+                    clock=state.vessel.clock.advance(days),
+                ),
+            )
+        pilot_id = self.recommended_pilot_id(planning_state, leg.route_id)
+        plan = self.session.plan_voyage(
+            planning_state,
+            leg.route_id,
+            pilot_id=pilot_id,
+            seed=seed,
+        )
         required = plan.provision_days_required
         remaining = state.vessel.provision_days - required
         route = self.session.routes[leg.route_id]
