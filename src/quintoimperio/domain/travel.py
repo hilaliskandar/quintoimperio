@@ -64,6 +64,7 @@ class VoyagePlan:
     navigation_basis: NavigationBasis | None
     events: tuple[VoyageEvent, ...]
     events_suppressed_by_observation: bool
+    timing_events_suppressed_by_observation: bool
     feasible: bool
     blockers: tuple[str, ...]
 
@@ -81,6 +82,11 @@ class TravelModel:
     historica exata, eventos que alterariam a duracao sao suprimidos, mas
     eventos ``observed_timing_safe`` podem afetar provisoes ou condicao sem
     deslocar a chegada historica.
+
+    ``timing_events_suppressed_by_observation`` registra essa restricao parcial.
+    ``events_suppressed_by_observation`` preserva a semantica anterior e so e
+    verdadeiro quando a observacao historica resultou em ausencia total de
+    evento aleatorio no plano.
 
     Rotas com ``route_origin=STRATEGIC_AGGREGATE`` existem apenas para leitura
     do grafo em escala estrategica e nao sao executaveis como uma unica perna.
@@ -224,6 +230,7 @@ class TravelModel:
             blockers.append("VESSEL_CONDITION_TOO_LOW")
 
         arrival = state.clock.advance(travel_days).current_date
+        all_events_suppressed = suppress_timing_events and not events
         return VoyagePlan(
             route_id=route_id,
             origin_node=route["origin_node"],
@@ -241,7 +248,8 @@ class TravelModel:
             pilot_id=pilot_id,
             navigation_basis=basis,
             events=events,
-            events_suppressed_by_observation=suppress_timing_events,
+            events_suppressed_by_observation=all_events_suppressed,
+            timing_events_suppressed_by_observation=suppress_timing_events,
             feasible=not blockers,
             blockers=tuple(blockers),
         )
