@@ -143,7 +143,7 @@ class CampaignProgressModel:
             1
             for record in state.node_knowledge
             if any(
-                level > KnowledgeLevel.NONE
+                level > KnowledgeLevel.UNKNOWN
                 for level in (
                     record.state.geo,
                     record.state.nav,
