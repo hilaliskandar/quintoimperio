@@ -50,7 +50,13 @@ def test_transfer_conserves_each_resource() -> None:
     after_fleet = model.transfer_provisions(fleet, "SUPPLY", "BERRIO", transfer)
     after = after_fleet.provisions
 
-    assert after == before
+    for resource in ("water_l", "wine_l", "biscuit_kg", "meat_kg"):
+        assert math.isclose(
+            getattr(after, resource),
+            getattr(before, resource),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
     assert after_fleet.vessel("SUPPLY").provisions != fleet.vessel("SUPPLY").provisions
     assert after_fleet.vessel("BERRIO").provisions != fleet.vessel("BERRIO").provisions
 

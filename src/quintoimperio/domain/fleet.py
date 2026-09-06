@@ -72,16 +72,24 @@ class ConsumableRates:
 
 @dataclass(frozen=True)
 class ProvisionLoad:
-    """Carga fisica dos quatro consumiveis principais."""
+    """Carga fisica dos quatro consumiveis principais, com densidade e evidencia."""
 
     water_l: float = 0.0
     wine_l: float = 0.0
     biscuit_kg: float = 0.0
     meat_kg: float = 0.0
+    liquid_density_kg_l: float = 1.0
+    evidence: EvidenceClass = EvidenceClass.SIMULATION
 
     def __post_init__(self) -> None:
-        for value in (self.water_l, self.wine_l, self.biscuit_kg, self.meat_kg):
-            if value < -1e-9:
+        for value in (
+            self.water_l,
+            self.wine_l,
+            self.biscuit_kg,
+            self.meat_kg,
+            self.liquid_density_kg_l,
+        ):
+            if value < 0:
                 raise ValueError("provision quantities cannot be negative")
 
     @property
@@ -90,24 +98,57 @@ class ProvisionLoad:
 
     @property
     def major_consumables_mass_kg(self) -> float:
-        return self.water_l + self.wine_l + self.biscuit_kg + self.meat_kg
+        return (
+            (self.water_l + self.wine_l) * self.liquid_density_kg_l
+            + self.biscuit_kg
+            + self.meat_kg
+        )
 
     def plus(self, other: "ProvisionLoad") -> "ProvisionLoad":
+        if self._has_stock and other._has_stock:
+            if not isclose(
+                self.liquid_density_kg_l,
+                other.liquid_density_kg_l,
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            ):
+                raise ValueError("provision loads must use the same liquid density")
+            if self.evidence is not other.evidence:
+                raise ValueError("provision loads must use the same evidence class")
+        density = other.liquid_density_kg_l if not self._has_stock else self.liquid_density_kg_l
+        evidence = other.evidence if not self._has_stock else self.evidence
         return ProvisionLoad(
             water_l=self.water_l + other.water_l,
             wine_l=self.wine_l + other.wine_l,
             biscuit_kg=self.biscuit_kg + other.biscuit_kg,
             meat_kg=self.meat_kg + other.meat_kg,
+            liquid_density_kg_l=density,
+            evidence=evidence,
         )
 
     def minus(self, other: "ProvisionLoad") -> "ProvisionLoad":
-        result = ProvisionLoad(
+        if any(
+            current < requested
+            for current, requested in (
+                (self.water_l, other.water_l),
+                (self.wine_l, other.wine_l),
+                (self.biscuit_kg, other.biscuit_kg),
+                (self.meat_kg, other.meat_kg),
+            )
+        ):
+            raise ValueError("cannot remove more provisions than available")
+        return ProvisionLoad(
             water_l=self.water_l - other.water_l,
             wine_l=self.wine_l - other.wine_l,
             biscuit_kg=self.biscuit_kg - other.biscuit_kg,
             meat_kg=self.meat_kg - other.meat_kg,
+            liquid_density_kg_l=self.liquid_density_kg_l,
+            evidence=self.evidence,
         )
-        return result
+
+    @property
+    def _has_stock(self) -> bool:
+        return any((self.water_l, self.wine_l, self.biscuit_kg, self.meat_kg))
 
 
 @dataclass(frozen=True)
@@ -126,6 +167,10 @@ class PhysicalVessel:
     provisions: ProvisionLoad = ProvisionLoad()
 
     def __post_init__(self) -> None:
+        if self.burden_min_toneis <= 0 or self.burden_max_toneis <= 0:
+            raise ValueError("burden sensitivity bounds must be positive")
+        if self.burden_min_toneis > self.burden_max_toneis:
+            raise ValueError("burden sensitivity bounds must be ordered")
         if self.burden_toneis <= 0:
             raise ValueError("burden_toneis must be positive")
         if not (self.burden_min_toneis <= self.burden_toneis <= self.burden_max_toneis):
@@ -235,6 +280,8 @@ class FleetModel:
             wine_l=self.rates.wine_l * scale,
             biscuit_kg=self.rates.biscuit_kg * scale,
             meat_kg=self.rates.meat_kg * scale,
+            liquid_density_kg_l=self.rates.liquid_density_kg_l,
+            evidence=self.rates.evidence,
         )
 
     def daily_consumption(self, vessel: PhysicalVessel) -> ProvisionLoad:
