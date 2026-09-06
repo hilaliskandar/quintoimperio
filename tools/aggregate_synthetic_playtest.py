@@ -29,9 +29,7 @@ def mean(values):
 
 def main():
     args = parse_args()
-    rows = []
-    for path in sorted(args.input_dir.rglob("*.json")):
-        rows.append(json.loads(path.read_text(encoding="utf-8")))
+    rows = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(args.input_dir.rglob("*.json"))]
     if not rows:
         raise SystemExit("Nenhum resultado sintético encontrado")
 
@@ -45,12 +43,13 @@ def main():
     fieldnames = [
         "wave", "player_id", "profile", "seed", "completed", "current_objective",
         "actions_attempted", "actions_executed", "blocked_attempts", "readiness_checks",
-        "extra_actions_vs_reference", "voyage_actions", "waits",
-        "reprovision_actions", "reprovision_total", "access_negotiations",
-        "trade_actions", "elapsed_days", "final_date", "final_location",
-        "chronology_mode", "counterfactual", "min_provisions", "min_condition",
-        "voyage_events", "capital_final", "capacity_used_final", "capacity_total",
-        "knowledge_nodes", "recovered_after_block", "first_block_action",
+        "recommendation_checks", "recommendation_followed", "recommendation_ignored",
+        "indeterminate_destination_warnings", "extra_actions_vs_reference", "voyage_actions", "waits",
+        "reprovision_actions", "reprovision_total", "access_negotiations", "trade_actions",
+        "elapsed_days", "final_date", "final_location", "chronology_mode", "counterfactual",
+        "min_provisions", "min_condition", "voyage_events", "capital_final",
+        "capacity_used_final", "capacity_total", "knowledge_nodes", "recovered_after_block",
+        "first_block_action",
     ]
     with args.csv.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
@@ -72,6 +71,10 @@ def main():
         "counterfactual_rate": sum(1 for r in rows if r["counterfactual"]) / len(rows),
         "players_with_blocks": sum(1 for r in rows if r["blocked_attempts"] > 0),
         "recovered_after_block": sum(1 for r in rows if r["blocked_attempts"] > 0 and r["recovered_after_block"]),
+        "recommendation_checks": sum(r.get("recommendation_checks", 0) for r in rows),
+        "recommendation_followed": sum(r.get("recommendation_followed", 0) for r in rows),
+        "recommendation_ignored": sum(r.get("recommendation_ignored", 0) for r in rows),
+        "indeterminate_destination_warnings": sum(r.get("indeterminate_destination_warnings", 0) for r in rows),
         "readiness_checks": {
             "median": median([r.get("readiness_checks", 0) for r in rows]),
             "mean": mean([r.get("readiness_checks", 0) for r in rows]),
@@ -115,6 +118,9 @@ def main():
             "median_actions": median([r["actions_attempted"] for r in items]),
             "median_blocked": median([r["blocked_attempts"] for r in items]),
             "median_readiness_checks": median([r.get("readiness_checks", 0) for r in items]),
+            "recommendation_checks": sum(r.get("recommendation_checks", 0) for r in items),
+            "recommendation_followed": sum(r.get("recommendation_followed", 0) for r in items),
+            "recommendation_ignored": sum(r.get("recommendation_ignored", 0) for r in items),
             "median_reprovision_actions": median([r["reprovision_actions"] for r in items]),
             "median_capital_final": median([r["capital_final"] for r in items]),
             "counterfactual": sum(1 for r in items if r["counterfactual"]),
