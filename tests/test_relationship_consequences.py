@@ -140,6 +140,37 @@ class RelationshipConsequenceTests(unittest.TestCase):
         self.assertIn(pilot_id, self.session.travel.pilots)
         self.assertIn(actor_id, self.session.relationship.actors)
 
+    def test_missing_contact_time_rule_has_contextual_error(self):
+        model = RelationshipSessionModel()
+        model.relationship_rules = {
+            key: value
+            for key, value in model.relationship_rules.items()
+            if key != ("CONTACT_TIME_DAYS", "AUTHORITY")
+        }
+        state = model.initial_state(
+            location_node="MAL",
+            start_date=date(1498, 4, 14),
+        )
+        with self.assertRaisesRegex(
+            KeyError,
+            "CONTACT_TIME_DAYS/AUTHORITY.*simulation/relationship_rules.csv",
+        ):
+            model.contact_authority(state)
+
+    def test_malformed_contact_time_rule_has_contextual_error(self):
+        model = RelationshipSessionModel()
+        model.relationship_rules = dict(model.relationship_rules)
+        model.relationship_rules[("CONTACT_TIME_DAYS", "AUTHORITY")] = "not-an-int"
+        state = model.initial_state(
+            location_node="MAL",
+            start_date=date(1498, 4, 14),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "CONTACT_TIME_DAYS/AUTHORITY.*relationship_rules.csv",
+        ):
+            model.contact_authority(state)
+
     def test_contacted_remains_the_only_added_relational_state_needed_for_mvp_gate(self):
         self.assertEqual(
             set(RelationshipStatus),
