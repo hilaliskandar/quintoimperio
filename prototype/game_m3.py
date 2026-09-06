@@ -14,18 +14,35 @@ import argparse
 
 import pygame
 
-from prototype.game import (
-    BUTTON,
-    BUTTON_DISABLED,
-    INK,
-    LINE,
-    MAP_RECT,
-    MUTED,
-    WIDTH,
-    HEIGHT,
-    ClickTarget,
-    PlayablePrototype,
-)
+try:
+    from prototype.game import (
+        BUTTON,
+        BUTTON_DISABLED,
+        INK,
+        LINE,
+        MAP_RECT,
+        MUTED,
+        WIDTH,
+        HEIGHT,
+        ClickTarget,
+        PlayablePrototype,
+    )
+except ModuleNotFoundError:
+    # Execução direta via ``python prototype/game_m3.py`` ou importação pelo
+    # script irmão ``historical_campaign.py``: nesse caso o diretório
+    # ``prototype`` já é a raiz de importação.
+    from game import (
+        BUTTON,
+        BUTTON_DISABLED,
+        INK,
+        LINE,
+        MAP_RECT,
+        MUTED,
+        WIDTH,
+        HEIGHT,
+        ClickTarget,
+        PlayablePrototype,
+    )
 
 
 REASON_LABELS = {
@@ -109,7 +126,6 @@ class M3PlayablePrototype(PlayablePrototype):
         micro: pygame.font.Font,
     ) -> None:
         """Redesenha apenas os controles comerciais da interface base."""
-        # Atualiza rótulos dos botões de comércio já criados pela interface base.
         for target in self.targets:
             if target.kind != "action" or target.value not in {"buy", "sell"}:
                 continue
@@ -177,8 +193,6 @@ class M3PlayablePrototype(PlayablePrototype):
             if target.rect.collidepoint(pos) and target.kind == "trade_quantity":
                 self.adjust_trade_quantity(float(target.value))
                 return
-        # O painel de quantidade ocupa parte do mapa. Cliques dentro dele não
-        # podem atravessar para alvos cartográficos que estejam abaixo.
         if self.trade_overlay_rect.collidepoint(pos):
             return
         super().handle_click(pos)
