@@ -54,7 +54,9 @@ jobs:
           SDL_VIDEODRIVER: dummy
         run: |
           python prototype/game_m5.py --output /tmp/quintoimperio-interface-v02.png
+          python prototype/game_m5.py --campaign-smoke --output /tmp/quintoimperio-interface-v02-calicut.png
           test -s /tmp/quintoimperio-interface-v02.png
+          test -s /tmp/quintoimperio-interface-v02-calicut.png
       - name: Publish playable interface screenshots
         uses: actions/upload-artifact@v4
         with:
@@ -64,6 +66,7 @@ jobs:
             /tmp/quintoimperio-game-technical.png
             /tmp/quintoimperio-campaign-calicut.png
             /tmp/quintoimperio-interface-v02.png
+            /tmp/quintoimperio-interface-v02-calicut.png
           if-no-files-found: error
       - name: Smoke-test coordinate map
         env:
