@@ -11,19 +11,39 @@ não atribui atividades e não concede recursos automaticamente.
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 
 from .expedition import ExpeditionLeg
+from .port import PortServiceKind, ServiceAvailability
 from .service_knowledge import ServiceKnowledgeSessionModel
 from .session import GameSessionState, SessionWaitResult
 from .stop import ChronologyMode
 from .travel import VoyagePlan
 
 
+@dataclass(frozen=True)
+class LogisticsPlanningView:
+    """Leitura de planejamento; não concede recursos nem altera evidência histórica."""
+
+    current_autonomy_days: float
+    next_leg_required_days: float | None
+    recommended_margin_days: float
+    margin_after_next_leg_days: float | None
+    meets_recommended_margin: bool | None
+    in_predeparture_phase: bool
+    historical_departure_date: date | None
+    next_destination_node: str | None
+    next_destination_provisions_evidence_indeterminate: bool
+
+
 class HistoricalCampaignModel:
     """Fachada da sessão para a vertical slice histórica de 1497–1498."""
+
+    PREDEPARTURE_START = date(1497, 7, 6)
+    GAMA_DEPARTURE = date(1497, 7, 8)
+    RECOMMENDED_LOGISTICS_MARGIN_DAYS = 20.0
 
     def __init__(self, root: Path | None = None) -> None:
         self.session = ServiceKnowledgeSessionModel(root)
@@ -31,6 +51,18 @@ class HistoricalCampaignModel:
     def __getattr__(self, name: str):
         """Delega os demais sistemas ao modelo de sessão composto."""
         return getattr(self.session, name)
+
+    def initial_playable_state(self) -> GameSessionState:
+        """Abre a campanha em uma fase simulada de preparação de dois dias.
+
+        A data de 1497-07-06 é uma camada de jogo. A partida histórica da primeira
+        perna continua sendo 1497-07-08 e é obtida das observações da viagem.
+        """
+        return self.session.initial_state(
+            active_expedition_id="EXP_GAMA_1497",
+            start_date=self.PREDEPARTURE_START,
+            chronology_mode=ChronologyMode.GUIDED,
+        )
 
     def current_leg(self, state: GameSessionState) -> ExpeditionLeg | None:
         if state.active_expedition_id is None or state.expedition_leg_sequence is None:
@@ -66,6 +98,59 @@ class HistoricalCampaignModel:
                 + ", ".join(sorted(item.isoformat() for item in dates))
             )
         return next(iter(dates))
+
+    def in_predeparture_phase(self, state: GameSessionState) -> bool:
+        expected = self.guided_departure_date(state)
+        return bool(
+            state.active_expedition_id == "EXP_GAMA_1497"
+            and state.expedition_leg_sequence == 1
+            and state.vessel.location_node == "LIS"
+            and expected == self.GAMA_DEPARTURE
+            and state.vessel.clock.current_date < expected
+        )
+
+    def logistics_planning_view(self, state: GameSessionState) -> LogisticsPlanningView:
+        """Expõe autonomia e margem de prudência sem automatizar decisões.
+
+        Os 20 dias são uma heurística de robustez derivada dos playtests, não uma
+        ração, duração ou requisito histórico. A indicação de incerteza consulta
+        apenas o campo histórico de provisões do próximo destino.
+        """
+        leg = self.current_leg(state)
+        expected = self.guided_departure_date(state)
+        if leg is None:
+            return LogisticsPlanningView(
+                current_autonomy_days=state.vessel.provision_days,
+                next_leg_required_days=None,
+                recommended_margin_days=self.RECOMMENDED_LOGISTICS_MARGIN_DAYS,
+                margin_after_next_leg_days=None,
+                meets_recommended_margin=None,
+                in_predeparture_phase=False,
+                historical_departure_date=expected,
+                next_destination_node=None,
+                next_destination_provisions_evidence_indeterminate=False,
+            )
+
+        plan = self.session.plan_voyage(state, leg.route_id, seed=1498)
+        required = plan.provision_days_required
+        remaining = state.vessel.provision_days - required
+        route = self.session.routes[leg.route_id]
+        destination = route["destination_node"]
+        destination_unknown = (
+            self.session.port.availability(destination, PortServiceKind.PROVISIONS)
+            is ServiceAvailability.UNKNOWN
+        )
+        return LogisticsPlanningView(
+            current_autonomy_days=state.vessel.provision_days,
+            next_leg_required_days=required,
+            recommended_margin_days=self.RECOMMENDED_LOGISTICS_MARGIN_DAYS,
+            margin_after_next_leg_days=remaining,
+            meets_recommended_margin=remaining >= self.RECOMMENDED_LOGISTICS_MARGIN_DAYS,
+            in_predeparture_phase=self.in_predeparture_phase(state),
+            historical_departure_date=expected,
+            next_destination_node=destination,
+            next_destination_provisions_evidence_indeterminate=destination_unknown,
+        )
 
     def wait_for_guided_departure(self, state: GameSessionState) -> SessionWaitResult:
         """Avança somente o relógio até a próxima partida histórica observada.
