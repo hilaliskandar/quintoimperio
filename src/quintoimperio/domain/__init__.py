@@ -19,6 +19,7 @@ from .information import (
 )
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .navigation import NavigationModel, great_circle_nm
+from .persistence import CampaignPersistence, CampaignSave, SAVE_SCHEMA_VERSION
 from .port import (
     PortServiceKind,
     PortServiceModel,
@@ -57,8 +58,10 @@ __all__ = [
     "AccessStatus",
     "AccessView",
     "CampaignMilestone",
+    "CampaignPersistence",
     "CampaignProgress",
     "CampaignProgressModel",
+    "CampaignSave",
     "CampaignSummary",
     "CargoHolding",
     "ChronologyMode",
@@ -100,6 +103,7 @@ __all__ = [
     "RelationshipStatus",
     "RouteKnowledgeModel",
     "RouteKnowledgeRecord",
+    "SAVE_SCHEMA_VERSION",
     "ServiceAvailability",
     "SessionAccessResult",
     "SessionInformationResult",
