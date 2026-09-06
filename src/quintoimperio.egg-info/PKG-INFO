@@ -230,11 +230,17 @@ Com Pygame e cartografia:
 python -m pip install -e ".[game,cartography]"
 ```
 
+Com dependências de teste (pytest):
+
+```bash
+python -m pip install -e ".[game,cartography,test]"
+```
+
 Validação:
 
 ```bash
 python scripts/validate_data.py
-python -m unittest discover -s tests -v
+python -m pytest tests -v
 python prototype/session.py
 ```
 
