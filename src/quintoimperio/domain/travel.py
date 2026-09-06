@@ -1,4 +1,4 @@
-"""Estado de viagem, provisoes abstratas, desgaste, pilotos, comando e eventos v0.1."""
+"""Estado de viagem, provisoes abstratas, desgaste, pilotos, comando e eventos v0.2."""
 
 from __future__ import annotations
 
@@ -56,6 +56,7 @@ class VoyagePlan:
     estimated_duration_days: float
     travel_days: int
     provision_days_required: float
+    event_provision_delta: float
     provision_days_after: float
     condition_before: float
     condition_after: float
@@ -73,16 +74,16 @@ class TravelModel:
     Pilotos historicos podem habilitar uma rota quando o conhecimento nautico
     do personagem ainda nao e operacional. Uma expedicao ativa pode fornecer a
     base institucional ``FLEET_COMMAND`` sem transformar o comando da armada em
-    conhecimento pessoal do personagem. Nenhuma dessas bases concede bonus
-    quantitativo de velocidade, consumo ou desgaste na v0.1.
+    conhecimento pessoal do personagem.
 
-    Eventos marítimos são hipóteses explícitas de simulação. Quando
-    ``preserve_observed_timing`` é verdadeiro e a rota/data possui observação
-    histórica exata, nenhum evento aleatório altera duração ou chegada.
+    Eventos maritimos sao hipoteses explicitas de simulacao. Quando
+    ``preserve_observed_timing`` e verdadeiro e a rota/data possui observacao
+    historica exata, eventos que alterariam a duracao sao suprimidos, mas
+    eventos ``observed_timing_safe`` podem afetar provisoes ou condicao sem
+    deslocar a chegada historica.
 
     Rotas com ``route_origin=STRATEGIC_AGGREGATE`` existem apenas para leitura
-    do grafo em escala estratégica. Elas nunca são executáveis como uma única
-    perna de viagem quando a base já possui a sequência histórica segmentada.
+    do grafo em escala estrategica e nao sao executaveis como uma unica perna.
     """
 
     def __init__(self, root: Path | None = None) -> None:
@@ -178,12 +179,16 @@ class TravelModel:
         exact_observation = bool(
             self.navigation.observed_days_for_departure(route_id, state.clock.current_date)
         )
-        suppress_events = preserve_observed_timing and exact_observation
-        events = () if suppress_events else self.events.select(
-            route_id, state.clock.current_date, seed=seed
+        suppress_timing_events = preserve_observed_timing and exact_observation
+        events = self.events.select(
+            route_id,
+            state.clock.current_date,
+            seed=seed,
+            timing_safe_only=suppress_timing_events,
         )
         extra_days = sum(event.extra_days for event in events)
         event_condition_loss = sum(event.condition_loss for event in events)
+        event_provision_delta = sum(event.provision_delta for event in events)
 
         base_travel_days = max(1, ceil(duration))
         travel_days = base_travel_days + extra_days
@@ -191,6 +196,9 @@ class TravelModel:
             self.rules[("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY")]
         )
         provisions_required = travel_days * provision_rate
+        provision_days_after_raw = (
+            state.provision_days - provisions_required + event_provision_delta
+        )
         normal_wear = base_travel_days * self.wear_per_day(route_id)
         condition_after = max(
             0.0, state.condition - normal_wear - event_condition_loss
@@ -208,9 +216,8 @@ class TravelModel:
         if route.get("route_origin") == "STRATEGIC_AGGREGATE":
             blockers.append("STRATEGIC_AGGREGATE_NOT_EXECUTABLE")
         if basis is None:
-            # Identificador preservado por compatibilidade com testes/telemetria v0.1.
             blockers.append("NAVIGATION_KNOWLEDGE_OR_PILOT_REQUIRED")
-        if state.provision_days < provisions_required:
+        if provision_days_after_raw < 0:
             blockers.append("INSUFFICIENT_PROVISIONS")
         min_condition = float(self.rules[("DEPARTURE", "MIN_CONDITION")])
         if state.condition < min_condition:
@@ -227,13 +234,14 @@ class TravelModel:
             estimated_duration_days=duration + extra_days,
             travel_days=travel_days,
             provision_days_required=provisions_required,
-            provision_days_after=max(0.0, state.provision_days - provisions_required),
+            event_provision_delta=event_provision_delta,
+            provision_days_after=max(0.0, provision_days_after_raw),
             condition_before=state.condition,
             condition_after=condition_after,
             pilot_id=pilot_id,
             navigation_basis=basis,
             events=events,
-            events_suppressed_by_observation=suppress_events,
+            events_suppressed_by_observation=suppress_timing_events,
             feasible=not blockers,
             blockers=tuple(blockers),
         )
@@ -245,12 +253,10 @@ class TravelModel:
             raise ValueError("Estado do navio nao corresponde a origem do plano")
         if state.clock.current_date != plan.departure_date:
             raise ValueError("Data atual nao corresponde a data de partida do plano")
-        if state.provision_days < plan.provision_days_required:
-            raise ValueError("Provisoes atuais nao suportam o plano")
 
         return VesselState(
             location_node=plan.destination_node,
             clock=state.clock.advance(plan.travel_days),
-            provision_days=state.provision_days - plan.provision_days_required,
+            provision_days=plan.provision_days_after,
             condition=plan.condition_after,
         )
