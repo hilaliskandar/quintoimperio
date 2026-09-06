@@ -48,7 +48,7 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         self.state = self.session.initial_playable_state()
         self.message = (
             "Preparação simulada em Lisboa: partida histórica em 1497-07-08; "
-            "margem logística recomendada 20 dias-equivalentes."
+            "margem logística de 20 dias-equivalentes é heurística de simulação."
         )
 
     def plan_for_route(self, route_id: str):
@@ -99,23 +99,35 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
             return
 
         days = (expected - current).days
-        planning = self.session.logistics_planning_view(self.state)
-        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 62, 500, 48)
+        planning = self.session.logistics_planning_view(self.state, seed=SEED)
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 78, 550, 64)
         pygame.draw.rect(surface, BG, rect, border_radius=3)
         pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
-        font = pygame.font.SysFont("monospace", 12)
+        font = pygame.font.SysFont("monospace", 11)
+        required = (
+            "?"
+            if planning.next_leg_required_days is None
+            else f"{planning.next_leg_required_days:.0f}d"
+        )
+        status = "OK" if planning.meets_recommended_margin else "abaixo"
         if planning.in_predeparture_phase:
             line1 = f"PREPARAÇÃO SIMULADA | partida histórica {expected} | esperar {days}d"
-            status = "OK" if planning.meets_recommended_margin else "abaixo"
-            line2 = (
-                f"Autonomia {planning.current_autonomy_days:.0f}d | "
-                f"margem recomendada +{planning.recommended_margin_days:.0f}d ({status})"
-            )
         else:
             line1 = f"Próxima partida observada: {expected} | esperar {days}d"
-            line2 = "Esperar altera apenas o relógio; não concede recursos."
-        surface.blit(font.render(line1, True, INK), (rect.x + 8, rect.y + 7))
-        surface.blit(font.render(line2, True, MUTED), (rect.x + 8, rect.y + 25))
+        line2 = (
+            f"Autonomia {planning.current_autonomy_days:.0f}d | próxima perna {required} | "
+            f"margem heurística +{planning.recommended_margin_days:.0f}d ({status})"
+        )
+        if planning.next_destination_provisions_evidence_indeterminate:
+            line3 = (
+                f"Destino {planning.next_destination_node}: evidência histórica de provisões "
+                "indeterminada."
+            )
+        else:
+            line3 = "Margem é heurística de simulação; esperar não concede recursos."
+        surface.blit(font.render(line1, True, INK), (rect.x + 8, rect.y + 6))
+        surface.blit(font.render(line2, True, MUTED), (rect.x + 8, rect.y + 24))
+        surface.blit(font.render(line3, True, MUTED), (rect.x + 8, rect.y + 42))
         self.targets.append(ClickTarget(rect, "action", "wait_stop"))
 
     def _authority_contact_overlay(self, surface: pygame.Surface) -> None:
@@ -132,7 +144,7 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         ):
             return
 
-        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 102, 345, 34)
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 118, 345, 34)
         pygame.draw.rect(surface, BUTTON, rect, border_radius=3)
         pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
         font = pygame.font.SysFont("monospace", 12)
