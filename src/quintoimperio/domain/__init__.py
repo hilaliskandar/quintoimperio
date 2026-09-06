@@ -21,6 +21,7 @@ from .port import (
     ServiceAvailability,
 )
 from .relationship import HistoricalActor, NodeActor, RelationshipModel, RelationshipStatus
+from .relationship_session import RelationshipSessionModel, SessionRelationshipResult
 from .route_knowledge import RouteKnowledgeModel
 from .session import (
     AccessRecord,
@@ -85,6 +86,7 @@ __all__ = [
     "PortServiceResult",
     "RelationshipModel",
     "RelationshipRecord",
+    "RelationshipSessionModel",
     "RelationshipStatus",
     "RouteKnowledgeModel",
     "RouteKnowledgeRecord",
@@ -92,6 +94,7 @@ __all__ = [
     "SessionAccessResult",
     "SessionInformationResult",
     "SessionPortServiceResult",
+    "SessionRelationshipResult",
     "SessionTradeResult",
     "SessionWaitResult",
     "TradeModel",
