@@ -1,0 +1,10 @@
+
+[cartography]
+matplotlib<4,>=3.10
+basemap<3,>=2
+
+[game]
+pygame-ce<3,>=2.5
+
+[test]
+pytest<9,>=8

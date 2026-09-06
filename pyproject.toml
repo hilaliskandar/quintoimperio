@@ -22,6 +22,9 @@ cartography = [
   "matplotlib>=3.10,<4",
   "basemap>=2,<3"
 ]
+test = [
+  "pytest>=8,<9"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

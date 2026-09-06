@@ -18,11 +18,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install project package
-        run: python -m pip install -e ".[game,cartography]"
+        run: python -m pip install -e ".[game,cartography,test]"
       - name: Validate CSV data
         run: python scripts/validate_data.py
       - name: Run domain tests
-        run: python -m unittest discover -s tests -v
+        run: python -m pytest tests -v
       - name: Render economy prototype report
         run: python prototype/economy.py
       - name: Render navigation prototype report
