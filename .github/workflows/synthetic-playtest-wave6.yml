@@ -11,13 +11,13 @@ on:
 permissions: {contents: read}
 jobs:
   play:
-    name: wave6-r${{ matrix.reserve }}-p${{ matrix.id }}-${{ matrix.profile }}
+    name: wave6-r${{ matrix.reserve }}-p${{ matrix.player.id }}-${{ matrix.player.profile }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         reserve: [10, 20, 30]
-        include:
+        player:
           - {id: 1, profile: DISCIPLINED, seed: 101}
           - {id: 2, profile: DISCIPLINED, seed: 102}
           - {id: 3, profile: DISCIPLINED, seed: 103}
@@ -45,11 +45,11 @@ jobs:
       - run: python -m pip install -e .
       - run: |
           mkdir -p build/wave6
-          python tools/simulate_synthetic_player_wave6.py --player-id "${{ matrix.id }}" --profile "${{ matrix.profile }}" --seed "${{ matrix.seed }}" --reserve-days "${{ matrix.reserve }}" --output "build/wave6/r${{ matrix.reserve }}-p${{ matrix.id }}.json"
+          python tools/simulate_synthetic_player_wave6.py --player-id "${{ matrix.player.id }}" --profile "${{ matrix.player.profile }}" --seed "${{ matrix.player.seed }}" --reserve-days "${{ matrix.reserve }}" --output "build/wave6/r${{ matrix.reserve }}-p${{ matrix.player.id }}.json"
       - uses: actions/upload-artifact@v4
         with:
-          name: wave6-r${{ matrix.reserve }}-p${{ matrix.id }}
-          path: build/wave6/r${{ matrix.reserve }}-p${{ matrix.id }}.json
+          name: wave6-r${{ matrix.reserve }}-p${{ matrix.player.id }}
+          path: build/wave6/r${{ matrix.reserve }}-p${{ matrix.player.id }}.json
   aggregate:
     needs: play
     runs-on: ubuntu-latest
