@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   play:
-    name: player-${{ matrix.id }}-${{ matrix.profile }}
+    name: wave2-player-${{ matrix.id }}-${{ matrix.profile }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -50,10 +50,11 @@ jobs:
           python-version: "3.12"
       - name: Install downloaded project
         run: python -m pip install -e .
-      - name: Run independent synthetic player
+      - name: Run independent synthetic player wave 2
         run: |
           mkdir -p build/synthetic
           python tools/simulate_synthetic_player.py \
+            --wave 2 \
             --player-id "${{ matrix.id }}" \
             --profile "${{ matrix.profile }}" \
             --seed "${{ matrix.seed }}" \
@@ -61,12 +62,12 @@ jobs:
       - name: Upload player metrics
         uses: actions/upload-artifact@v4
         with:
-          name: synthetic-player-${{ matrix.id }}
+          name: synthetic-wave2-player-${{ matrix.id }}
           path: build/synthetic/player-${{ matrix.id }}.json
           if-no-files-found: error
 
   aggregate:
-    name: aggregate-20-players
+    name: aggregate-wave2-20-players
     needs: play
     runs-on: ubuntu-latest
     steps:
@@ -75,20 +76,20 @@ jobs:
       - name: Download all player metrics
         uses: actions/download-artifact@v4
         with:
-          pattern: synthetic-player-*
+          pattern: synthetic-wave2-player-*
           path: build/synthetic-results
           merge-multiple: true
       - name: Aggregate metrics
         run: |
           python tools/aggregate_synthetic_playtest.py \
             --input-dir build/synthetic-results \
-            --csv build/synthetic-playtest-20.csv \
-            --summary build/synthetic-playtest-summary.json
+            --csv build/synthetic-playtest-wave2-20.csv \
+            --summary build/synthetic-playtest-wave2-summary.json
       - name: Upload consolidated metrics
         uses: actions/upload-artifact@v4
         with:
-          name: synthetic-playtest-20-results
+          name: synthetic-playtest-wave2-20-results
           path: |
-            build/synthetic-playtest-20.csv
-            build/synthetic-playtest-summary.json
+            build/synthetic-playtest-wave2-20.csv
+            build/synthetic-playtest-wave2-summary.json
           if-no-files-found: error
