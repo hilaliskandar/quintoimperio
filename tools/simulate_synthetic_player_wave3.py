@@ -63,7 +63,7 @@ def reprovision_wave3(model, state, metrics: Metrics, seed: int, counters: dict[
     if result.executed:
         metrics.executed()
         metrics.reprovision_actions += 1
-        metrics.reprovision_total += amount
+        metrics.reprovision_total += result.service_result.effect
         state = result.state_after
         metrics.observe(state)
         return state, True
@@ -85,7 +85,7 @@ def reprovision_wave3(model, state, metrics: Metrics, seed: int, counters: dict[
     if retry.executed:
         metrics.executed()
         metrics.reprovision_actions += 1
-        metrics.reprovision_total += amount
+        metrics.reprovision_total += retry.service_result.effect
         state = retry.state_after
         counters["service_unknown_resolved"] += 1
         metrics.observe(state)
