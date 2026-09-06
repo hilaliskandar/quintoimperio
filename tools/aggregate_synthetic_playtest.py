@@ -41,6 +41,7 @@ def main():
         row["extra_actions_vs_reference"] = row["actions_attempted"] - reference_actions
 
     args.csv.parent.mkdir(parents=True, exist_ok=True)
+    args.summary.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
         "wave", "player_id", "profile", "seed", "completed", "current_objective",
         "actions_attempted", "actions_executed", "blocked_attempts", "readiness_checks",
