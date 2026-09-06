@@ -17,10 +17,12 @@ class InterfaceM6Tests(unittest.TestCase):
             path = Path(directory) / "slot.json"
             app = M6HistoricalCampaignPrototype(path)
             original = app.state
+            self.assertTrue(app.session.in_predeparture_phase(original))
             app.session_seed = 1777
             app.save_slot()
             self.assertTrue(path.exists())
 
+            app.state = app.session.wait_for_guided_departure(app.state).state_after
             plan = app.session.plan_current_leg(app.state, seed=app.session_seed)
             self.assertTrue(plan.feasible)
             app.state = app.session.execute_voyage(app.state, plan)
@@ -31,6 +33,7 @@ class InterfaceM6Tests(unittest.TestCase):
             app.load_slot()
 
             self.assertEqual(app.state, original)
+            self.assertTrue(app.session.in_predeparture_phase(app.state))
             self.assertEqual(app.session_seed, 1777)
             self.assertIsNone(app.selected_route)
             self.assertIsNone(app.pending_travel_route)
