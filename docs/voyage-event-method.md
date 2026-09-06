@@ -10,6 +10,13 @@ A evidência histórica continua acima da aleatoriedade. Quando `preserve_observ
 
 Assim, Melinde → Calecute em 24/4/1498 preserva seus 26/27 dias no modo guiado, mas a autonomia restante pode variar por um evento de provisões. Em trajetórias contrafactuais, a mesma rota pode também receber atrasos e danos abstratos.
 
+`VoyagePlan` distingue duas situações para evitar ambiguidade:
+
+- `timing_events_suppressed_by_observation=True`: a observação histórica restringiu a seleção a eventos que não alteram o timing;
+- `events_suppressed_by_observation=True`: além dessa restrição, nenhum evento aleatório foi efetivamente selecionado para a perna.
+
+Portanto, uma perna guiada pode ter `timing_events_suppressed_by_observation=True`, `events_suppressed_by_observation=False` e ainda assim registrar um evento de provisões compatível com a data histórica.
+
 ## Eventos disponíveis
 
 `simulation/voyage_event_rules.csv` contém seis hipóteses de simulação:
