@@ -1,8 +1,8 @@
-"""Estado de viagem, provisoes abstratas, desgaste, pilotos, comando e eventos v0.2."""
+"""Estado de viagem, provisoes abstratas, desgaste, pilotos, comando e eventos v0.3."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from enum import Enum
 from math import ceil
@@ -17,8 +17,6 @@ from .voyage_event import VoyageEvent, VoyageEventModel
 
 
 class NavigationBasis(str, Enum):
-    """Base pela qual o personagem participa da operacao de uma rota."""
-
     OWN_KNOWLEDGE = "OWN_KNOWLEDGE"
     PILOT = "PILOT"
     FLEET_COMMAND = "FLEET_COMMAND"
@@ -26,13 +24,6 @@ class NavigationBasis(str, Enum):
 
 @dataclass(frozen=True)
 class VesselState:
-    """Estado minimo do navio para o primeiro loop de viagem.
-
-    ``provision_days`` usa dias-equivalentes abstratos. ``condition`` usa uma
-    escala de simulacao 0-100. Nenhum dos dois campos representa uma unidade
-    historica documentada.
-    """
-
     location_node: str
     clock: GameClock
     provision_days: float
@@ -47,6 +38,8 @@ class VesselState:
 
 @dataclass(frozen=True)
 class VoyagePlan:
+    """Plano de viagem, resolvido ou ainda sem revelar contingência."""
+
     route_id: str
     origin_node: str
     destination_node: str
@@ -65,31 +58,19 @@ class VoyagePlan:
     events: tuple[VoyageEvent, ...]
     events_suppressed_by_observation: bool
     timing_events_suppressed_by_observation: bool
+    simulation_seed: int
+    events_resolved: bool
     feasible: bool
     blockers: tuple[str, ...]
 
 
 class TravelModel:
-    """Orquestra navegacao, recursos abstratos, bases de viagem e eventos.
+    """Orquestra navegação e permite resolução tardia da contingência.
 
-    Pilotos historicos podem habilitar uma rota quando o conhecimento nautico
-    do personagem ainda nao e operacional. Uma expedicao ativa pode fornecer a
-    base institucional ``FLEET_COMMAND`` sem transformar o comando da armada em
-    conhecimento pessoal do personagem.
-
-    Eventos maritimos sao hipoteses explicitas de simulacao. Quando
-    ``preserve_observed_timing`` e verdadeiro e a rota/data possui observacao
-    historica exata, eventos que alterariam a duracao sao suprimidos, mas
-    eventos ``observed_timing_safe`` podem afetar provisoes ou condicao sem
-    deslocar a chegada historica.
-
-    ``timing_events_suppressed_by_observation`` registra essa restricao parcial.
-    ``events_suppressed_by_observation`` preserva a semantica anterior e so e
-    verdadeiro quando a observacao historica resultou em ausencia total de
-    evento aleatorio no plano.
-
-    Rotas com ``route_origin=STRATEGIC_AGGREGATE`` existem apenas para leitura
-    do grafo em escala estrategica e nao sao executaveis como uma unica perna.
+    Por compatibilidade, ``plan_voyage`` continua resolvendo eventos por padrão.
+    Camadas jogáveis que não devem revelar o evento antes da confirmação podem
+    usar ``defer_events=True`` ou ``defer_plan``. A resolução posterior usa a
+    seed armazenada no próprio plano.
     """
 
     def __init__(self, root: Path | None = None) -> None:
@@ -124,7 +105,6 @@ class TravelModel:
             return False
         if pilot["available_node"] != origin_node:
             return False
-
         return any(
             row["pilot_id"] == pilot_id
             and row["route_id"] == route_id
@@ -158,6 +138,75 @@ class TravelModel:
             raw = self.rules[("WEAR", "DEFAULT_PER_DAY")]
         return float(raw)
 
+    def _base_plan(
+        self,
+        state: VesselState,
+        route_id: str,
+        nav_knowledge: KnowledgeLevel,
+        pilot_id: str | None,
+        fleet_command: bool,
+        seed: int,
+        preserve_observed_timing: bool,
+    ) -> VoyagePlan:
+        route = self.routes[route_id]
+        if state.location_node != route["origin_node"]:
+            raise ValueError(
+                f"Navio esta em {state.location_node}, mas {route_id} parte de {route['origin_node']}"
+            )
+        duration = self.navigation.estimate_duration_days(
+            route_id, state.clock.current_date, seed=seed
+        )
+        if duration is None:
+            raise ValueError(
+                f"Rota {route_id} nao possui coordenadas suficientes para estimar duracao"
+            )
+        exact_observation = bool(
+            self.navigation.observed_days_for_departure(route_id, state.clock.current_date)
+        )
+        suppress_timing = preserve_observed_timing and exact_observation
+        travel_days = max(1, ceil(duration))
+        rate = float(self.rules[("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY")])
+        required = travel_days * rate
+        normal_wear = travel_days * self.wear_per_day(route_id)
+        basis = self.navigation_basis(
+            route_id, nav_knowledge, state.clock.current_date, state.location_node,
+            pilot_id, fleet_command,
+        )
+        blockers: list[str] = []
+        if route.get("route_origin") == "STRATEGIC_AGGREGATE":
+            blockers.append("STRATEGIC_AGGREGATE_NOT_EXECUTABLE")
+        if basis is None:
+            blockers.append("NAVIGATION_KNOWLEDGE_OR_PILOT_REQUIRED")
+        if state.provision_days < required:
+            blockers.append("INSUFFICIENT_PROVISIONS")
+        min_condition = float(self.rules[("DEPARTURE", "MIN_CONDITION")])
+        if state.condition < min_condition:
+            blockers.append("VESSEL_CONDITION_TOO_LOW")
+        return VoyagePlan(
+            route_id=route_id,
+            origin_node=route["origin_node"],
+            destination_node=route["destination_node"],
+            departure_date=state.clock.current_date,
+            arrival_date=state.clock.advance(travel_days).current_date,
+            base_estimated_duration_days=duration,
+            estimated_duration_days=duration,
+            travel_days=travel_days,
+            provision_days_required=required,
+            event_provision_delta=0.0,
+            provision_days_after=max(0.0, state.provision_days - required),
+            condition_before=state.condition,
+            condition_after=max(0.0, state.condition - normal_wear),
+            pilot_id=pilot_id,
+            navigation_basis=basis,
+            events=(),
+            events_suppressed_by_observation=False,
+            timing_events_suppressed_by_observation=suppress_timing,
+            simulation_seed=int(seed),
+            events_resolved=False,
+            feasible=not blockers,
+            blockers=tuple(blockers),
+        )
+
     def plan_voyage(
         self,
         state: VesselState,
@@ -167,104 +216,99 @@ class TravelModel:
         fleet_command: bool = False,
         seed: int = 0,
         preserve_observed_timing: bool = True,
+        defer_events: bool = False,
     ) -> VoyagePlan:
-        route = self.routes[route_id]
-        if state.location_node != route["origin_node"]:
-            raise ValueError(
-                f"Navio esta em {state.location_node}, mas {route_id} parte de {route['origin_node']}"
-            )
+        plan = self._base_plan(
+            state, route_id, nav_knowledge, pilot_id, fleet_command, seed,
+            preserve_observed_timing,
+        )
+        if defer_events or not plan.feasible:
+            return plan
+        return self.resolve_voyage(state, plan, enforce_event_feasibility=True)
 
-        duration = self.navigation.estimate_duration_days(
-            route_id, state.clock.current_date, seed=seed
-        )
-        if duration is None:
-            raise ValueError(
-                f"Rota {route_id} nao possui coordenadas suficientes para estimar duracao"
-            )
-
-        exact_observation = bool(
-            self.navigation.observed_days_for_departure(route_id, state.clock.current_date)
-        )
-        suppress_timing_events = preserve_observed_timing and exact_observation
-        events = self.events.select(
-            route_id,
-            state.clock.current_date,
-            seed=seed,
-            timing_safe_only=suppress_timing_events,
-        )
-        extra_days = sum(event.extra_days for event in events)
-        event_condition_loss = sum(event.condition_loss for event in events)
-        event_provision_delta = sum(event.provision_delta for event in events)
-
-        base_travel_days = max(1, ceil(duration))
-        travel_days = base_travel_days + extra_days
-        provision_rate = float(
-            self.rules[("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY")]
-        )
-        provisions_required = travel_days * provision_rate
-        provision_days_after_raw = (
-            state.provision_days - provisions_required + event_provision_delta
-        )
-        normal_wear = base_travel_days * self.wear_per_day(route_id)
-        condition_after = max(
-            0.0, state.condition - normal_wear - event_condition_loss
-        )
-        basis = self.navigation_basis(
-            route_id,
-            nav_knowledge,
-            state.clock.current_date,
-            state.location_node,
-            pilot_id,
-            fleet_command,
-        )
-
-        blockers: list[str] = []
-        if route.get("route_origin") == "STRATEGIC_AGGREGATE":
-            blockers.append("STRATEGIC_AGGREGATE_NOT_EXECUTABLE")
-        if basis is None:
-            blockers.append("NAVIGATION_KNOWLEDGE_OR_PILOT_REQUIRED")
-        if provision_days_after_raw < 0:
+    def defer_plan(self, state: VesselState, plan: VoyagePlan) -> VoyagePlan:
+        """Remove contingência já resolvida sem remover bloqueios externos à viagem."""
+        base_days = max(1, ceil(plan.base_estimated_duration_days))
+        rate = float(self.rules[("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY")])
+        required = base_days * rate
+        normal_wear = base_days * self.wear_per_day(plan.route_id)
+        blockers = [b for b in plan.blockers if b != "INSUFFICIENT_PROVISIONS"]
+        if state.provision_days < required:
             blockers.append("INSUFFICIENT_PROVISIONS")
-        min_condition = float(self.rules[("DEPARTURE", "MIN_CONDITION")])
-        if state.condition < min_condition:
-            blockers.append("VESSEL_CONDITION_TOO_LOW")
-
-        arrival = state.clock.advance(travel_days).current_date
-        all_events_suppressed = suppress_timing_events and not events
-        return VoyagePlan(
-            route_id=route_id,
-            origin_node=route["origin_node"],
-            destination_node=route["destination_node"],
-            departure_date=state.clock.current_date,
-            arrival_date=arrival,
-            base_estimated_duration_days=duration,
-            estimated_duration_days=duration + extra_days,
-            travel_days=travel_days,
-            provision_days_required=provisions_required,
-            event_provision_delta=event_provision_delta,
-            provision_days_after=max(0.0, provision_days_after_raw),
-            condition_before=state.condition,
-            condition_after=condition_after,
-            pilot_id=pilot_id,
-            navigation_basis=basis,
-            events=events,
-            events_suppressed_by_observation=all_events_suppressed,
-            timing_events_suppressed_by_observation=suppress_timing_events,
+        blockers = list(dict.fromkeys(blockers))
+        return replace(
+            plan,
+            arrival_date=state.clock.advance(base_days).current_date,
+            estimated_duration_days=plan.base_estimated_duration_days,
+            travel_days=base_days,
+            provision_days_required=required,
+            event_provision_delta=0.0,
+            provision_days_after=max(0.0, state.provision_days - required),
+            condition_after=max(0.0, state.condition - normal_wear),
+            events=(),
+            events_suppressed_by_observation=False,
+            events_resolved=False,
             feasible=not blockers,
             blockers=tuple(blockers),
         )
 
-    def execute_voyage(self, state: VesselState, plan: VoyagePlan) -> VesselState:
+    def resolve_voyage(
+        self,
+        state: VesselState,
+        plan: VoyagePlan,
+        *,
+        enforce_event_feasibility: bool = False,
+    ) -> VoyagePlan:
         if not plan.feasible:
             raise ValueError(f"Plano de viagem bloqueado: {', '.join(plan.blockers)}")
         if state.location_node != plan.origin_node:
             raise ValueError("Estado do navio nao corresponde a origem do plano")
         if state.clock.current_date != plan.departure_date:
             raise ValueError("Data atual nao corresponde a data de partida do plano")
+        if plan.events_resolved:
+            return plan
+        events = self.events.select(
+            plan.route_id,
+            plan.departure_date,
+            seed=plan.simulation_seed,
+            timing_safe_only=plan.timing_events_suppressed_by_observation,
+        )
+        extra_days = sum(event.extra_days for event in events)
+        event_loss = sum(event.condition_loss for event in events)
+        event_delta = sum(event.provision_delta for event in events)
+        base_days = max(1, ceil(plan.base_estimated_duration_days))
+        travel_days = base_days + extra_days
+        rate = float(self.rules[("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY")])
+        required = travel_days * rate
+        after_raw = state.provision_days - required + event_delta
+        normal_wear = base_days * self.wear_per_day(plan.route_id)
+        blockers = list(plan.blockers)
+        if enforce_event_feasibility and after_raw < 0:
+            blockers.append("INSUFFICIENT_PROVISIONS")
+        blockers = list(dict.fromkeys(blockers))
+        return replace(
+            plan,
+            arrival_date=state.clock.advance(travel_days).current_date,
+            estimated_duration_days=plan.base_estimated_duration_days + extra_days,
+            travel_days=travel_days,
+            provision_days_required=required,
+            event_provision_delta=event_delta,
+            provision_days_after=max(0.0, after_raw),
+            condition_after=max(0.0, state.condition - normal_wear - event_loss),
+            events=events,
+            events_suppressed_by_observation=(
+                plan.timing_events_suppressed_by_observation and not events
+            ),
+            events_resolved=True,
+            feasible=not blockers,
+            blockers=tuple(blockers),
+        )
 
+    def execute_voyage(self, state: VesselState, plan: VoyagePlan) -> VesselState:
+        resolved = self.resolve_voyage(state, plan)
         return VesselState(
-            location_node=plan.destination_node,
-            clock=state.clock.advance(plan.travel_days),
-            provision_days=plan.provision_days_after,
-            condition=plan.condition_after,
+            location_node=resolved.destination_node,
+            clock=state.clock.advance(resolved.travel_days),
+            provision_days=resolved.provision_days_after,
+            condition=resolved.condition_after,
         )

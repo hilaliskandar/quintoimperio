@@ -42,8 +42,6 @@ class HistoricalCampaignTests(unittest.TestCase):
         seen_stops.append(self.model.active_stop(state).stop_id)
         self.assertEqual(state.vessel.clock.current_date, date(1497, 7, 27))
 
-        # São Thiago documenta abastecimento; as três ações são parâmetros de
-        # jogo explícitos e cabem antes da partida observada de 3 de agosto.
         for _ in range(3):
             result = self.model.reprovision(state, 30.0)
             self.assertTrue(result.executed)
@@ -69,8 +67,6 @@ class HistoricalCampaignTests(unittest.TestCase):
         seen_stops.append(self.model.active_stop(state).stop_id)
         self.assertEqual(state.vessel.clock.current_date, date(1497, 11, 25))
 
-        # São Brás documenta água e a longa escala oferece tempo suficiente
-        # para reabastecimentos explícitos antes de 8 de dezembro.
         for _ in range(4):
             result = self.model.reprovision(state, 30.0)
             self.assertTrue(result.executed)
@@ -99,9 +95,6 @@ class HistoricalCampaignTests(unittest.TestCase):
         self.assertIsNone(self.model.active_stop(state))
         self.assertEqual(state.vessel.clock.current_date, date(1498, 3, 2))
 
-        # Moçambique, Mombaça e Melinde não são promovidos a permanências
-        # normalizadas neste gate. A espera abaixo apenas sincroniza a data da
-        # próxima partida já observada em voyage_observations.csv.
         state = self.model.wait_for_guided_departure(state).state_after
         self.assertEqual(state.vessel.clock.current_date, date(1498, 3, 29))
         state, plan = self._execute_current_leg(state)
@@ -114,8 +107,6 @@ class HistoricalCampaignTests(unittest.TestCase):
         seen_routes.append(plan.route_id)
         self.assertEqual(state.vessel.clock.current_date, date(1498, 4, 14))
 
-        # O piloto é historicamente disponível na armada, mas sua atribuição ao
-        # personagem exige contato explícito com a autoridade que o forneceu.
         self.assertIsNone(self.model.recommended_pilot_id(state, "R_MAL_CAL"))
         access_before = self.model.access_status(state, "MAL")
         contacted = self.model.contact_authority(state)
@@ -215,7 +206,9 @@ class HistoricalCampaignTests(unittest.TestCase):
         self.assertEqual(waited.days_waited, 27)
         plan = self.model.plan_current_leg(waited.state_after, seed=1498)
         self.assertTrue(plan.feasible)
-        self.assertTrue(plan.events_suppressed_by_observation)
+        self.assertTrue(plan.timing_events_suppressed_by_observation)
+        self.assertFalse(plan.events_resolved)
+        self.assertEqual(plan.events, ())
 
     def test_late_guided_departure_becomes_counterfactual_and_stays_so(self):
         state = self.model.initial_state(
