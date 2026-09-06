@@ -61,6 +61,8 @@ class CampaignPersistence:
             "departure_date": event.departure_date.isoformat(),
             "extra_days": event.extra_days,
             "condition_loss": event.condition_loss,
+            "provision_delta": event.provision_delta,
+            "observed_timing_safe": event.observed_timing_safe,
             "simulation_only": event.simulation_only,
         }
 
@@ -211,6 +213,8 @@ class CampaignPersistence:
                 departure_date=date.fromisoformat(str(item["departure_date"])),
                 extra_days=int(item["extra_days"]),
                 condition_loss=float(item["condition_loss"]),
+                provision_delta=float(item.get("provision_delta", 0.0)),
+                observed_timing_safe=bool(item.get("observed_timing_safe", False)),
                 simulation_only=bool(item.get("simulation_only", True)),
             )
             for item in raw.get("voyage_event_history", [])
