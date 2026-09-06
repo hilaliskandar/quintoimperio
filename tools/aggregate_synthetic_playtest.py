@@ -42,8 +42,8 @@ def main():
 
     args.csv.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
-        "player_id", "profile", "seed", "completed", "current_objective",
-        "actions_attempted", "actions_executed", "blocked_attempts",
+        "wave", "player_id", "profile", "seed", "completed", "current_objective",
+        "actions_attempted", "actions_executed", "blocked_attempts", "readiness_checks",
         "extra_actions_vs_reference", "voyage_actions", "waits",
         "reprovision_actions", "reprovision_total", "access_negotiations",
         "trade_actions", "elapsed_days", "final_date", "final_location",
@@ -63,6 +63,7 @@ def main():
         by_profile[row["profile"]].append(row)
 
     summary = {
+        "wave": rows[0].get("wave", 1),
         "n_players": len(rows),
         "completed": sum(1 for r in rows if r["completed"]),
         "completion_rate": sum(1 for r in rows if r["completed"]) / len(rows),
@@ -70,6 +71,12 @@ def main():
         "counterfactual_rate": sum(1 for r in rows if r["counterfactual"]) / len(rows),
         "players_with_blocks": sum(1 for r in rows if r["blocked_attempts"] > 0),
         "recovered_after_block": sum(1 for r in rows if r["blocked_attempts"] > 0 and r["recovered_after_block"]),
+        "readiness_checks": {
+            "median": median([r.get("readiness_checks", 0) for r in rows]),
+            "mean": mean([r.get("readiness_checks", 0) for r in rows]),
+            "min": min(r.get("readiness_checks", 0) for r in rows),
+            "max": max(r.get("readiness_checks", 0) for r in rows),
+        },
         "actions_attempted": {
             "median": median([r["actions_attempted"] for r in rows]),
             "mean": mean([r["actions_attempted"] for r in rows]),
@@ -106,6 +113,7 @@ def main():
             "completion_rate": sum(1 for r in items if r["completed"]) / len(items),
             "median_actions": median([r["actions_attempted"] for r in items]),
             "median_blocked": median([r["blocked_attempts"] for r in items]),
+            "median_readiness_checks": median([r.get("readiness_checks", 0) for r in items]),
             "median_reprovision_actions": median([r["reprovision_actions"] for r in items]),
             "median_capital_final": median([r["capital_final"] for r in items]),
             "counterfactual": sum(1 for r in items if r["counterfactual"]),
