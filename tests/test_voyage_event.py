@@ -31,21 +31,27 @@ class VoyageEventModelTests(unittest.TestCase):
         b = self.events.select("R_CAL_ADE", date(1498, 5, 22), seed=77)
         self.assertEqual(a, b)
 
-    def test_event_effects_remain_inside_declared_v02_limits(self):
+    def test_event_effects_remain_inside_declared_v04_limits(self):
         found = []
-        for seed in range(1000):
+        for seed in range(5000):
             candidate = self.events.select("R_CAL_ADE", date(1498, 5, 22), seed=seed)
             if candidate:
                 found.append(candidate[0])
         self.assertTrue(found)
         self.assertTrue(all(0 <= event.extra_days <= 3 for event in found))
-        self.assertTrue(all(0.0 <= event.condition_loss <= 5.0 for event in found))
-        self.assertTrue(all(-8.0 <= event.provision_delta <= 5.0 for event in found))
+        self.assertTrue(all(0.0 <= event.condition_loss <= 14.0 for event in found))
+        self.assertTrue(all(-28.0 <= event.provision_delta <= 5.0 for event in found))
         self.assertTrue(all(event.simulation_only for event in found))
 
-    def test_positive_and_negative_resource_events_are_reachable(self):
+    def test_timing_safe_positive_moderate_and_rare_negative_events_are_reachable(self):
         types = set()
-        for seed in range(5000):
+        expected = {
+            VoyageEventType.PROVISION_SPOILAGE,
+            VoyageEventType.EFFICIENT_RATIONING,
+            VoyageEventType.MAJOR_PROVISION_LOSS,
+            VoyageEventType.STRUCTURAL_STRAIN,
+        }
+        for seed in range(20000):
             candidate = self.events.select(
                 "R_MAL_CAL",
                 date(1498, 4, 24),
@@ -54,13 +60,46 @@ class VoyageEventModelTests(unittest.TestCase):
             )
             if candidate:
                 types.add(candidate[0].event_type)
-            if {
-                VoyageEventType.PROVISION_SPOILAGE,
-                VoyageEventType.EFFICIENT_RATIONING,
-            }.issubset(types):
+            if expected.issubset(types):
                 break
-        self.assertIn(VoyageEventType.PROVISION_SPOILAGE, types)
-        self.assertIn(VoyageEventType.EFFICIENT_RATIONING, types)
+        self.assertTrue(expected.issubset(types), types)
+
+    def test_major_provision_loss_has_declared_rare_tail(self):
+        found = None
+        for seed in range(20000):
+            candidate = self.events.select(
+                "R_MAL_CAL", date(1498, 4, 24), seed=seed, timing_safe_only=True
+            )
+            if candidate and candidate[0].event_type is VoyageEventType.MAJOR_PROVISION_LOSS:
+                found = candidate[0]
+                break
+        self.assertIsNotNone(found)
+        assert found is not None
+        self.assertGreaterEqual(found.provision_delta, -28.0)
+        self.assertLessEqual(found.provision_delta, -18.0)
+        self.assertEqual(found.extra_days, 0)
+        self.assertTrue(found.observed_timing_safe)
+
+    def test_structural_strain_changes_condition_without_observed_timing(self):
+        selected = None
+        for seed in range(20000):
+            plan = self.travel.plan_voyage(
+                self.malindi_state(),
+                "R_MAL_CAL",
+                KnowledgeLevel.OPERATIONAL,
+                seed=seed,
+                preserve_observed_timing=True,
+            )
+            if plan.events and plan.events[0].event_type is VoyageEventType.STRUCTURAL_STRAIN:
+                selected = plan
+                break
+        self.assertIsNotNone(selected)
+        assert selected is not None
+        self.assertEqual(selected.travel_days, 27)
+        self.assertEqual(selected.arrival_date, date(1498, 5, 21))
+        self.assertGreaterEqual(selected.events[0].condition_loss, 8.0)
+        self.assertLessEqual(selected.events[0].condition_loss, 14.0)
+        self.assertLess(selected.condition_after, 100.0 - 27 * self.travel.wear_per_day("R_MAL_CAL"))
 
     def test_guided_exact_observation_preserves_timing_but_can_change_resources(self):
         selected = None
@@ -72,7 +111,7 @@ class VoyageEventModelTests(unittest.TestCase):
                 seed=seed,
                 preserve_observed_timing=True,
             )
-            if plan.events:
+            if plan.events and plan.event_provision_delta != 0:
                 selected = plan
                 break
         self.assertIsNotNone(selected)
@@ -125,7 +164,7 @@ class VoyageEventModelTests(unittest.TestCase):
         self.assertFalse(selected.events_suppressed_by_observation)
         self.assertGreater(selected.travel_days, 27)
 
-    def test_negative_provision_event_can_block_marginal_voyage(self):
+    def test_negative_provision_event_can_block_marginal_generic_voyage(self):
         selected = None
         state = VesselState(
             location_node="MAL",
