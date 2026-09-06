@@ -11,6 +11,14 @@ from .campaign_progress import (
 )
 from .economy import EconomyModel
 from .expedition import ExpeditionLeg, ExpeditionModel
+from .fleet import (
+    ConsumableRates,
+    EvidenceClass,
+    FleetModel,
+    FleetState,
+    PhysicalVessel,
+    ProvisionLoad,
+)
 from .information import (
     InformationChannel,
     InformationModel,
@@ -73,11 +81,15 @@ __all__ = [
     "CargoHolding",
     "ChronologyMode",
     "CommercialState",
+    "ConsumableRates",
     "EconomyModel",
+    "EvidenceClass",
     "ExpeditionLeg",
     "ExpeditionModel",
     "ExpeditionStop",
     "ExpeditionStopModel",
+    "FleetModel",
+    "FleetState",
     "GameClock",
     "GameSessionModel",
     "GameSessionState",
@@ -100,10 +112,12 @@ __all__ = [
     "NavigationModel",
     "NodeActor",
     "NodeKnowledgeRecord",
+    "PhysicalVessel",
     "PortServiceKind",
     "PortServiceModel",
     "PortServiceQuote",
     "PortServiceResult",
+    "ProvisionLoad",
     "RelationshipModel",
     "RelationshipRecord",
     "RelationshipSessionModel",
