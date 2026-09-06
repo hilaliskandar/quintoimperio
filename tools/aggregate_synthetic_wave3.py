@@ -35,6 +35,7 @@ def main():
         "min_provisions","min_condition","capital_final","recovered_after_block"
     ]
     args.csv.parent.mkdir(parents=True, exist_ok=True)
+    args.summary.parent.mkdir(parents=True, exist_ok=True)
     with args.csv.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
