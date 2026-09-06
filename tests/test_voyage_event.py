@@ -77,7 +77,8 @@ class VoyageEventModelTests(unittest.TestCase):
                 break
         self.assertIsNotNone(selected)
         assert selected is not None
-        self.assertTrue(selected.events_suppressed_by_observation)
+        self.assertTrue(selected.timing_events_suppressed_by_observation)
+        self.assertFalse(selected.events_suppressed_by_observation)
         self.assertTrue(all(event.observed_timing_safe for event in selected.events))
         self.assertEqual(selected.travel_days, 27)
         self.assertEqual(selected.arrival_date, date(1498, 5, 21))
@@ -86,6 +87,24 @@ class VoyageEventModelTests(unittest.TestCase):
             selected.provision_days_after,
             80.0 - selected.provision_days_required + selected.event_provision_delta,
         )
+
+    def test_guided_exact_observation_without_selected_event_marks_total_suppression(self):
+        selected = None
+        for seed in range(5000):
+            plan = self.travel.plan_voyage(
+                self.malindi_state(),
+                "R_MAL_CAL",
+                KnowledgeLevel.OPERATIONAL,
+                seed=seed,
+                preserve_observed_timing=True,
+            )
+            if not plan.events:
+                selected = plan
+                break
+        self.assertIsNotNone(selected)
+        assert selected is not None
+        self.assertTrue(selected.timing_events_suppressed_by_observation)
+        self.assertTrue(selected.events_suppressed_by_observation)
 
     def test_counterfactual_exact_departure_can_receive_timing_event(self):
         selected = None
@@ -102,6 +121,7 @@ class VoyageEventModelTests(unittest.TestCase):
                 break
         self.assertIsNotNone(selected)
         assert selected is not None
+        self.assertFalse(selected.timing_events_suppressed_by_observation)
         self.assertFalse(selected.events_suppressed_by_observation)
         self.assertGreater(selected.travel_days, 27)
 
@@ -141,7 +161,7 @@ class VoyageEventSessionTests(unittest.TestCase):
         )
         self.assertEqual(state.chronology_mode, ChronologyMode.GUIDED)
         plan = self.session.plan_voyage(state, "R_LIS_STG", seed=17)
-        self.assertTrue(plan.events_suppressed_by_observation)
+        self.assertTrue(plan.timing_events_suppressed_by_observation)
         self.assertTrue(all(event.observed_timing_safe for event in plan.events))
 
     def test_counterfactual_session_can_apply_and_log_event_on_exact_route_date(self):
@@ -162,7 +182,7 @@ class VoyageEventSessionTests(unittest.TestCase):
                 break
         self.assertIsNotNone(selected)
         assert selected is not None
-        self.assertFalse(selected.events_suppressed_by_observation)
+        self.assertFalse(selected.timing_events_suppressed_by_observation)
         after = self.session.execute_voyage(state, selected)
         self.assertEqual(after.voyage_event_history, selected.events)
 
