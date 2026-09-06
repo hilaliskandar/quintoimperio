@@ -1,0 +1,71 @@
+name: Synthetic MVP playtest wave 6
+
+on:
+  push:
+    branches: [experiment/logistics-reserve-wave6]
+    paths:
+      - "tools/simulate_synthetic_player_wave6.py"
+      - "tools/aggregate_synthetic_wave6.py"
+      - ".github/workflows/synthetic-playtest-wave6.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  play:
+    name: wave6-r${{ matrix.reserve }}-p${{ matrix.id }}-${{ matrix.profile }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        reserve: [10, 20, 30]
+        include:
+          - {id: 1, profile: DISCIPLINED, seed: 101}
+          - {id: 2, profile: DISCIPLINED, seed: 102}
+          - {id: 3, profile: DISCIPLINED, seed: 103}
+          - {id: 4, profile: DISCIPLINED, seed: 104}
+          - {id: 5, profile: CAUTIOUS, seed: 201}
+          - {id: 6, profile: CAUTIOUS, seed: 202}
+          - {id: 7, profile: CAUTIOUS, seed: 203}
+          - {id: 8, profile: CAUTIOUS, seed: 204}
+          - {id: 9, profile: IMPATIENT, seed: 301}
+          - {id: 10, profile: IMPATIENT, seed: 302}
+          - {id: 11, profile: IMPATIENT, seed: 303}
+          - {id: 12, profile: IMPATIENT, seed: 304}
+          - {id: 13, profile: FRUGAL, seed: 401}
+          - {id: 14, profile: FRUGAL, seed: 402}
+          - {id: 15, profile: FRUGAL, seed: 403}
+          - {id: 16, profile: FRUGAL, seed: 404}
+          - {id: 17, profile: TRADER, seed: 501}
+          - {id: 18, profile: TRADER, seed: 502}
+          - {id: 19, profile: TRADER, seed: 503}
+          - {id: 20, profile: TRADER, seed: 504}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -e .
+      - run: |
+          mkdir -p build/wave6
+          python tools/simulate_synthetic_player_wave6.py --player-id "${{ matrix.id }}" --profile "${{ matrix.profile }}" --seed "${{ matrix.seed }}" --reserve-days "${{ matrix.reserve }}" --output "build/wave6/r${{ matrix.reserve }}-p${{ matrix.id }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wave6-r${{ matrix.reserve }}-p${{ matrix.id }}
+          path: build/wave6/r${{ matrix.reserve }}-p${{ matrix.id }}.json
+  aggregate:
+    needs: play
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wave6-*
+          path: build/wave6-results
+          merge-multiple: true
+      - run: python tools/aggregate_synthetic_wave6.py --input-dir build/wave6-results --csv build/wave6.csv --summary build/wave6-summary.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-playtest-wave6-results
+          path: |
+            build/wave6.csv
+            build/wave6-summary.json
