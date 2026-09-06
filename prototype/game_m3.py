@@ -15,13 +15,12 @@ import argparse
 import pygame
 
 from prototype.game import (
-    BAD,
     BUTTON,
     BUTTON_DISABLED,
     INK,
     LINE,
+    MAP_RECT,
     MUTED,
-    SIDE_RECT,
     WIDTH,
     HEIGHT,
     ClickTarget,
@@ -46,6 +45,12 @@ class M3PlayablePrototype(PlayablePrototype):
     def __init__(self, scenario: str = "HISTORICAL") -> None:
         super().__init__(scenario)
         self.trade_quantity = 1.0
+        self.trade_overlay_rect = pygame.Rect(
+            MAP_RECT.right - 225,
+            MAP_RECT.bottom - 105,
+            208,
+            88,
+        )
 
     def reset(self, scenario: str | None = None) -> None:
         super().reset(scenario)
@@ -116,7 +121,7 @@ class M3PlayablePrototype(PlayablePrototype):
             )
             self._draw_text(surface, micro, label, (target.rect.x + 9, target.rect.y + 6))
 
-        overlay = pygame.Rect(SIDE_RECT.left + 280, SIDE_RECT.top + 112, 208, 88)
+        overlay = self.trade_overlay_rect
         pygame.draw.rect(surface, (246, 241, 221), overlay, border_radius=4)
         pygame.draw.rect(surface, LINE, overlay, width=1, border_radius=4)
 
@@ -172,6 +177,10 @@ class M3PlayablePrototype(PlayablePrototype):
             if target.rect.collidepoint(pos) and target.kind == "trade_quantity":
                 self.adjust_trade_quantity(float(target.value))
                 return
+        # O painel de quantidade ocupa parte do mapa. Cliques dentro dele não
+        # podem atravessar para alvos cartográficos que estejam abaixo.
+        if self.trade_overlay_rect.collidepoint(pos):
+            return
         super().handle_click(pos)
 
 
