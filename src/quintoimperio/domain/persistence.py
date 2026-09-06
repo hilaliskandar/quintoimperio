@@ -16,7 +16,13 @@ from typing import Any
 from .access import AccessStatus
 from .calendar import GameClock
 from .knowledge import KnowledgeLevel, KnowledgeState
+from .port import PortServiceKind, ServiceAvailability
 from .relationship import RelationshipStatus
+from .service_knowledge import (
+    ServiceAwareSessionState,
+    ServiceKnowledgeRecord,
+    ServiceKnowledgeStatus,
+)
 from .session import (
     AccessRecord,
     GameSessionState,
@@ -30,7 +36,8 @@ from .travel import VesselState
 from .voyage_event import VoyageEvent, VoyageEventType
 
 
-SAVE_SCHEMA_VERSION = 1
+SAVE_SCHEMA_VERSION = 2
+SUPPORTED_SCHEMA_VERSIONS = (1, 2)
 
 
 @dataclass(frozen=True)
@@ -41,7 +48,7 @@ class CampaignSave:
 
 
 class CampaignPersistence:
-    """Converte ``GameSessionState`` para o schema JSON inicial e vice-versa."""
+    """Converte ``GameSessionState`` para JSON e migra saves v1 sem inferir fatos."""
 
     schema_version = SAVE_SCHEMA_VERSION
 
@@ -58,6 +65,7 @@ class CampaignPersistence:
         }
 
     def to_dict(self, state: GameSessionState, *, seed: int) -> dict[str, Any]:
+        service_records = tuple(getattr(state, "service_knowledge_records", ()))
         return {
             "schema_version": self.schema_version,
             "seed": int(seed),
@@ -98,6 +106,19 @@ class CampaignPersistence:
                     {"actor_id": record.actor_id, "status": int(record.status)}
                     for record in state.relationship_records
                 ],
+                "service_knowledge_records": [
+                    {
+                        "node_id": record.node_id,
+                        "service": record.service.value,
+                        "status": record.status.value,
+                        "revealed_availability": (
+                            None
+                            if record.revealed_availability is None
+                            else record.revealed_availability.value
+                        ),
+                    }
+                    for record in service_records
+                ],
                 "active_expedition_id": state.active_expedition_id,
                 "expedition_leg_sequence": state.expedition_leg_sequence,
                 "chronology_mode": state.chronology_mode.value,
@@ -118,9 +139,9 @@ class CampaignPersistence:
     def from_dict(self, payload: dict[str, Any]) -> CampaignSave:
         data = self._require_mapping(payload, "save")
         version = data.get("schema_version")
-        if version != self.schema_version:
+        if version not in SUPPORTED_SCHEMA_VERSIONS:
             raise ValueError(
-                f"Versão de save não suportada: {version!r}; esperada {self.schema_version}"
+                f"Versão de save não suportada: {version!r}; esperadas {SUPPORTED_SCHEMA_VERSIONS}"
             )
         if "seed" not in data:
             raise ValueError("Save sem seed")
@@ -138,10 +159,7 @@ class CampaignPersistence:
             capital_index=float(commerce_raw["capital_index"]),
             capacity_total=float(commerce_raw["capacity_total"]),
             cargo=tuple(
-                CargoHolding(
-                    good_id=str(item["good_id"]),
-                    quantity=float(item["quantity"]),
-                )
+                CargoHolding(good_id=str(item["good_id"]), quantity=float(item["quantity"]))
                 for item in commerce_raw.get("cargo", [])
             ),
         )
@@ -158,17 +176,11 @@ class CampaignPersistence:
             for item in raw.get("node_knowledge", [])
         )
         route_knowledge = tuple(
-            RouteKnowledgeRecord(
-                route_id=str(item["route_id"]),
-                nav=KnowledgeLevel(int(item["nav"])),
-            )
+            RouteKnowledgeRecord(route_id=str(item["route_id"]), nav=KnowledgeLevel(int(item["nav"])))
             for item in raw.get("route_knowledge", [])
         )
         access_records = tuple(
-            AccessRecord(
-                node_id=str(item["node_id"]),
-                status=AccessStatus(str(item["status"])),
-            )
+            AccessRecord(node_id=str(item["node_id"]), status=AccessStatus(str(item["status"])))
             for item in raw.get("access_records", [])
         )
         relationship_records = tuple(
@@ -177,6 +189,19 @@ class CampaignPersistence:
                 status=RelationshipStatus(int(item["status"])),
             )
             for item in raw.get("relationship_records", [])
+        )
+        service_knowledge_records = tuple(
+            ServiceKnowledgeRecord(
+                node_id=str(item["node_id"]),
+                service=PortServiceKind(str(item["service"])),
+                status=ServiceKnowledgeStatus(str(item["status"])),
+                revealed_availability=(
+                    None
+                    if item.get("revealed_availability") is None
+                    else ServiceAvailability(str(item["revealed_availability"]))
+                ),
+            )
+            for item in raw.get("service_knowledge_records", [])
         )
         events = tuple(
             VoyageEvent(
@@ -190,7 +215,7 @@ class CampaignPersistence:
             )
             for item in raw.get("voyage_event_history", [])
         )
-        state = GameSessionState(
+        state = ServiceAwareSessionState(
             vessel=vessel,
             commerce=commerce,
             node_knowledge=node_knowledge,
@@ -207,12 +232,9 @@ class CampaignPersistence:
             active_stop_id=raw.get("active_stop_id"),
             information_history=tuple(str(value) for value in raw.get("information_history", [])),
             voyage_event_history=events,
+            service_knowledge_records=service_knowledge_records,
         )
-        return CampaignSave(
-            schema_version=self.schema_version,
-            seed=int(data["seed"]),
-            state=state,
-        )
+        return CampaignSave(schema_version=int(version), seed=int(data["seed"]), state=state)
 
     def dumps(self, state: GameSessionState, *, seed: int) -> str:
         return json.dumps(
