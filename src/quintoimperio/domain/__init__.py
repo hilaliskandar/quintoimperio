@@ -30,6 +30,13 @@ from .port import (
 from .relationship import HistoricalActor, NodeActor, RelationshipModel, RelationshipStatus
 from .relationship_session import RelationshipSessionModel, SessionRelationshipResult
 from .route_knowledge import RouteKnowledgeModel
+from .service_knowledge import (
+    ServiceAwareSessionState,
+    ServiceKnowledgeRecord,
+    ServiceKnowledgeSessionModel,
+    ServiceKnowledgeStatus,
+    ServiceKnowledgeView,
+)
 from .session import (
     AccessRecord,
     GameSessionModel,
@@ -105,6 +112,11 @@ __all__ = [
     "RouteKnowledgeRecord",
     "SAVE_SCHEMA_VERSION",
     "ServiceAvailability",
+    "ServiceAwareSessionState",
+    "ServiceKnowledgeRecord",
+    "ServiceKnowledgeSessionModel",
+    "ServiceKnowledgeStatus",
+    "ServiceKnowledgeView",
     "SessionAccessResult",
     "SessionInformationResult",
     "SessionPortServiceResult",

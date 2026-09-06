@@ -1,7 +1,7 @@
 """Orquestração mínima da campanha histórica Lisboa–Calecute.
 
-Esta camada compõe ``RelationshipSessionModel`` sem alterar dados históricos. Ela
-usa as datas de partida já registradas em ``voyage_observations.csv`` como
+Esta camada compõe ``ServiceKnowledgeSessionModel`` sem alterar dados históricos.
+Ela usa as datas de partida já registradas em ``voyage_observations.csv`` como
 referência de cronologia quando a sessão está em ``ChronologyMode.GUIDED``.
 
 Uma espera guiada fora de ``expedition_stops.csv`` apenas sincroniza o relógio
@@ -16,7 +16,7 @@ from datetime import date
 from pathlib import Path
 
 from .expedition import ExpeditionLeg
-from .relationship_session import RelationshipSessionModel
+from .service_knowledge import ServiceKnowledgeSessionModel
 from .session import GameSessionState, SessionWaitResult
 from .stop import ChronologyMode
 from .travel import VoyagePlan
@@ -26,7 +26,7 @@ class HistoricalCampaignModel:
     """Fachada da sessão para a vertical slice histórica de 1497–1498."""
 
     def __init__(self, root: Path | None = None) -> None:
-        self.session = RelationshipSessionModel(root)
+        self.session = ServiceKnowledgeSessionModel(root)
 
     def __getattr__(self, name: str):
         """Delega os demais sistemas ao modelo de sessão composto."""
