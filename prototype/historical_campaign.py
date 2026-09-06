@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Interface histórica contínua da vertical slice Lisboa–Calecute.
 
-Reutiliza a interface Pygame v0.1 e troca apenas a orquestração da sessão pela
+Reutiliza a interface Pygame do MVP e troca a orquestração da sessão pela
 fachada ``HistoricalCampaignModel``. A espera em Moçambique, Mombaça e Melinde
 serve somente para alinhar o relógio às partidas já observadas; esses nós não
 são promovidos a novas permanências em ``expedition_stops.csv``.
@@ -9,6 +9,10 @@ são promovidos a novas permanências em ``expedition_stops.csv``.
 A camada relacional do MVP expõe contato explícito com autoridade documentada.
 Esse contato não concede acesso comercial nem benefício econômico; em Melinde,
 ele torna o piloto guzerate documentado atribuível ao personagem.
+
+O gate M3 acrescenta quantidade comercial selecionável e torna a primeira
+operação em Calecute parte do smoke da própria campanha, sem introduzir moeda
+histórica, crédito ou novas regras econômicas.
 """
 
 from __future__ import annotations
@@ -28,8 +32,8 @@ from game import (
     SEED,
     WIDTH,
     ClickTarget,
-    PlayablePrototype,
 )
+from game_m3 import M3PlayablePrototype
 from quintoimperio.domain import (
     ChronologyMode,
     HistoricalCampaignModel,
@@ -37,8 +41,8 @@ from quintoimperio.domain import (
 )
 
 
-class HistoricalCampaignPrototype(PlayablePrototype):
-    """Versão histórica do painel v0.1 com cronologia guiada ponta a ponta."""
+class HistoricalCampaignPrototype(M3PlayablePrototype):
+    """Versão histórica do painel do MVP com cronologia guiada ponta a ponta."""
 
     def __init__(self) -> None:
         super().__init__("HISTORICAL")
@@ -197,9 +201,29 @@ class HistoricalCampaignPrototype(PlayablePrototype):
             raise RuntimeError("Campanha histórica não terminou em Calecute")
         if self.state.active_expedition_id is not None:
             raise RuntimeError("Expedição permaneceu ativa após a décima perna")
+
+        # Calecute chega com mercado conhecido, mas acesso ainda separado. O
+        # smoke satisfaz o acesso institucional e realiza uma operação comercial
+        # usando os mesmos controles M3 expostos ao jogador.
+        access_result = self.session.negotiate_access(self.state)
+        if not access_result.executed:
+            raise RuntimeError(
+                "Negociação de acesso em Calecute falhou no smoke: "
+                + ", ".join(access_result.reasons)
+            )
+        self.state = access_result.state_after
+        self.selected_good = "PEPPER"
+        self.trade_quantity = 2.0
+        before_quantity = self.state.commerce.quantity_of("PEPPER")
+        self.buy_selected()
+        after_quantity = self.state.commerce.quantity_of("PEPPER")
+        if after_quantity <= before_quantity:
+            raise RuntimeError(f"Comércio M3 não foi executado em Calecute: {self.message}")
+
         self.message = (
             f"Smoke concluído: Calecute em {self.state.vessel.clock.current_date}; "
-            f"cronologia {self.state.chronology_mode.value}; piloto {pilot_id}."
+            f"cronologia {self.state.chronology_mode.value}; piloto {pilot_id}; "
+            f"compra M3={after_quantity - before_quantity:g} PEPPER."
         )
 
 
