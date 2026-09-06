@@ -31,6 +31,8 @@ class SessionRelationshipResult:
 class RelationshipSessionModel(GameSessionModel):
     """Sessão com uma ação relacional explícita e efeitos locais mínimos."""
 
+    RULES_FILE = "simulation/relationship_rules.csv"
+
     def __init__(self, root: Path | None = None) -> None:
         super().__init__(root)
         repository = RepositoryData(self.root)
@@ -38,6 +40,29 @@ class RelationshipSessionModel(GameSessionModel):
             (row["rule_type"], row["key"]): row["value"]
             for row in repository.simulation("relationship_rules.csv")
         }
+
+    def _required_int_rule(self, rule_type: str, key: str) -> int:
+        rule_key = (rule_type, key)
+        try:
+            raw = self.relationship_rules[rule_key]
+        except KeyError as exc:
+            raise KeyError(
+                f"Regra relacional obrigatória {rule_type}/{key} ausente em "
+                f"{self.RULES_FILE}"
+            ) from exc
+        try:
+            value = int(raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Regra relacional {rule_type}/{key} em {self.RULES_FILE} "
+                f"deve ser inteira; valor recebido: {raw!r}"
+            ) from exc
+        if value < 0:
+            raise ValueError(
+                f"Regra relacional {rule_type}/{key} em {self.RULES_FILE} "
+                "não pode ser negativa"
+            )
+        return value
 
     def contact_authority(self, state: GameSessionState) -> SessionRelationshipResult:
         """Estabelece contato com autoridade normalizada sem conceder outros efeitos.
@@ -69,7 +94,7 @@ class RelationshipSessionModel(GameSessionModel):
                 state_after=state,
             )
 
-        days = int(self.relationship_rules[("CONTACT_TIME_DAYS", "AUTHORITY")])
+        days = self._required_int_rule("CONTACT_TIME_DAYS", "AUTHORITY")
         after = self._replace_relationship(
             state,
             authority.actor_id,
