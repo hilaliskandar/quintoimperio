@@ -7,6 +7,9 @@ sobre ações públicas do domínio; nenhuma regra da campanha é contornada.
 Onda 1: descoberta não assistida, sem inspeção explícita de viabilidade antes da espera.
 Onda 2: o jogador consulta a próxima perna antes de esperar e prepara recursos quando
 os próprios bloqueios públicos do domínio indicam necessidade.
+Onda 9: validação pós-merge com FRUGAL/IMPATIENT livres para ignorar a recomendação.
+Onda 10: controle de equivalência; todos usam a margem pública de 20 dias quando indicada,
+preservando no IMPATIENT a tentativa precoce antes da correção pela regra pública.
 """
 
 from __future__ import annotations
@@ -37,6 +40,10 @@ class Metrics:
     actions_executed: int = 0
     blocked_attempts: int = 0
     readiness_checks: int = 0
+    recommendation_checks: int = 0
+    recommendation_followed: int = 0
+    recommendation_ignored: int = 0
+    indeterminate_destination_warnings: int = 0
     reprovision_actions: int = 0
     reprovision_total: float = 0.0
     access_negotiations: int = 0
@@ -74,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--player-id", type=int, required=True)
     parser.add_argument("--profile", choices=sorted(PROFILES), required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--wave", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--wave", type=int, choices=(1, 2, 9, 10), default=1)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -107,7 +114,6 @@ def wait_guided(model, state, metrics: Metrics):
 
 
 def plan_and_execute(model, state, metrics: Metrics, seed: int):
-    """Tenta a perna atual e recupera bloqueios usando apenas ações públicas."""
     recovery_steps = 0
     while recovery_steps < 12:
         metrics.attempt()
@@ -140,7 +146,6 @@ def plan_and_execute(model, state, metrics: Metrics, seed: int):
 
 
 def proactive_policy(model, state, metrics: Metrics, profile: str):
-    """Aplica apenas decisões plausíveis antes da próxima perna."""
     if profile == "CAUTIOUS":
         while state.vessel.provision_days < 85:
             state, changed = reprovision(model, state, metrics)
@@ -153,12 +158,6 @@ def proactive_policy(model, state, metrics: Metrics, profile: str):
 
 
 def prepare_before_wait(model, state, metrics: Metrics, seed: int):
-    """Onda 2: consulta viabilidade antes de consumir a janela histórica de espera.
-
-    A inspeção usa exatamente ``plan_current_leg``. Se os bloqueios publicados
-    indicarem falta de provisões, tenta reabastecer ainda antes da espera. Nenhuma
-    necessidade é inferida por conhecimento interno do simulador.
-    """
     for _ in range(8):
         metrics.attempt()
         metrics.readiness_checks += 1
@@ -177,10 +176,40 @@ def prepare_before_wait(model, state, metrics: Metrics, seed: int):
     return state
 
 
+def apply_logistics_recommendation(
+    model, state, metrics: Metrics, profile: str, seed: int, *, allow_ignore: bool
+):
+    """Reage à recomendação pública sem transformar os 20 dias em requisito de domínio."""
+    for _ in range(4):
+        metrics.attempt()
+        metrics.recommendation_checks += 1
+        view = model.logistics_planning_view(state, seed=seed)
+        metrics.executed()
+        if view.next_destination_provisions_evidence_indeterminate:
+            metrics.indeterminate_destination_warnings += 1
+        if view.meets_recommended_margin is not False:
+            return state
+
+        if allow_ignore and profile in {"FRUGAL", "IMPATIENT"}:
+            metrics.recommendation_ignored += 1
+            return state
+
+        state, changed = reprovision(model, state, metrics)
+        if not changed:
+            metrics.recommendation_ignored += 1
+            return state
+        metrics.recommendation_followed += 1
+    return state
+
+
 def run_player(player_id: int, profile: str, seed: int, wave: int) -> dict:
     model = HistoricalCampaignModel()
     progress_model = CampaignProgressModel(model.session)
-    state = model.initial_state(active_expedition_id="EXP_GAMA_1497")
+    state = (
+        model.initial_playable_state()
+        if wave in {9, 10}
+        else model.initial_state(active_expedition_id="EXP_GAMA_1497")
+    )
     metrics = Metrics(player_id=player_id, profile=profile, seed=seed, wave=wave)
     metrics.observe(state)
     start_date = state.vessel.clock.current_date
@@ -191,6 +220,15 @@ def run_player(player_id: int, profile: str, seed: int, wave: int) -> dict:
         departure = model.guided_departure_date(state)
         if wave == 2 and departure is not None and state.vessel.clock.current_date < departure:
             state = prepare_before_wait(model, state, metrics, seed)
+        elif wave in {9, 10}:
+            state = apply_logistics_recommendation(
+                model,
+                state,
+                metrics,
+                profile,
+                seed,
+                allow_ignore=(wave == 9),
+            )
 
         if (
             profile != "IMPATIENT"
@@ -254,6 +292,10 @@ def run_player(player_id: int, profile: str, seed: int, wave: int) -> dict:
         "actions_executed": metrics.actions_executed,
         "blocked_attempts": metrics.blocked_attempts,
         "readiness_checks": metrics.readiness_checks,
+        "recommendation_checks": metrics.recommendation_checks,
+        "recommendation_followed": metrics.recommendation_followed,
+        "recommendation_ignored": metrics.recommendation_ignored,
+        "indeterminate_destination_warnings": metrics.indeterminate_destination_warnings,
         "blockers": dict(sorted(metrics.blockers.items())),
         "first_block_action": metrics.first_block_action,
         "recovered_after_block": metrics.recovered_after_block,

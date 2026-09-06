@@ -89,8 +89,6 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
     def _guided_wait_overlay(self, surface: pygame.Surface) -> None:
         if self.state.chronology_mode is not ChronologyMode.GUIDED:
             return
-        if self.session.active_stop(self.state) is not None:
-            return
         expected = self.session.guided_departure_date(self.state)
         if expected is None:
             return
@@ -100,34 +98,40 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
 
         days = (expected - current).days
         planning = self.session.logistics_planning_view(self.state, seed=SEED)
-        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 78, 550, 64)
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 82, 610, 68)
         pygame.draw.rect(surface, BG, rect, border_radius=3)
         pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
-        font = pygame.font.SysFont("monospace", 11)
+        font = pygame.font.SysFont("monospace", 10)
         required = (
             "?"
             if planning.next_leg_required_days is None
             else f"{planning.next_leg_required_days:.0f}d"
         )
+        horizon = (
+            "?"
+            if planning.logistics_horizon_required_days is None
+            else f"{planning.logistics_horizon_required_days:.0f}d"
+        )
+        horizon_end = planning.logistics_horizon_end_node or "?"
         status = "OK" if planning.meets_recommended_margin else "abaixo"
         if planning.in_predeparture_phase:
             line1 = f"PREPARAÇÃO SIMULADA | partida histórica {expected} | esperar {days}d"
         else:
             line1 = f"Próxima partida observada: {expected} | esperar {days}d"
         line2 = (
-            f"Autonomia {planning.current_autonomy_days:.0f}d | próxima perna {required} | "
-            f"margem heurística +{planning.recommended_margin_days:.0f}d ({status})"
+            f"Autonomia {planning.current_autonomy_days:.0f}d | perna {required} | "
+            f"horizonte {horizon} até {horizon_end}"
         )
+        warning = ""
         if planning.next_destination_provisions_evidence_indeterminate:
-            line3 = (
-                f"Destino {planning.next_destination_node}: evidência histórica de provisões "
-                "indeterminada."
-            )
-        else:
-            line3 = "Margem é heurística de simulação; esperar não concede recursos."
-        surface.blit(font.render(line1, True, INK), (rect.x + 8, rect.y + 6))
-        surface.blit(font.render(line2, True, MUTED), (rect.x + 8, rect.y + 24))
-        surface.blit(font.render(line3, True, MUTED), (rect.x + 8, rect.y + 42))
+            warning = f" | {planning.next_destination_node}: provisões indeterminadas"
+        line3 = (
+            f"Margem heurística +{planning.recommended_margin_days:.0f}d ({status})"
+            f"{warning}; nenhum recurso é automático."
+        )
+        surface.blit(font.render(line1, True, INK), (rect.x + 8, rect.y + 7))
+        surface.blit(font.render(line2, True, MUTED), (rect.x + 8, rect.y + 27))
+        surface.blit(font.render(line3, True, MUTED), (rect.x + 8, rect.y + 47))
         self.targets.append(ClickTarget(rect, "action", "wait_stop"))
 
     def _authority_contact_overlay(self, surface: pygame.Surface) -> None:
@@ -144,7 +148,7 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         ):
             return
 
-        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 118, 345, 34)
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 122, 345, 34)
         pygame.draw.rect(surface, BUTTON, rect, border_radius=3)
         pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
         font = pygame.font.SysFont("monospace", 12)
@@ -196,8 +200,6 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
 
     def run_scripted_campaign(self) -> None:
         """Percorre a vertical slice usando as mesmas ações expostas pela UI."""
-        # A campanha jogável começa em 6 de julho. O smoke não recebe provisões
-        # automaticamente: apenas sincroniza a partida histórica antes da viagem.
         if self.session.in_predeparture_phase(self.state):
             self._wait()
 

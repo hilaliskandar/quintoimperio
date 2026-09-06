@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import date
+from math import ceil
 from pathlib import Path
 
 from .expedition import ExpeditionLeg
@@ -29,8 +30,11 @@ class LogisticsPlanningView:
 
     current_autonomy_days: float
     next_leg_required_days: float | None
+    logistics_horizon_required_days: float | None
+    logistics_horizon_end_node: str | None
     recommended_margin_days: float
     margin_after_next_leg_days: float | None
+    margin_after_logistics_horizon_days: float | None
     meets_recommended_margin: bool | None
     in_predeparture_phase: bool
     historical_departure_date: date | None
@@ -72,6 +76,23 @@ class HistoricalCampaignModel:
             state.expedition_leg_sequence,
         )
 
+    def _observed_departure_date(self, route_id: str, origin_node: str) -> date | None:
+        dates = {
+            date.fromisoformat(row["departure_date"])
+            for row in self.session.travel.navigation.observations
+            if row["route_id"] == route_id
+            and row.get("departure_date")
+            and row.get("departure_node") == origin_node
+        }
+        if not dates:
+            return None
+        if len(dates) > 1:
+            raise ValueError(
+                f"Rota {route_id} possui datas de partida conflitantes: "
+                + ", ".join(sorted(item.isoformat() for item in dates))
+            )
+        return next(iter(dates))
+
     def guided_departure_date(self, state: GameSessionState) -> date | None:
         """Retorna a data observada da partida da perna ativa, quando inequívoca."""
         if state.chronology_mode is not ChronologyMode.GUIDED:
@@ -82,22 +103,7 @@ class HistoricalCampaignModel:
         route = self.session.routes[leg.route_id]
         if route["origin_node"] != state.vessel.location_node:
             return None
-
-        dates = {
-            date.fromisoformat(row["departure_date"])
-            for row in self.session.travel.navigation.observations
-            if row["route_id"] == leg.route_id
-            and row.get("departure_date")
-            and row.get("departure_node") == state.vessel.location_node
-        }
-        if not dates:
-            return None
-        if len(dates) > 1:
-            raise ValueError(
-                f"Perna guiada {leg.route_id} possui datas de partida conflitantes: "
-                + ", ".join(sorted(item.isoformat() for item in dates))
-            )
-        return next(iter(dates))
+        return self._observed_departure_date(leg.route_id, state.vessel.location_node)
 
     def in_predeparture_phase(self, state: GameSessionState) -> bool:
         expected = self.guided_departure_date(state)
@@ -109,17 +115,81 @@ class HistoricalCampaignModel:
             and state.vessel.clock.current_date < expected
         )
 
+    def _historical_leg_provision_requirement(
+        self, leg: ExpeditionLeg, *, seed: int = 0
+    ) -> float | None:
+        """Requisito abstrato da perna em sua partida observada, sem executar viagem."""
+        route = self.session.routes[leg.route_id]
+        departure = self._observed_departure_date(leg.route_id, route["origin_node"])
+        if departure is None:
+            return None
+        duration = self.session.travel.navigation.estimate_duration_days(
+            leg.route_id, departure, seed=seed
+        )
+        if duration is None:
+            return None
+        rate = float(
+            self.session.travel.rules[("PROVISIONS", "DAY_EQUIVALENT_PER_TRAVEL_DAY")]
+        )
+        return max(1, ceil(duration)) * rate
+
+    def _logistics_horizon(
+        self,
+        state: GameSessionState,
+        *,
+        current_required: float,
+        seed: int = 0,
+    ) -> tuple[float, str]:
+        """Soma pernas até abastecimento historicamente documentado ou fim da expedição.
+
+        O cálculo não presume serviço em ``UNKNOWN`` nem em ``NONE``. Ele apenas
+        identifica quanto da sequência guiada precisa ser coberto antes de alcançar
+        um destino cuja disponibilidade de provisões esteja documentada como LOW,
+        MEDIUM ou HIGH. Se nenhum destino restante tiver serviço documentado, o
+        horizonte termina no último nó da expedição.
+        """
+        leg = self.current_leg(state)
+        if leg is None:
+            raise ValueError("Nenhuma perna ativa para horizonte logístico")
+
+        route = self.session.routes[leg.route_id]
+        total = current_required
+        end_node = route["destination_node"]
+        availability = self.session.port.availability(end_node, PortServiceKind.PROVISIONS)
+        if availability not in {ServiceAvailability.UNKNOWN, ServiceAvailability.NONE}:
+            return total, end_node
+
+        expedition_id = state.active_expedition_id
+        if expedition_id is None:
+            return total, end_node
+        for future_leg in self.session.expedition.legs.get(expedition_id, ()):
+            if future_leg.sequence <= leg.sequence:
+                continue
+            required = self._historical_leg_provision_requirement(future_leg, seed=seed)
+            if required is None:
+                break
+            total += required
+            future_route = self.session.routes[future_leg.route_id]
+            end_node = future_route["destination_node"]
+            availability = self.session.port.availability(
+                end_node, PortServiceKind.PROVISIONS
+            )
+            if availability not in {ServiceAvailability.UNKNOWN, ServiceAvailability.NONE}:
+                break
+        return total, end_node
+
     def logistics_planning_view(
         self, state: GameSessionState, *, seed: int = 0
     ) -> LogisticsPlanningView:
-        """Expõe autonomia e margem de prudência sem automatizar decisões.
+        """Expõe autonomia, horizonte e margem de prudência sem automatizar decisões.
 
         Os 20 dias são uma heurística de robustez derivada dos playtests, não uma
         ração, duração ou requisito histórico. Para cronologia guiada, o requisito
-        da próxima perna é calculado na data em que ela pode efetivamente partir,
-        evitando que o período de preparação introduza ruído artificial no plano.
-        A indicação de incerteza consulta apenas a evidência histórica de provisões
-        do próximo destino.
+        da próxima perna é calculado na data em que ela pode efetivamente partir.
+        Quando o próximo destino não oferece provisões historicamente documentadas,
+        o horizonte prossegue pelas pernas seguintes até o próximo abastecimento
+        documentado ou até o fim da expedição. Isso não converte ``UNKNOWN`` em
+        serviço e não concede recursos ao jogador.
         """
         leg = self.current_leg(state)
         expected = self.guided_departure_date(state)
@@ -127,8 +197,11 @@ class HistoricalCampaignModel:
             return LogisticsPlanningView(
                 current_autonomy_days=state.vessel.provision_days,
                 next_leg_required_days=None,
+                logistics_horizon_required_days=None,
+                logistics_horizon_end_node=None,
                 recommended_margin_days=self.RECOMMENDED_LOGISTICS_MARGIN_DAYS,
                 margin_after_next_leg_days=None,
+                margin_after_logistics_horizon_days=None,
                 meets_recommended_margin=None,
                 in_predeparture_phase=False,
                 historical_departure_date=expected,
@@ -155,6 +228,12 @@ class HistoricalCampaignModel:
         )
         required = plan.provision_days_required
         remaining = state.vessel.provision_days - required
+        horizon_required, horizon_end = self._logistics_horizon(
+            state,
+            current_required=required,
+            seed=seed,
+        )
+        horizon_remaining = state.vessel.provision_days - horizon_required
         route = self.session.routes[leg.route_id]
         destination = route["destination_node"]
         destination_unknown = (
@@ -164,9 +243,14 @@ class HistoricalCampaignModel:
         return LogisticsPlanningView(
             current_autonomy_days=state.vessel.provision_days,
             next_leg_required_days=required,
+            logistics_horizon_required_days=horizon_required,
+            logistics_horizon_end_node=horizon_end,
             recommended_margin_days=self.RECOMMENDED_LOGISTICS_MARGIN_DAYS,
             margin_after_next_leg_days=remaining,
-            meets_recommended_margin=remaining >= self.RECOMMENDED_LOGISTICS_MARGIN_DAYS,
+            margin_after_logistics_horizon_days=horizon_remaining,
+            meets_recommended_margin=(
+                horizon_remaining >= self.RECOMMENDED_LOGISTICS_MARGIN_DAYS
+            ),
             in_predeparture_phase=self.in_predeparture_phase(state),
             historical_departure_date=expected,
             next_destination_node=destination,

@@ -29,8 +29,45 @@ class LogisticsPlanningTests(unittest.TestCase):
         self.assertEqual(view.recommended_margin_days, 20.0)
         self.assertTrue(view.in_predeparture_phase)
         self.assertIsNotNone(view.next_leg_required_days)
+        self.assertEqual(view.logistics_horizon_required_days, view.next_leg_required_days)
+        self.assertEqual(view.logistics_horizon_end_node, "STG")
         self.assertEqual(state.vessel.provision_days, before)
         self.assertEqual(view.next_destination_node, "STG")
+
+    def test_horizon_extends_across_indeterminate_chain_from_rbs_to_calicut(self):
+        state = self.model.initial_state(
+            location_node="RBS",
+            start_date=date(1498, 2, 24),
+            provision_days=60.0,
+            active_expedition_id="EXP_GAMA_1497",
+            expedition_leg_sequence=7,
+        )
+        view = self.model.logistics_planning_view(state, seed=1498)
+
+        self.assertEqual(view.next_destination_node, "MOZ")
+        self.assertTrue(view.next_destination_provisions_evidence_indeterminate)
+        self.assertEqual(view.next_leg_required_days, 6.0)
+        self.assertEqual(view.logistics_horizon_end_node, "CAL")
+        self.assertEqual(view.logistics_horizon_required_days, 43.0)
+        self.assertEqual(view.margin_after_next_leg_days, 54.0)
+        self.assertEqual(view.margin_after_logistics_horizon_days, 17.0)
+        self.assertFalse(view.meets_recommended_margin)
+        self.assertEqual(state.vessel.provision_days, 60.0)
+
+    def test_horizon_margin_is_met_at_rbs_with_63_days_without_granting_resources(self):
+        state = self.model.initial_state(
+            location_node="RBS",
+            start_date=date(1498, 2, 24),
+            provision_days=63.0,
+            active_expedition_id="EXP_GAMA_1497",
+            expedition_leg_sequence=7,
+        )
+        view = self.model.logistics_planning_view(state, seed=1498)
+
+        self.assertEqual(view.logistics_horizon_required_days, 43.0)
+        self.assertEqual(view.margin_after_logistics_horizon_days, 20.0)
+        self.assertTrue(view.meets_recommended_margin)
+        self.assertEqual(state.vessel.provision_days, 63.0)
 
     def test_predeparture_service_consumes_time_without_automatic_grant(self):
         state = self.model.initial_playable_state()
