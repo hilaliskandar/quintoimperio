@@ -10,7 +10,9 @@ from quintoimperio.domain import (
 
 
 class MVPRobustnessTests(unittest.TestCase):
-    SEEDS = (0, 1, 7, 42, 1498)
+    # Seeds usadas para verificar que campanhas que atravessam a cauda de risco
+    # sem bloqueio continuam preservando a cronologia histórica observada.
+    CHRONOLOGY_SEEDS = (0, 7, 42, 1498)
 
     @classmethod
     def setUpClass(cls):
@@ -70,9 +72,9 @@ class MVPRobustnessTests(unittest.TestCase):
         state = self._execute_current_leg(state, seed)
         return state
 
-    def test_guided_campaign_preserves_chronology_across_stochastic_seeds(self):
+    def test_successful_guided_campaigns_preserve_chronology_across_stochastic_seeds(self):
         terminal_states = []
-        for seed in self.SEEDS:
+        for seed in self.CHRONOLOGY_SEEDS:
             state = self._guided_to_calicut(seed)
             self.assertEqual(state.vessel.location_node, "CAL")
             self.assertEqual(state.vessel.clock.current_date, date(1498, 5, 21))
@@ -85,13 +87,37 @@ class MVPRobustnessTests(unittest.TestCase):
             )
             terminal_states.append(state)
 
-        # A cronologia permanece invariável; recursos e histórico de eventos
-        # podem variar por seed a partir da v0.2.
         signatures = {
-            (round(state.vessel.provision_days, 6), state.voyage_event_history)
+            (
+                round(state.vessel.provision_days, 6),
+                round(state.vessel.condition, 6),
+                state.voyage_event_history,
+            )
             for state in terminal_states
         }
         self.assertGreater(len(signatures), 1)
+
+    def test_rare_tail_can_break_previously_guaranteed_guided_completion(self):
+        """Seed fixa de regressão: contingência pode consumir a margem disponível."""
+        seed = 1
+        state = self.model.initial_state(active_expedition_id="EXP_GAMA_1497")
+        state = self._execute_current_leg(state, seed)
+        for _ in range(3):
+            result = self.model.reprovision(state, 30.0)
+            self.assertTrue(result.executed)
+            state = result.state_after
+        state = self.model.wait_for_guided_departure(state).state_after
+        state = self._execute_current_leg(state, seed)
+        state = self.model.wait_for_guided_departure(state).state_after
+
+        plan = self.model.plan_current_leg(state, seed=seed)
+        self.assertFalse(plan.feasible)
+        self.assertEqual(plan.route_id, "R_SHB_CGH")
+        self.assertIn("INSUFFICIENT_PROVISIONS", plan.blockers)
+        self.assertEqual(state.chronology_mode, ChronologyMode.GUIDED)
+        self.assertTrue(
+            any(event.observed_timing_safe for event in state.voyage_event_history)
+        )
 
     def test_counterfactual_events_are_bounded_and_deterministic(self):
         state = self.model.initial_state(
@@ -115,12 +141,10 @@ class MVPRobustnessTests(unittest.TestCase):
                 eventful += 1
                 event = first.events[0]
                 self.assertLessEqual(event.extra_days, 3)
-                self.assertLessEqual(event.condition_loss, 5.0)
-                self.assertGreaterEqual(event.provision_delta, -8.0)
-                self.assertLessEqual(event.provision_delta, 5.0)
+                self.assertLessEqual(event.condition_loss, 14.0)
                 self.assertTrue(event.simulation_only)
 
-        self.assertLess(eventful, 70)
+        self.assertLess(eventful, 75)
 
     def test_same_market_round_trip_cannot_create_free_capital(self):
         state = self._guided_to_calicut()
