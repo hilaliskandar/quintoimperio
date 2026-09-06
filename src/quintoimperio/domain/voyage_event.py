@@ -1,8 +1,8 @@
-"""Eventos marítimos genéricos de simulação v0.2.
+"""Eventos marítimos genéricos de simulação v0.4.
 
 Nenhum evento deste módulo é tratado como incidente histórico documentado. As
-regras vivem em ``simulation/voyage_event_rules.csv``. A camada v0.2 admite
-efeitos positivos e negativos sobre provisões e condição, preservando a
+regras vivem em ``simulation/voyage_event_rules.csv``. A camada admite efeitos
+positivos e negativos sobre provisões e condição, preservando a
 reprodutibilidade por seed. Em pernas com timing histórico observado, apenas
 regras explicitamente marcadas como ``observed_timing_safe`` podem ocorrer.
 """
@@ -25,6 +25,8 @@ class VoyageEventType(str, Enum):
     JUNE_JULY_DISRUPTION = "JUNE_JULY_DISRUPTION"
     PROVISION_SPOILAGE = "PROVISION_SPOILAGE"
     EFFICIENT_RATIONING = "EFFICIENT_RATIONING"
+    MAJOR_PROVISION_LOSS = "MAJOR_PROVISION_LOSS"
+    STRUCTURAL_STRAIN = "STRUCTURAL_STRAIN"
 
 
 @dataclass(frozen=True)
@@ -130,6 +132,9 @@ class VoyageEventModel:
         if not rules:
             return ()
 
+        # O prefixo v02 é mantido deliberadamente para preservar a sequência
+        # pseudoaleatória já usada nas ondas anteriores. Novas regras são
+        # anexadas à cauda da distribuição, em vez de reembaralhar seeds antigas.
         rng = random.Random(
             f"voyage-event:v02:{seed}:{route_id}:{departure.isoformat()}:{int(timing_safe_only)}"
         )
