@@ -3,6 +3,10 @@
 
 Não representa um usuário humano. O perfil controla apenas heurísticas de decisão
 sobre ações públicas do domínio; nenhuma regra da campanha é contornada.
+
+Onda 1: descoberta não assistida, sem inspeção explícita de viabilidade antes da espera.
+Onda 2: o jogador consulta a próxima perna antes de esperar e prepara recursos quando
+os próprios bloqueios públicos do domínio indicam necessidade.
 """
 
 from __future__ import annotations
@@ -28,9 +32,11 @@ class Metrics:
     player_id: int
     profile: str
     seed: int
+    wave: int
     actions_attempted: int = 0
     actions_executed: int = 0
     blocked_attempts: int = 0
+    readiness_checks: int = 0
     reprovision_actions: int = 0
     reprovision_total: float = 0.0
     access_negotiations: int = 0
@@ -68,6 +74,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--player-id", type=int, required=True)
     parser.add_argument("--profile", choices=sorted(PROFILES), required=True)
     parser.add_argument("--seed", type=int, required=True)
+    parser.add_argument("--wave", type=int, choices=(1, 2), default=1)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -116,15 +123,12 @@ def plan_and_execute(model, state, metrics: Metrics, seed: int):
 
         metrics.blocked(plan.blockers)
 
-        # O perfil impaciente tenta a partida cedo; depois aceita sincronizar a data.
         if "HISTORICAL_DEPARTURE_NOT_REACHED" in plan.blockers:
             state, changed = wait_guided(model, state, metrics)
             recovery_steps += 1
             if changed:
                 continue
 
-        # Jogadores frugais só reabastecem quando a viagem já foi bloqueada.
-        # Os demais também podem usar o mesmo mecanismo como recuperação defensiva.
         if any(reason in RESOURCE_BLOCKERS or "PROVISION" in reason for reason in plan.blockers):
             state, changed = reprovision(model, state, metrics)
             recovery_steps += 1
@@ -138,7 +142,6 @@ def plan_and_execute(model, state, metrics: Metrics, seed: int):
 def proactive_policy(model, state, metrics: Metrics, profile: str):
     """Aplica apenas decisões plausíveis antes da próxima perna."""
     if profile == "CAUTIOUS":
-        # Mantém uma margem elevada, mas para assim que o porto não oferece serviço.
         while state.vessel.provision_days < 85:
             state, changed = reprovision(model, state, metrics)
             if not changed:
@@ -146,25 +149,49 @@ def proactive_policy(model, state, metrics: Metrics, profile: str):
     elif profile in {"DISCIPLINED", "TRADER"}:
         if state.vessel.provision_days < 45:
             state, _ = reprovision(model, state, metrics)
-    # FRUGAL e IMPATIENT deliberadamente não fazem prevenção.
     return state
 
 
-def run_player(player_id: int, profile: str, seed: int) -> dict:
+def prepare_before_wait(model, state, metrics: Metrics, seed: int):
+    """Onda 2: consulta viabilidade antes de consumir a janela histórica de espera.
+
+    A inspeção usa exatamente ``plan_current_leg``. Se os bloqueios publicados
+    indicarem falta de provisões, tenta reabastecer ainda antes da espera. Nenhuma
+    necessidade é inferida por conhecimento interno do simulador.
+    """
+    for _ in range(8):
+        metrics.attempt()
+        metrics.readiness_checks += 1
+        plan = model.plan_current_leg(state, seed=seed)
+        metrics.executed()
+        resource_reasons = tuple(
+            reason
+            for reason in plan.blockers
+            if reason in RESOURCE_BLOCKERS or "PROVISION" in reason
+        )
+        if not resource_reasons:
+            return state
+        state, changed = reprovision(model, state, metrics)
+        if not changed:
+            return state
+    return state
+
+
+def run_player(player_id: int, profile: str, seed: int, wave: int) -> dict:
     model = HistoricalCampaignModel()
     progress_model = CampaignProgressModel(model.session)
     state = model.initial_state(active_expedition_id="EXP_GAMA_1497")
-    metrics = Metrics(player_id=player_id, profile=profile, seed=seed)
+    metrics = Metrics(player_id=player_id, profile=profile, seed=seed, wave=wave)
     metrics.observe(state)
     start_date = state.vessel.clock.current_date
 
-    # Cada iteração resolve exatamente a perna institucional corrente.
     while model.current_leg(state) is not None:
         state = proactive_policy(model, state, metrics, profile)
 
-        # IMPATIENT deixa o primeiro planejamento registrar a tentativa precoce.
-        # Para os demais perfis, sincroniza-se antes quando a partida guiada é futura.
         departure = model.guided_departure_date(state)
+        if wave == 2 and departure is not None and state.vessel.clock.current_date < departure:
+            state = prepare_before_wait(model, state, metrics, seed)
+
         if (
             profile != "IMPATIENT"
             and departure is not None
@@ -176,7 +203,6 @@ def run_player(player_id: int, profile: str, seed: int) -> dict:
         if not ok:
             break
 
-        # Em Melinde, o contato documentado é necessário para liberar o piloto da perna final.
         if state.vessel.location_node == "MAL" and model.current_leg(state) is not None:
             metrics.attempt()
             contacted = model.contact_authority(state)
@@ -187,7 +213,6 @@ def run_player(player_id: int, profile: str, seed: int) -> dict:
                 metrics.blocked(contacted.reasons)
             metrics.observe(state)
 
-    # Em Calecute, negociar acesso e realizar a primeira compra são decisões separadas.
     if state.vessel.location_node == "CAL":
         metrics.attempt()
         access = model.negotiate_access(state)
@@ -201,7 +226,6 @@ def run_player(player_id: int, profile: str, seed: int) -> dict:
 
         requested_qty = 4.0 if profile == "TRADER" else 1.0
         qty = requested_qty
-        bought = None
         while qty >= 1.0:
             metrics.attempt()
             bought = model.buy(state, "PEPPER", qty, seed=seed)
@@ -220,6 +244,7 @@ def run_player(player_id: int, profile: str, seed: int) -> dict:
     final_cargo = {item.good_id: item.quantity for item in state.commerce.cargo if item.quantity > 0}
 
     return {
+        "wave": wave,
         "player_id": player_id,
         "profile": profile,
         "seed": seed,
@@ -228,6 +253,7 @@ def run_player(player_id: int, profile: str, seed: int) -> dict:
         "actions_attempted": metrics.actions_attempted,
         "actions_executed": metrics.actions_executed,
         "blocked_attempts": metrics.blocked_attempts,
+        "readiness_checks": metrics.readiness_checks,
         "blockers": dict(sorted(metrics.blockers.items())),
         "first_block_action": metrics.first_block_action,
         "recovered_after_block": metrics.recovered_after_block,
@@ -256,7 +282,7 @@ def run_player(player_id: int, profile: str, seed: int) -> dict:
 
 def main() -> None:
     args = parse_args()
-    result = run_player(args.player_id, args.profile, args.seed)
+    result = run_player(args.player_id, args.profile, args.seed, args.wave)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
