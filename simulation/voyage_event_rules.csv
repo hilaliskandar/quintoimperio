@@ -3,5 +3,7 @@ EV_CALM_DELAY,CALM_DELAY,ANY,ANY,,0.14,1,3,0,0,0,0,FALSE,"Atraso generico de sim
 EV_ROUGH_WEATHER,ROUGH_WEATHER,ANY,ANY,,0.12,1,2,1,4,0,0,FALSE,"Mau tempo generico de simulacao; nao implica reconstrucao meteorologica historica."
 EV_MINOR_RIGGING,MINOR_RIGGING_DAMAGE,ANY,ANY,,0.08,0,1,2,5,0,0,FALSE,"Avaria menor de aparelho como hipotese de simulacao; sem perda de tripulacao ou carga."
 EV_JUNE_JULY_DISRUPTION,JUNE_JULY_DISRUPTION,ANY,MEDIUM|HIGH,6|7,0.10,1,3,0,2,0,0,FALSE,"Camada adicional apenas em rotas ja classificadas com dependencia de moncao MEDIUM/HIGH nos meses de junho/julho; nao infere direcao de vento."
-EV_PROVISION_SPOILAGE,PROVISION_SPOILAGE,ANY,ANY,,0.10,0,0,0,0,-8,-3,TRUE,"Perda abstrata de provisoes por deterioracao ou avaria de armazenamento; parametro de simulacao, nao incidente historico documentado."
+EV_PROVISION_SPOILAGE,PROVISION_SPOILAGE,ANY,ANY,,0.10,0,0,0,0,-8,-3,TRUE,"Perda abstrata moderada de provisoes por deterioracao ou avaria de armazenamento; parametro de simulacao, nao incidente historico documentado."
 EV_EFFICIENT_RATIONING,EFFICIENT_RATIONING,ANY,ANY,,0.08,0,0,0,0,2,5,TRUE,"Ganho abstrato de autonomia por consumo mais eficiente; parametro de simulacao, nao evidencia historica de racionamento bem-sucedido."
+EV_MAJOR_PROVISION_LOSS,MAJOR_PROVISION_LOSS,ANY,ANY,,0.03,0,0,0,0,-28,-18,TRUE,"Cauda rara de perda extensa de provisoes por contaminacao ou falha de armazenamento; parametro de balanceamento, sem alegacao de frequencia historica."
+EV_STRUCTURAL_STRAIN,STRUCTURAL_STRAIN,ANY,ANY,,0.05,0,0,8,14,0,0,TRUE,"Tensao estrutural abstrata capaz de reduzir a condicao sem deslocar obrigatoriamente o timing observado; parametro de simulacao, nao incidente historico documentado."
