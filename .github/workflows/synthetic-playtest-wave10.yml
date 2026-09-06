@@ -5,6 +5,9 @@ on:
     branches:
       - test/onda-pos-merge-prepartida
     paths:
+      - "src/quintoimperio/domain/campaign.py"
+      - "prototype/historical_campaign.py"
+      - "tests/test_logistics_planning.py"
       - "tools/simulate_synthetic_player.py"
       - "tools/aggregate_synthetic_playtest.py"
       - ".github/workflows/synthetic-playtest-wave10.yml"
