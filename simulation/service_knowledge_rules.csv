@@ -1,0 +1,2 @@
+rule_type,key,value,notes
+LOCAL_OBSERVATION_TIME_DAYS,DEFAULT,0,"A presença física no porto torna observável o estado da evidência disponível sobre provisões e reparo sem consumir tempo adicional; não transforma campo histórico vazio em disponibilidade."
