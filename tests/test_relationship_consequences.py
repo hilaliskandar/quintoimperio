@@ -117,6 +117,29 @@ class RelationshipConsequenceTests(unittest.TestCase):
         self.assertEqual(plan.pilot_id, "PIL_MAL_GUJ_1498")
         self.assertEqual(plan.navigation_basis, NavigationBasis.PILOT)
 
+    def test_fleet_command_remains_separate_when_pilot_relationship_is_missing(self):
+        state = self.campaign.initial_state(
+            location_node="MAL",
+            start_date=date(1498, 4, 24),
+            provision_days=120.0,
+            active_expedition_id="EXP_GAMA_1497",
+            expedition_leg_sequence=10,
+            chronology_mode=ChronologyMode.GUIDED,
+        )
+        self.assertIsNone(self.campaign.recommended_pilot_id(state, "R_MAL_CAL"))
+        plan = self.campaign.plan_current_leg(state, seed=1498)
+        self.assertTrue(plan.feasible)
+        self.assertIsNone(plan.pilot_id)
+        self.assertEqual(plan.navigation_basis, NavigationBasis.FLEET_COMMAND)
+
+    def test_relationship_effect_rule_references_existing_pilot_and_actor(self):
+        pilot_id = "PIL_MAL_GUJ_1498"
+        actor_id = self.session.relationship_rules[
+            ("PILOT_REQUIRES_ACTOR_CONTACT", pilot_id)
+        ]
+        self.assertIn(pilot_id, self.session.travel.pilots)
+        self.assertIn(actor_id, self.session.relationship.actors)
+
     def test_contacted_remains_the_only_added_relational_state_needed_for_mvp_gate(self):
         self.assertEqual(
             set(RelationshipStatus),
