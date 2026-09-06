@@ -13,6 +13,8 @@ import argparse
 
 import pygame
 
+from quintoimperio.domain import CampaignProgressModel
+
 try:
     from prototype.game import (
         BAD,
@@ -72,10 +74,14 @@ class M5HistoricalCampaignPrototype(HistoricalCampaignPrototype):
         super().__init__()
         self.pending_travel_route: str | None = None
         self.action_history: list[str] = [self.message]
+        self.progress_model = CampaignProgressModel(self.session.session)
 
     @staticmethod
     def friendly_reasons(reasons: tuple[str, ...]) -> str:
-        return "; ".join(BLOCKER_LABELS.get(reason, reason.replace("_", " ").lower()) for reason in reasons)
+        return "; ".join(
+            BLOCKER_LABELS.get(reason, reason.replace("_", " ").lower())
+            for reason in reasons
+        )
 
     def _remember(self) -> None:
         if not self.message:
@@ -87,7 +93,7 @@ class M5HistoricalCampaignPrototype(HistoricalCampaignPrototype):
 
     def campaign_status(self):
         """Retorna a projeção M4; não mantém estado paralelo de objetivos."""
-        return self.session.progress(self.state)
+        return self.progress_model.progress(self.state)
 
     def travel_selected(self) -> None:
         """Primeiro comando de viagem apenas solicita confirmação."""
@@ -113,8 +119,6 @@ class M5HistoricalCampaignPrototype(HistoricalCampaignPrototype):
             return
         self.selected_route = self.pending_travel_route
         self.pending_travel_route = None
-        # Chama a implementação executora herdada da interface base, evitando a
-        # sobrescrita acima que apenas abre a confirmação.
         super().travel_selected()
         self._remember()
 
@@ -126,7 +130,12 @@ class M5HistoricalCampaignPrototype(HistoricalCampaignPrototype):
 
     def _draw_campaign_strip(self, surface: pygame.Surface) -> None:
         progress = self.campaign_status()
-        strip = pygame.Rect(MAP_RECT.left + 10, MAP_RECT.top + 10, MAP_RECT.width - 20, 58)
+        strip = pygame.Rect(
+            MAP_RECT.left + 10,
+            MAP_RECT.top + 10,
+            MAP_RECT.width - 20,
+            58,
+        )
         pygame.draw.rect(surface, PANEL, strip, border_radius=5)
         pygame.draw.rect(surface, LINE, strip, width=1, border_radius=5)
         small = pygame.font.SysFont("sans", 15, bold=True)
@@ -149,11 +158,22 @@ class M5HistoricalCampaignPrototype(HistoricalCampaignPrototype):
         )
 
     def _draw_history(self, surface: pygame.Surface) -> None:
-        rect = pygame.Rect(MAP_RECT.left + 10, MAP_RECT.bottom - 92, MAP_RECT.width - 20, 78)
+        rect = pygame.Rect(
+            MAP_RECT.left + 10,
+            MAP_RECT.bottom - 92,
+            MAP_RECT.width - 20,
+            78,
+        )
         pygame.draw.rect(surface, BG, rect, border_radius=4)
         pygame.draw.rect(surface, LINE, rect, width=1, border_radius=4)
         tiny = pygame.font.SysFont("monospace", 11)
-        self._draw_text(surface, tiny, "Acontecimentos recentes", (rect.x + 10, rect.y + 7), MUTED)
+        self._draw_text(
+            surface,
+            tiny,
+            "Acontecimentos recentes",
+            (rect.x + 10, rect.y + 7),
+            MUTED,
+        )
         y = rect.y + 23
         for entry in self.action_history[-3:]:
             lines = self._wrap(tiny, entry, rect.width - 24)
@@ -182,7 +202,13 @@ class M5HistoricalCampaignPrototype(HistoricalCampaignPrototype):
             (rect.x + 18, rect.y + 49),
         )
         basis = plan.navigation_basis.value if plan.navigation_basis else "sem base"
-        self._draw_text(surface, micro, f"Duração prevista: {plan.travel_days} dias | base: {basis}", (rect.x + 18, rect.y + 76), MUTED)
+        self._draw_text(
+            surface,
+            micro,
+            f"Duração prevista: {plan.travel_days} dias | base: {basis}",
+            (rect.x + 18, rect.y + 76),
+            MUTED,
+        )
         confirm = pygame.Rect(rect.x + 18, rect.bottom - 48, 170, 30)
         cancel = pygame.Rect(rect.right - 188, rect.bottom - 48, 170, 30)
         pygame.draw.rect(surface, BUTTON, confirm, border_radius=4)
@@ -237,10 +263,10 @@ def main() -> None:
     app = M5HistoricalCampaignPrototype()
 
     if args.campaign_smoke:
-        # O smoke M1–M4 usa as ações herdadas diretamente; a confirmação M5 é
-        # exercitada em teste próprio para não transformar o roteiro automático
-        # em um driver de cliques.
-        HistoricalCampaignPrototype.run_scripted_campaign(app)
+        runner = HistoricalCampaignPrototype()
+        runner.run_scripted_campaign()
+        app.state = runner.state
+        app.message = runner.message
         app._remember()
         app.render(surface)
         print(app.message)
