@@ -3,6 +3,12 @@
 from .access import AccessModel, AccessRule, AccessStatus, AccessView
 from .calendar import GameClock, MonsoonPhase, monsoon_phase
 from .campaign import HistoricalCampaignModel
+from .campaign_progress import (
+    CampaignMilestone,
+    CampaignProgress,
+    CampaignProgressModel,
+    CampaignSummary,
+)
 from .economy import EconomyModel
 from .expedition import ExpeditionLeg, ExpeditionModel
 from .information import (
@@ -50,6 +56,10 @@ __all__ = [
     "AccessRule",
     "AccessStatus",
     "AccessView",
+    "CampaignMilestone",
+    "CampaignProgress",
+    "CampaignProgressModel",
+    "CampaignSummary",
     "CargoHolding",
     "ChronologyMode",
     "CommercialState",

@@ -11,8 +11,9 @@ Esse contato não concede acesso comercial nem benefício econômico; em Melinde
 ele torna o piloto guzerate documentado atribuível ao personagem.
 
 O gate M3 acrescenta quantidade comercial selecionável e torna a primeira
-operação em Calecute parte do smoke da própria campanha, sem introduzir moeda
-histórica, crédito ou novas regras econômicas.
+operação em Calecute parte do smoke da própria campanha. O gate M4 projeta
+objetivos e encerramento a partir do estado real da sessão, sem criar quests,
+pontuação ou recompensas paralelas.
 """
 
 from __future__ import annotations
@@ -39,6 +40,7 @@ from quintoimperio.domain import (
     HistoricalCampaignModel,
     RelationshipStatus,
 )
+from quintoimperio.domain.campaign_progress import CampaignProgressModel
 
 
 class HistoricalCampaignPrototype(M3PlayablePrototype):
@@ -47,6 +49,7 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
     def __init__(self) -> None:
         super().__init__("HISTORICAL")
         self.session = HistoricalCampaignModel()
+        self.progress_model = CampaignProgressModel(self.session.session)
         self.state = self._make_state("HISTORICAL")
         self.message = "Campanha histórica iniciada em Lisboa."
 
@@ -128,8 +131,22 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         surface.blit(font.render(text, True, INK), (rect.x + 8, rect.y + 9))
         self.targets.append(ClickTarget(rect, "action", "contact_authority"))
 
+    def _campaign_progress_overlay(self, surface: pygame.Surface) -> None:
+        progress = self.progress_model.progress(self.state)
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.top + 12, 430, 56)
+        pygame.draw.rect(surface, BG, rect, border_radius=3)
+        pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
+        font = pygame.font.SysFont("monospace", 12)
+        title = "M4 CONCLUÍDO" if progress.completed else "Objetivo atual"
+        surface.blit(font.render(title, True, MUTED), (rect.x + 8, rect.y + 7))
+        surface.blit(
+            font.render(progress.current_objective[:56], True, INK),
+            (rect.x + 8, rect.y + 27),
+        )
+
     def render(self, surface: pygame.Surface) -> None:
         super().render(surface)
+        self._campaign_progress_overlay(surface)
         self._authority_contact_overlay(surface)
         self._guided_wait_overlay(surface)
 
@@ -201,6 +218,8 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
             raise RuntimeError("Campanha histórica não terminou em Calecute")
         if self.state.active_expedition_id is not None:
             raise RuntimeError("Expedição permaneceu ativa após a décima perna")
+        if self.progress_model.progress(self.state).completed:
+            raise RuntimeError("M4 encerrou a campanha apenas pela chegada a Calecute")
 
         # Calecute chega com mercado conhecido, mas acesso ainda separado. O
         # smoke satisfaz o acesso institucional e realiza uma operação comercial
@@ -212,6 +231,9 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
                 + ", ".join(access_result.reasons)
             )
         self.state = access_result.state_after
+        if self.progress_model.progress(self.state).completed:
+            raise RuntimeError("M4 encerrou a campanha antes da operação comercial")
+
         self.selected_good = "PEPPER"
         self.trade_quantity = 2.0
         before_quantity = self.state.commerce.quantity_of("PEPPER")
@@ -220,10 +242,17 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         if after_quantity <= before_quantity:
             raise RuntimeError(f"Comércio M3 não foi executado em Calecute: {self.message}")
 
+        progress = self.progress_model.progress(self.state)
+        if not progress.completed:
+            raise RuntimeError(f"M4 não encerrou após o comércio elegível: {progress.current_objective}")
+        summary = self.progress_model.summary(self.state)
         self.message = (
-            f"Smoke concluído: Calecute em {self.state.vessel.clock.current_date}; "
-            f"cronologia {self.state.chronology_mode.value}; piloto {pilot_id}; "
-            f"compra M3={after_quantity - before_quantity:g} PEPPER."
+            f"Campanha concluída: Calecute em {summary.current_date}; "
+            f"cronologia {summary.chronology_mode.value}; piloto {pilot_id}; "
+            f"compra={after_quantity - before_quantity:g} PEPPER; "
+            f"contatos={len(summary.contacted_actor_ids)}; "
+            f"capital={summary.capital_index:.1f}; "
+            f"carga={summary.capacity_used:.1f}/{summary.capacity_total:.1f}."
         )
 
 
