@@ -1,9 +1,9 @@
-name: Synthetic player archetypes stochastic 200 sessions wave 13
+name: Synthetic player archetypes stochastic 200 sessions wave 14
 
 on:
   push:
     branches:
-      - test/player-archetypes-200-v03
+      - test/player-archetypes-200-v04
     paths:
       - "tools/simulate_player_archetype.py"
       - "tools/simulate_synthetic_player.py"
@@ -48,7 +48,7 @@ jobs:
           done
       - uses: actions/upload-artifact@v4
         with:
-          name: stochastic-archetype-${{ matrix.archetype }}-20-wave13
+          name: stochastic-archetype-${{ matrix.archetype }}-20-wave14
           path: build/archetypes/${{ matrix.archetype }}/*.json
 
   aggregate:
@@ -60,14 +60,14 @@ jobs:
         with: {python-version: "3.12"}
       - uses: actions/download-artifact@v4
         with:
-          pattern: stochastic-archetype-*-20-wave13
+          pattern: stochastic-archetype-*-20-wave14
           path: build/archetype-results
           merge-multiple: false
       - name: Aggregate
-        run: python tools/aggregate_archetype_playtest.py --input-dir build/archetype-results --csv build/synthetic-player-archetypes-wave13.csv --summary build/synthetic-player-archetypes-wave13-summary.json
+        run: python tools/aggregate_archetype_playtest.py --input-dir build/archetype-results --csv build/synthetic-player-archetypes-wave14.csv --summary build/synthetic-player-archetypes-wave14-summary.json
       - uses: actions/upload-artifact@v4
         with:
-          name: synthetic-player-archetypes-wave13-results
+          name: synthetic-player-archetypes-wave14-results
           path: |
-            build/synthetic-player-archetypes-wave13.csv
-            build/synthetic-player-archetypes-wave13-summary.json
+            build/synthetic-player-archetypes-wave14.csv
+            build/synthetic-player-archetypes-wave14-summary.json
