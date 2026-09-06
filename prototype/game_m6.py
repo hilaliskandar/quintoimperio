@@ -125,6 +125,8 @@ def main() -> None:
     if args.roundtrip_smoke:
         original = app.state
         app.save_slot()
+        if app.session.in_predeparture_phase(app.state):
+            app.state = app.session.wait_for_guided_departure(app.state).state_after
         app.state = app.session.execute_voyage(
             app.state,
             app.session.plan_current_leg(app.state, seed=app.session_seed),

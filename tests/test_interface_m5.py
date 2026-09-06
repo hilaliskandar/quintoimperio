@@ -10,15 +10,22 @@ from game_m5 import M5HistoricalCampaignPrototype
 
 
 class InterfaceM5Tests(unittest.TestCase):
+    @staticmethod
+    def _at_historical_departure(app):
+        if app.session.in_predeparture_phase(app.state):
+            app.state = app.session.wait_for_guided_departure(app.state).state_after
+        return app
+
     def test_initial_campaign_status_is_derived_from_m4(self):
         app = M5HistoricalCampaignPrototype()
         progress = app.campaign_status()
         self.assertFalse(progress.completed)
         self.assertTrue(progress.current_objective)
         self.assertEqual(app.state.vessel.location_node, "LIS")
+        self.assertTrue(app.session.in_predeparture_phase(app.state))
 
     def test_travel_requires_explicit_confirmation(self):
-        app = M5HistoricalCampaignPrototype()
+        app = self._at_historical_departure(M5HistoricalCampaignPrototype())
         app.selected_route = "R_LIS_STG"
         before = app.state
 
@@ -35,7 +42,7 @@ class InterfaceM5Tests(unittest.TestCase):
         self.assertNotEqual(app.state, before)
 
     def test_cancel_keeps_state_unchanged(self):
-        app = M5HistoricalCampaignPrototype()
+        app = self._at_historical_departure(M5HistoricalCampaignPrototype())
         app.selected_route = "R_LIS_STG"
         before = app.state
         app.travel_selected()

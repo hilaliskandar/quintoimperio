@@ -6,14 +6,9 @@ fachada ``HistoricalCampaignModel``. A espera em Moçambique, Mombaça e Melinde
 serve somente para alinhar o relógio às partidas já observadas; esses nós não
 são promovidos a novas permanências em ``expedition_stops.csv``.
 
-A camada relacional do MVP expõe contato explícito com autoridade documentada.
-Esse contato não concede acesso comercial nem benefício econômico; em Melinde,
-ele torna o piloto guzerate documentado atribuível ao personagem.
-
-O gate M3 acrescenta quantidade comercial selecionável e torna a primeira
-operação em Calecute parte do smoke da própria campanha. O gate M4 projeta
-objetivos e encerramento a partir do estado real da sessão, sem criar quests,
-pontuação ou recompensas paralelas.
+A campanha jogável abre em uma fase explicitamente simulada de preparação dois
+dias antes da partida histórica de 8 de julho de 1497. Essa janela não altera a
+data documentada da partida e não concede recursos automaticamente.
 """
 
 from __future__ import annotations
@@ -50,8 +45,11 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         super().__init__("HISTORICAL")
         self.session = HistoricalCampaignModel()
         self.progress_model = CampaignProgressModel(self.session.session)
-        self.state = self._make_state("HISTORICAL")
-        self.message = "Campanha histórica iniciada em Lisboa."
+        self.state = self.session.initial_playable_state()
+        self.message = (
+            "Preparação simulada em Lisboa: partida histórica em 1497-07-08; "
+            "margem logística de 20 dias-equivalentes é heurística de simulação."
+        )
 
     def plan_for_route(self, route_id: str):
         pilot_id = self.session.recommended_pilot_id(self.state, route_id)
@@ -101,12 +99,35 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
             return
 
         days = (expected - current).days
-        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 48, 345, 34)
+        planning = self.session.logistics_planning_view(self.state, seed=SEED)
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 78, 550, 64)
         pygame.draw.rect(surface, BG, rect, border_radius=3)
         pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
-        font = pygame.font.SysFont("monospace", 12)
-        text = f"Próxima partida observada: {expected} | esperar {days}d"
-        surface.blit(font.render(text, True, INK), (rect.x + 8, rect.y + 9))
+        font = pygame.font.SysFont("monospace", 11)
+        required = (
+            "?"
+            if planning.next_leg_required_days is None
+            else f"{planning.next_leg_required_days:.0f}d"
+        )
+        status = "OK" if planning.meets_recommended_margin else "abaixo"
+        if planning.in_predeparture_phase:
+            line1 = f"PREPARAÇÃO SIMULADA | partida histórica {expected} | esperar {days}d"
+        else:
+            line1 = f"Próxima partida observada: {expected} | esperar {days}d"
+        line2 = (
+            f"Autonomia {planning.current_autonomy_days:.0f}d | próxima perna {required} | "
+            f"margem heurística +{planning.recommended_margin_days:.0f}d ({status})"
+        )
+        if planning.next_destination_provisions_evidence_indeterminate:
+            line3 = (
+                f"Destino {planning.next_destination_node}: evidência histórica de provisões "
+                "indeterminada."
+            )
+        else:
+            line3 = "Margem é heurística de simulação; esperar não concede recursos."
+        surface.blit(font.render(line1, True, INK), (rect.x + 8, rect.y + 6))
+        surface.blit(font.render(line2, True, MUTED), (rect.x + 8, rect.y + 24))
+        surface.blit(font.render(line3, True, MUTED), (rect.x + 8, rect.y + 42))
         self.targets.append(ClickTarget(rect, "action", "wait_stop"))
 
     def _authority_contact_overlay(self, surface: pygame.Surface) -> None:
@@ -123,7 +144,7 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         ):
             return
 
-        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 88, 345, 34)
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 118, 345, 34)
         pygame.draw.rect(surface, BUTTON, rect, border_radius=3)
         pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
         font = pygame.font.SysFont("monospace", 12)
@@ -175,6 +196,11 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
 
     def run_scripted_campaign(self) -> None:
         """Percorre a vertical slice usando as mesmas ações expostas pela UI."""
+        # A campanha jogável começa em 6 de julho. O smoke não recebe provisões
+        # automaticamente: apenas sincroniza a partida histórica antes da viagem.
+        if self.session.in_predeparture_phase(self.state):
+            self._wait()
+
         self._travel("R_LIS_STG")
         for _ in range(3):
             self.reprovision()
@@ -203,8 +229,6 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         self._wait()
         self._travel("R_MOM_MAL")
 
-        # O governante de Melinde é o ator documentado associado ao fornecimento
-        # do piloto. O contato é uma ação relacional distinta do acesso ao porto.
         self.contact_authority_action()
         if "Contato estabelecido" not in self.message:
             raise RuntimeError(f"Contato de Melinde não foi estabelecido: {self.message}")
@@ -221,9 +245,6 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         if self.progress_model.progress(self.state).completed:
             raise RuntimeError("M4 encerrou a campanha apenas pela chegada a Calecute")
 
-        # Calecute chega com mercado conhecido, mas acesso ainda separado. O
-        # smoke satisfaz o acesso institucional e realiza uma operação comercial
-        # usando os mesmos controles M3 expostos ao jogador.
         access_result = self.session.negotiate_access(self.state)
         if not access_result.executed:
             raise RuntimeError(
