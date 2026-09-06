@@ -85,7 +85,7 @@ def reprovision(model, state, metrics: Metrics, amount: float = 30.0):
     if result.executed:
         metrics.executed()
         metrics.reprovision_actions += 1
-        metrics.reprovision_total += amount
+        metrics.reprovision_total += result.service_result.effect
         state = result.state_after
     else:
         metrics.blocked(result.reasons)
