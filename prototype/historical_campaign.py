@@ -71,8 +71,11 @@ class HistoricalCampaignPrototype(PlayablePrototype):
         if not result.executed:
             self.message = "Contato indisponível: " + ", ".join(result.reasons)
             return
+        if result.actor is None:
+            raise RuntimeError(
+                "Contato relacional foi executado sem autoridade histórica normalizada"
+            )
         self.state = result.state_after
-        assert result.actor is not None
         self.message = (
             f"Contato estabelecido: {result.actor.label}; "
             f"+{result.days_spent} dia(s). Acesso comercial não foi alterado."
