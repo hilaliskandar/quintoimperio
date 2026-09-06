@@ -6,6 +6,8 @@ A interface Pygame v0.1 expõe `GameSessionModel` sem duplicar regras econômica
 
 A tela apresenta mapa conhecido, porto atual, data, condição e provisões do navio, capital e carga, estado de acesso, serviços portuários, canais de informação, relações já estabelecidas, mercado, armada ativa quando houver, cronologia, escala histórica ativa, rotas de saída e o último evento `SIM` de viagem quando houver.
 
+A vertical slice histórica possui uma extensão em `prototype/historical_campaign.py`. Ela reutiliza o mesmo painel e acrescenta apenas a orquestração de campanha e, no gate relacional v0.2, a ação explícita de contato com autoridade documentada.
+
 ## Dois estados explicitamente distintos
 
 ### HISTORICAL
@@ -44,7 +46,11 @@ A interface não enumera atores apenas porque eles existem em `actors.csv`. Ela 
 
 Assim, um ator ainda `UNESTABLISHED` permanece invisível. Em Calecute, `MERCHANT_CONTACT` pode tornar visível a comunidade mercantil muçulmana/pardesi sem revelar automaticamente a autoridade do Samudri Raja. A negociação de acesso pode registrar contato com a autoridade sem tornar a comunidade mercantil conhecida por esse simples fato.
 
-A seção é informativa: mostrar um ator contatado não concede preço melhor, crédito, acesso adicional, influência, amizade ou hostilidade. Esses efeitos não fazem parte da v0.1.
+Na campanha histórica, `HistoricalCampaignPrototype` pode exibir `Contatar autoridade local documentada` quando o domínio encontra uma associação `AUTHORITY` válida para o nó/período e o ator ainda está `UNESTABLISHED`. O botão deliberadamente não revela o nome do ator antes do contato. A ação chama `RelationshipSessionModel.contact_authority()`; a UI não cria ator, não resolve sucesso e não concede acesso por conta própria.
+
+Depois do contato, o ator pode aparecer em `Relações estabelecidas`. Em Melinde, o domínio passa a poder atribuir ao personagem o piloto guzerate historicamente documentado. A interface apenas reflete essa disponibilidade; não cria bônus de velocidade, segurança, consumo ou desgaste.
+
+A relação continua sem alterar preço, crédito, acesso adicional, amizade ou hostilidade por simples existência.
 
 ## Informação
 
@@ -76,7 +82,7 @@ A costa real permanece na ferramenta cartográfica de referência separada em `t
 
 O painel consulta `GameSessionModel.service_quote()` para provisões e reparo e mantém `UNKNOWN`, `NONE`, `LOW`, `MEDIUM` e `HIGH` distintos.
 
-`Reabastecer +30` solicita 30 dias-equivalentes e `Reparar +20` solicita 20 pontos abstratos de condição. Esses números são parâmetros de simulação. Em uma escala guiada, o tempo dessas ações — assim como informação e negociação — conta contra o mesmo intervalo até a partida documentada.
+`Reabastecer +30` solicita 30 dias-equivalentes e `Reparar +20` solicita 20 pontos abstratos de condição. Esses números são parâmetros de simulação. Em uma escala guiada, o tempo dessas ações — assim como informação, negociação e contato relacional — conta contra o mesmo intervalo até a partida documentada.
 
 O mercado usa `GameSessionModel.market_view()`. Se `market_knowledge < OPERATIONAL`, a cesta permanece oculta. Se o conhecimento é operacional mas o acesso não está concedido, a cesta pode ser lida e a operação fica bloqueada. Nós logísticos com `market_scale=NONE` não recebem mercadorias apenas por terem sido escalas da expedição.
 
@@ -84,7 +90,9 @@ O mercado usa `GameSessionModel.market_view()`. Se `market_knowledge < OPERATION
 
 Cada rota de saída é planejada pelo domínio. O painel exibe `OWN_KNOWLEDGE`, `PILOT`, `FLEET_COMMAND` ou bloqueio.
 
-Quando existe piloto documentado para porto, período e rota, a interface o fornece ao plano antes de recorrer ao comando institucional. Isso preserva o caso Melinde–Calecute de 1498. Uma consulta prévia ao piloto não substitui esse papel operacional: ela só pode ensinar a rota até `PARTIAL`.
+A campanha histórica distingue a disponibilidade documentada do piloto de sua atribuição ao personagem. Em Melinde, `TravelModel` pode confirmar que o piloto guzerate está historicamente disponível para rota/período, mas `HistoricalCampaignModel.recommended_pilot_id()` só o fornece à camada pessoal depois do contato com a autoridade documentada que o enviou. Sem esse contato, `FLEET_COMMAND` continua sendo uma base institucional separada e pode permanecer a base da viagem.
+
+Uma consulta prévia ao piloto não substitui esse papel operacional: ela só pode ensinar a rota até `PARTIAL`.
 
 Em `GUIDED`, uma rota de saída é bloqueada por `HISTORICAL_STOP_NOT_RELEASED` enquanto a data estiver antes da partida da escala ativa. Se o jogador permanece além da partida e depois navega, o domínio muda para `COUNTERFACTUAL`; a interface exibe essa condição e não força novas esperas históricas.
 
@@ -95,6 +103,7 @@ A interface não apresenta calmaria, mau tempo ou avaria genérica como fato his
 ## Interação
 
 - `Negociar acesso (Nd)` aparece somente onde o gate institucional é negociável;
+- `Contatar autoridade local documentada` aparece na campanha somente quando há autoridade normalizada ainda não contatada;
 - `Ouvir rumor`, `Falar mercador` e `Consultar piloto` executam aquisição ativa de informação sem mostrar o alvo previamente;
 - relações já estabelecidas aparecem somente depois do contato correspondente;
 - `Reabastecer +30` e `Reparar +20` acionam serviços do porto atual;
@@ -102,16 +111,17 @@ A interface não apresenta calmaria, mau tempo ou avaria genérica como fato his
 - clique em mercadoria, depois `Comprar 1` ou `Vender 1` quando o mercado estiver acionável;
 - clique em rota ou destino conectado e use `Executar viagem`;
 - `R` reinicia;
-- `Tab` alterna `HISTORICAL`/`TECHNICAL`;
+- `Tab` alterna `HISTORICAL`/`TECHNICAL` no protótipo-base;
 - `Esc` encerra.
 
 ## Inspeção visual e teste reprodutível
 
-As duas telas são renderizadas no CI:
+As telas-base e o smoke final da campanha são renderizados no CI:
 
 ```bash
 SDL_VIDEODRIVER=dummy python prototype/game.py --scenario HISTORICAL --output /tmp/game-historical.png
 SDL_VIDEODRIVER=dummy python prototype/game.py --scenario TECHNICAL --output /tmp/game-technical.png
+SDL_VIDEODRIVER=dummy python prototype/historical_campaign.py --campaign-smoke --output /tmp/campaign-calicut.png
 ```
 
-O GitHub Actions executa os smoke tests e publica as capturas como artefato para inspeção visual. Além disso, testes específicos verificam o não vazamento de atores `UNESTABLISHED` e a ausência de sobreposição entre rótulos cartográficos nos dois cenários padrão.
+O GitHub Actions executa os smoke tests e publica as capturas como artefato para inspeção visual. Além disso, testes específicos verificam o não vazamento de atores `UNESTABLISHED`, a separação entre contato e acesso, a atribuição relacional do piloto e a ausência de sobreposição entre rótulos cartográficos nos cenários padrão.
