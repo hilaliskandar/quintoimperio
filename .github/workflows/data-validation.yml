@@ -57,6 +57,13 @@ jobs:
           python prototype/game_m5.py --campaign-smoke --output /tmp/quintoimperio-interface-v02-calicut.png
           test -s /tmp/quintoimperio-interface-v02.png
           test -s /tmp/quintoimperio-interface-v02-calicut.png
+      - name: Smoke-test persistence M6
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          python prototype/game_m6.py --roundtrip-smoke --save-path /tmp/quintoimperio-save.json --output /tmp/quintoimperio-interface-m6.png
+          test -s /tmp/quintoimperio-save.json
+          test -s /tmp/quintoimperio-interface-m6.png
       - name: Publish playable interface screenshots
         uses: actions/upload-artifact@v4
         with:
@@ -67,6 +74,7 @@ jobs:
             /tmp/quintoimperio-campaign-calicut.png
             /tmp/quintoimperio-interface-v02.png
             /tmp/quintoimperio-interface-v02-calicut.png
+            /tmp/quintoimperio-interface-m6.png
           if-no-files-found: error
       - name: Smoke-test coordinate map
         env:
