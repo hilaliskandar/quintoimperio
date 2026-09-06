@@ -36,7 +36,7 @@ class LogisticsPlanningTests(unittest.TestCase):
         state = self.model.initial_playable_state()
         result = self.model.reprovision(state, 30.0)
         self.assertTrue(result.executed)
-        self.assertEqual(result.days_spent, 1)
+        self.assertEqual(result.service_result.days_spent, 1)
         self.assertEqual(result.state_after.vessel.clock.current_date, date(1497, 7, 7))
         self.assertGreater(result.state_after.vessel.provision_days, state.vessel.provision_days)
         self.assertTrue(self.model.in_predeparture_phase(result.state_after))
