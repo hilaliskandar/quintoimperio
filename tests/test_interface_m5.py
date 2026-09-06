@@ -1,6 +1,12 @@
+import sys
 import unittest
+from pathlib import Path
 
-from prototype.game_m5 import M5HistoricalCampaignPrototype
+PROTOTYPE_DIR = Path(__file__).resolve().parents[1] / "prototype"
+if str(PROTOTYPE_DIR) not in sys.path:
+    sys.path.insert(0, str(PROTOTYPE_DIR))
+
+from game_m5 import M5HistoricalCampaignPrototype
 
 
 class InterfaceM5Tests(unittest.TestCase):
