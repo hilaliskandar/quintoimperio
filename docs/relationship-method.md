@@ -1,14 +1,14 @@
-# Método de relações por atores v0.1
+# Método de relações por atores v0.2
 
 ## Objetivo
 
-Evitar uma reputação global abstrata e começar por atores historicamente identificáveis. A camada v0.1 separa a existência histórica do ator de qualquer estado relacional do personagem.
+Evitar uma reputação global abstrata e modelar apenas relações com atores historicamente identificáveis. `data/actors.csv` registra atores/comunidades sustentados pelo corpus; `data/node_actors.csv` associa cada ator a um nó, papel e período. `RelationshipModel` consulta essas associações e nunca fabrica uma autoridade ou comunidade mercantil para preencher lacunas de jogabilidade.
 
-`data/actors.csv` registra atores/comunidades sustentados pelo corpus. `data/node_actors.csv` associa cada ator a um nó, papel e período. `RelationshipModel` apenas consulta essas associações; ele não fabrica uma autoridade ou comunidade mercantil para preencher lacunas de jogabilidade.
+A v0.2 acrescenta ao registro de contato uma consequência local mínima necessária ao MVP, sem transformar relação em pontuação, desconto, crédito ou bônus genérico.
 
 ## Primeiro recorte histórico
 
-A base inicial contém três atores:
+A base contém três atores:
 
 - a autoridade institucional do Samudri Raja de Calecute;
 - os mercadores muçulmanos/pardesi de Calecute como comunidade mercantil agregada;
@@ -20,48 +20,83 @@ A comunidade mercantil de Calecute é deliberadamente agregada apenas no nível 
 
 ## Estados relacionais
 
-A v0.1 define somente:
+A v0.2 continua definindo somente:
 
 - `UNESTABLISHED`: nenhuma interação explícita do personagem com aquele ator foi registrada pelo loop;
 - `CONTACTED`: ocorreu uma interação explícita que pode ser associada àquele ator.
 
-Os valores internos do `IntEnum` servem apenas à implementação. Eles não são pontos de reputação. Não existem ainda `+10`, confiança percentual, amizade, hostilidade ou alinhamento político.
+Não se acrescenta `COOPERATIVE`, confiança, hostilidade ou reputação porque nenhum desses estados é necessário para o efeito mínimo deste gate. Os valores internos do `IntEnum` são apenas implementação, não pontos de reputação.
+
+## Contato explícito com autoridade
+
+`RelationshipSessionModel.contact_authority()` cria uma ação relacional própria para a autoridade documentada do nó/período atual. Quando não há `AUTHORITY` normalizada, a ação é bloqueada por `NO_DOCUMENTED_AUTHORITY_ACTOR` e nenhum ator genérico é criado.
+
+O contato consome um dia segundo `simulation/relationship_rules.csv`. Esse número é parâmetro de jogo e não duração histórica de audiência, negociação ou cerimônia.
+
+A ação altera somente:
+
+- o estado daquele ator para `CONTACTED`;
+- o `GameClock` pelo custo temporal de simulação.
+
+Ela não altera acesso ao porto, conhecimento, preços, capital, carga, provisões, condição do navio, informação ou eventos.
+
+A negociação de acesso existente continua sendo uma ação institucional separada. Assim, contatar a autoridade de Melinde não equivale a obter autorização comercial, e negociar acesso não é redefinido como diplomacia histórica detalhada.
+
+## Consequência local em Melinde
+
+A única consequência relacional nova da v0.2 é a atribuição do piloto guzerate ao personagem.
+
+`data/pilots.csv` registra que o piloto foi enviado pelo governante de Melinde. `simulation/relationship_rules.csv` traduz esse vínculo em uma regra de jogabilidade: `PIL_MAL_GUJ_1498` só é recomendado/atribuído ao personagem depois que `ACT_MAL_RULER_1498` está em `CONTACTED`.
+
+Essa regra não apaga a disponibilidade histórica do piloto para a armada. `TravelModel.pilot_can_guide()` continua respondendo à evidência histórica de período, nó e rota. A nova camada distingue duas perguntas:
+
+1. o piloto historicamente podia guiar aquela rota naquele momento?
+2. o personagem estabeleceu a relação necessária para que o piloto seja atribuído à sua camada pessoal de navegação?
+
+Sem o contato, a participação na armada pode continuar oferecendo `FLEET_COMMAND`; isso permanece um estado institucional separado e não converte o piloto em conhecimento pessoal. Depois do contato, `HistoricalCampaignModel.recommended_pilot_id()` pode selecionar o piloto e a perna Melinde–Calecute passa a registrar `NavigationBasis.PILOT` para o personagem.
+
+O piloto não recebe bônus quantitativo de velocidade, segurança, consumo, desgaste ou êxito.
 
 ## Separação entre sistemas
 
-Relação com ator é distinta de:
+Relação com ator permanece distinta de:
 
 - conhecimento geográfico, náutico, comercial ou político;
 - acesso institucional ao porto;
 - participação em armada;
-- disponibilidade de intermediário;
-- competência de piloto;
-- preço ou disponibilidade de mercadoria.
+- disponibilidade histórica de piloto;
+- preço ou disponibilidade de mercadoria;
+- capital, crédito e capacidade de carga.
 
-A integração v0.1 registra somente contatos que podem ser associados de modo não ambíguo a um ator documentado. Uma negociação de acesso em Calecute muda a autoridade do Samudri Raja de `UNESTABLISHED` para `CONTACTED`. Uma ação `MERCHANT_CONTACT` em Calecute faz o mesmo para a comunidade mercantil muçulmana/pardesi documentada. `RUMOR` não cria contato com essa comunidade.
-
-Esse registro, por si só, não concede desconto, crédito, informação adicional, acesso adicional, bônus de negociação ou sucesso diplomático. O gate de acesso continua sendo resolvido por `AccessModel`; a relação apenas registra que a interação ocorreu com um ator historicamente normalizado.
+Uma ação `MERCHANT_CONTACT` em Calecute continua registrando contato com a comunidade mercantil documentada quando aplicável. `RUMOR` não cria esse contato. A negociação de acesso continua podendo registrar contato com autoridade quando a interação pode ser associada de modo não ambíguo, mas o novo `contact_authority()` permite estabelecer a relação sem confundir isso com acesso comercial.
 
 ## Política contra atores inventados
 
-`RelationshipModel.actor_for_role()` retorna `None` quando a base não possui ator para aquele nó/papel/período. Isso é intencional. `broker_availability=HIGH`, por exemplo, indica possibilidade estrutural de intermediação, mas não autoriza criar silenciosamente uma comunidade histórica nomeada.
+`RelationshipModel.actor_for_role()` retorna `None` quando a base não possui ator para o nó/papel/período. Isso é intencional. `broker_availability=HIGH`, por exemplo, não autoriza criar silenciosamente uma comunidade histórica nomeada.
 
-Aden permanece sem ator normalizado neste primeiro gate, embora seja um porto conhecido do modelo. Uma negociação genérica de acesso em Aden pode funcionar segundo `AccessModel`, mas não cria relação com uma autoridade fictícia. A lacuna deve ser preenchida por pesquisa histórica, não por uma entidade genérica criada para completar a interface.
+Aden permanece sem ator normalizado neste gate. Uma negociação genérica de acesso em Aden pode funcionar segundo `AccessModel`, mas `contact_authority()` não cria relação fictícia. A lacuna deve ser preenchida por pesquisa histórica.
 
 ## Temporalidade
 
-Os vínculos respeitam `period_from` e `period_to`. A autoridade local de Melinde foi normalizada apenas para 1498 porque o primeiro uso jogável decorre diretamente do episódio documentado da armada de Gama. O modelo não estende silenciosamente esse registro para 1499 ou décadas posteriores.
+Os vínculos respeitam `period_from` e `period_to`. A autoridade local de Melinde está normalizada apenas para 1498 porque o uso jogável decorre diretamente do episódio documentado da armada de Gama. O modelo não estende silenciosamente esse ator ou o efeito do piloto a outros anos.
 
 ## Interface e não vazamento
 
-A interface consulta `GameSessionModel.contacted_relationships()` e mostra apenas atores no estado `CONTACTED`. A existência de uma linha em `actors.csv` não é suficiente para revelar o ator ao jogador. Assim, a UI não funciona como fonte externa de informação histórica que o personagem ainda não obteve pela sessão.
-
-Os estados `HISTORICAL` e `TECHNICAL` iniciam sem relações estabelecidas. Depois de uma interação válida, somente o ator efetivamente contatado aparece na seção `Relações estabelecidas`.
+A interface continua mostrando somente relações já estabelecidas. Na campanha histórica, quando existe uma autoridade normalizada ainda não contatada, uma ação explícita de contato pode ser exibida. O nome do ator não é revelado no botão antes da interação; a interface mostra apenas que há uma “autoridade local documentada”. Depois do contato, o ator pode aparecer em `Relações estabelecidas`.
 
 ## Validação
 
-Os testes cobrem unicidade e proveniência de atores, integridade dos vínculos nó–ator, limites temporais, ausência de ator genérico em porto não mapeado, separação entre autoridade e comunidade mercantil em Calecute, efeitos de negociação e `MERCHANT_CONTACT`, não criação por rumor e ocultação de atores ainda não contatados na interface.
+Os testes cobrem:
+
+- contato alterando somente relação e relógio;
+- acesso comercial permanecendo inalterado;
+- ausência de ação relacional onde não há autoridade normalizada;
+- idempotência de contato repetido;
+- distinção entre disponibilidade histórica do piloto e atribuição ao personagem;
+- piloto de Melinde indisponível ao personagem antes do contato e disponível depois;
+- campanha Lisboa–Calecute usando o piloto após a interação explícita;
+- manutenção de apenas `UNESTABLISHED` e `CONTACTED` como estados necessários neste gate.
 
 ## Próximo gate
 
-A v0.1 termina em `CONTACTED`. Estados mais ricos — confiança, hostilidade, reputação, privilégios, crédito, descontos ou influência política — só devem ser introduzidos depois de definir quais atores e relações o corpus sustenta e quais efeitos pertencem apenas à simulação. Nenhuma dessas dimensões deve ser reduzida automaticamente a uma pontuação global.
+Estados mais ricos — confiança, hostilidade, privilégios, crédito, descontos ou influência política — continuam fora do MVP enquanto não forem necessários para uma decisão jogável específica e sustentados por regras explícitas. O próximo gate funcional é tornar o comércio da campanha operacional sem usar relações como modificadores genéricos de preço.
