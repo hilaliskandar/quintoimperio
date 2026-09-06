@@ -1,8 +1,8 @@
 """Orquestração mínima da campanha histórica Lisboa–Calecute.
 
-Esta camada compõe ``GameSessionModel`` sem alterar dados históricos. Ela usa as
-datas de partida já registradas em ``voyage_observations.csv`` como referência
-de cronologia quando a sessão está em ``ChronologyMode.GUIDED``.
+Esta camada compõe ``RelationshipSessionModel`` sem alterar dados históricos. Ela
+usa as datas de partida já registradas em ``voyage_observations.csv`` como
+referência de cronologia quando a sessão está em ``ChronologyMode.GUIDED``.
 
 Uma espera guiada fora de ``expedition_stops.csv`` apenas sincroniza o relógio
 com a próxima partida observada. Ela não cria uma nova permanência histórica,
@@ -16,7 +16,8 @@ from datetime import date
 from pathlib import Path
 
 from .expedition import ExpeditionLeg
-from .session import GameSessionModel, GameSessionState, SessionWaitResult
+from .relationship_session import RelationshipSessionModel
+from .session import GameSessionState, SessionWaitResult
 from .stop import ChronologyMode
 from .travel import VoyagePlan
 
@@ -25,10 +26,10 @@ class HistoricalCampaignModel:
     """Fachada da sessão para a vertical slice histórica de 1497–1498."""
 
     def __init__(self, root: Path | None = None) -> None:
-        self.session = GameSessionModel(root)
+        self.session = RelationshipSessionModel(root)
 
     def __getattr__(self, name: str):
-        """Delega os demais sistemas ao ``GameSessionModel`` composto."""
+        """Delega os demais sistemas ao modelo de sessão composto."""
         return getattr(self.session, name)
 
     def current_leg(self, state: GameSessionState) -> ExpeditionLeg | None:
@@ -127,15 +128,8 @@ class HistoricalCampaignModel:
     def recommended_pilot_id(
         self, state: GameSessionState, route_id: str
     ) -> str | None:
-        """Retorna piloto documentado elegível, sem criar bônus quantitativo."""
-        origin = state.vessel.location_node
-        on_date = state.vessel.clock.current_date
-        for pilot_id in sorted(self.session.travel.pilots):
-            if self.session.travel.pilot_can_guide(
-                pilot_id, route_id, on_date, origin
-            ):
-                return pilot_id
-        return None
+        """Retorna piloto elegível e relacionalmente disponível ao personagem."""
+        return self.session.recommended_pilot_id(state, route_id)
 
     def plan_voyage(
         self,
@@ -167,7 +161,7 @@ class HistoricalCampaignModel:
         return plan
 
     def plan_current_leg(self, state: GameSessionState, *, seed: int = 0) -> VoyagePlan:
-        """Planeja a perna ativa, usando piloto documentado quando disponível."""
+        """Planeja a perna ativa e só atribui piloto após o requisito relacional."""
         leg = self.current_leg(state)
         if leg is None:
             raise ValueError("Nenhuma perna de expedição ativa")

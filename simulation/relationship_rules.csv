@@ -1,0 +1,3 @@
+rule_type,key,value,notes
+CONTACT_TIME_DAYS,AUTHORITY,1,"Custo temporal abstrato para estabelecer contato com autoridade local documentada. Parâmetro de simulação; não representa duração histórica de audiência ou negociação."
+PILOT_REQUIRES_ACTOR_CONTACT,PIL_MAL_GUJ_1498,ACT_MAL_RULER_1498,"Para atribuir ao personagem o piloto guzerate de Melinde, exige-se contato prévio com a autoridade local que a fonte registra como responsável por fornecê-lo. A regra não altera a disponibilidade histórica do piloto para a armada."

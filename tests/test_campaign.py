@@ -114,6 +114,16 @@ class HistoricalCampaignTests(unittest.TestCase):
         seen_routes.append(plan.route_id)
         self.assertEqual(state.vessel.clock.current_date, date(1498, 4, 14))
 
+        # O piloto é historicamente disponível na armada, mas sua atribuição ao
+        # personagem exige contato explícito com a autoridade que o forneceu.
+        self.assertIsNone(self.model.recommended_pilot_id(state, "R_MAL_CAL"))
+        access_before = self.model.access_status(state, "MAL")
+        contacted = self.model.contact_authority(state)
+        self.assertTrue(contacted.executed)
+        state = contacted.state_after
+        self.assertEqual(state.vessel.clock.current_date, date(1498, 4, 15))
+        self.assertEqual(self.model.access_status(state, "MAL"), access_before)
+
         state = self.model.wait_for_guided_departure(state).state_after
         self.assertEqual(state.vessel.clock.current_date, date(1498, 4, 24))
         final_plan = self.model.plan_current_leg(state, seed=1498)
@@ -149,6 +159,41 @@ class HistoricalCampaignTests(unittest.TestCase):
             AccessStatus.NEGOTIATION_REQUIRED,
         )
 
+    def test_guided_wait_changes_only_clock(self):
+        state = self.model.initial_state(
+            location_node="MOZ",
+            start_date=date(1498, 3, 2),
+            provision_days=77.0,
+            condition=91.0,
+            capital_index=83.0,
+            active_expedition_id="EXP_GAMA_1497",
+            expedition_leg_sequence=8,
+            chronology_mode=ChronologyMode.GUIDED,
+        )
+        before_commerce = state.commerce
+        before_nodes = state.node_knowledge
+        before_routes = state.route_knowledge
+        before_access = state.access_records
+        before_relationships = state.relationship_records
+        before_information = state.information_history
+        before_events = state.voyage_event_history
+        before_provisions = state.vessel.provision_days
+        before_condition = state.vessel.condition
+
+        waited = self.model.wait_for_guided_departure(state)
+        self.assertTrue(waited.executed)
+        after = waited.state_after
+        self.assertEqual(after.vessel.clock.current_date, date(1498, 3, 29))
+        self.assertEqual(after.vessel.provision_days, before_provisions)
+        self.assertEqual(after.vessel.condition, before_condition)
+        self.assertEqual(after.commerce, before_commerce)
+        self.assertEqual(after.node_knowledge, before_nodes)
+        self.assertEqual(after.route_knowledge, before_routes)
+        self.assertEqual(after.access_records, before_access)
+        self.assertEqual(after.relationship_records, before_relationships)
+        self.assertEqual(after.information_history, before_information)
+        self.assertEqual(after.voyage_event_history, before_events)
+
     def test_guided_departure_blocks_early_departure_without_normalized_stop(self):
         state = self.model.initial_state(
             location_node="MOZ",
@@ -168,16 +213,6 @@ class HistoricalCampaignTests(unittest.TestCase):
         waited = self.model.wait_for_guided_departure(state)
         self.assertTrue(waited.executed)
         self.assertEqual(waited.days_waited, 27)
-        self.assertEqual(waited.state_after.vessel.location_node, state.vessel.location_node)
-        self.assertEqual(waited.state_after.vessel.provision_days, state.vessel.provision_days)
-        self.assertEqual(waited.state_after.vessel.condition, state.vessel.condition)
-        self.assertEqual(waited.state_after.commerce, state.commerce)
-        self.assertEqual(waited.state_after.node_knowledge, state.node_knowledge)
-        self.assertEqual(waited.state_after.route_knowledge, state.route_knowledge)
-        self.assertEqual(waited.state_after.access_records, state.access_records)
-        self.assertEqual(waited.state_after.relationship_records, state.relationship_records)
-        self.assertEqual(waited.state_after.information_history, state.information_history)
-        self.assertEqual(waited.state_after.voyage_event_history, state.voyage_event_history)
         plan = self.model.plan_current_leg(waited.state_after, seed=1498)
         self.assertTrue(plan.feasible)
         self.assertTrue(plan.events_suppressed_by_observation)

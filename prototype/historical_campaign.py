@@ -5,6 +5,10 @@ Reutiliza a interface Pygame v0.1 e troca apenas a orquestração da sessão pel
 fachada ``HistoricalCampaignModel``. A espera em Moçambique, Mombaça e Melinde
 serve somente para alinhar o relógio às partidas já observadas; esses nós não
 são promovidos a novas permanências em ``expedition_stops.csv``.
+
+A camada relacional do MVP expõe contato explícito com autoridade documentada.
+Esse contato não concede acesso comercial nem benefício econômico; em Melinde,
+ele torna o piloto guzerate documentado atribuível ao personagem.
 """
 
 from __future__ import annotations
@@ -26,7 +30,11 @@ from game import (
     ClickTarget,
     PlayablePrototype,
 )
-from quintoimperio.domain import ChronologyMode, HistoricalCampaignModel
+from quintoimperio.domain import (
+    ChronologyMode,
+    HistoricalCampaignModel,
+    RelationshipStatus,
+)
 
 
 class HistoricalCampaignPrototype(PlayablePrototype):
@@ -58,6 +66,21 @@ class HistoricalCampaignPrototype(PlayablePrototype):
         else:
             self.message = "Espera indisponível: " + ", ".join(result.reasons)
 
+    def contact_authority_action(self) -> None:
+        result = self.session.contact_authority(self.state)
+        if not result.executed:
+            self.message = "Contato indisponível: " + ", ".join(result.reasons)
+            return
+        if result.actor is None:
+            raise RuntimeError(
+                "Contato relacional foi executado sem autoridade histórica normalizada"
+            )
+        self.state = result.state_after
+        self.message = (
+            f"Contato estabelecido: {result.actor.label}; "
+            f"+{result.days_spent} dia(s). Acesso comercial não foi alterado."
+        )
+
     def _guided_wait_overlay(self, surface: pygame.Surface) -> None:
         if self.state.chronology_mode is not ChronologyMode.GUIDED:
             return
@@ -79,9 +102,43 @@ class HistoricalCampaignPrototype(PlayablePrototype):
         surface.blit(font.render(text, True, INK), (rect.x + 8, rect.y + 9))
         self.targets.append(ClickTarget(rect, "action", "wait_stop"))
 
+    def _authority_contact_overlay(self, surface: pygame.Surface) -> None:
+        node_id = self.state.vessel.location_node
+        on_date = self.state.vessel.clock.current_date
+        authority = self.session.relationship.actor_for_role(
+            node_id, on_date, "AUTHORITY"
+        )
+        if authority is None:
+            return
+        if (
+            self.session.relationship_status(self.state, authority.actor_id)
+            is RelationshipStatus.CONTACTED
+        ):
+            return
+
+        rect = pygame.Rect(MAP_RECT.left + 12, MAP_RECT.bottom - 88, 345, 34)
+        pygame.draw.rect(surface, BUTTON, rect, border_radius=3)
+        pygame.draw.rect(surface, LINE, rect, width=1, border_radius=3)
+        font = pygame.font.SysFont("monospace", 12)
+        text = "Contatar autoridade local documentada"
+        surface.blit(font.render(text, True, INK), (rect.x + 8, rect.y + 9))
+        self.targets.append(ClickTarget(rect, "action", "contact_authority"))
+
     def render(self, surface: pygame.Surface) -> None:
         super().render(surface)
+        self._authority_contact_overlay(surface)
         self._guided_wait_overlay(surface)
+
+    def handle_click(self, pos: tuple[int, int]) -> None:
+        for target in reversed(self.targets):
+            if (
+                target.rect.collidepoint(pos)
+                and target.kind == "action"
+                and target.value == "contact_authority"
+            ):
+                self.contact_authority_action()
+                return
+        super().handle_click(pos)
 
     def _travel(self, route_id: str) -> None:
         self.selected_route = route_id
@@ -124,7 +181,16 @@ class HistoricalCampaignPrototype(PlayablePrototype):
         self._travel("R_MOZ_MOM")
         self._wait()
         self._travel("R_MOM_MAL")
+
+        # O governante de Melinde é o ator documentado associado ao fornecimento
+        # do piloto. O contato é uma ação relacional distinta do acesso ao porto.
+        self.contact_authority_action()
+        if "Contato estabelecido" not in self.message:
+            raise RuntimeError(f"Contato de Melinde não foi estabelecido: {self.message}")
         self._wait()
+        pilot_id = self.session.recommended_pilot_id(self.state, "R_MAL_CAL")
+        if pilot_id != "PIL_MAL_GUJ_1498":
+            raise RuntimeError("Piloto guzerate não ficou disponível após o contato em Melinde")
         self._travel("R_MAL_CAL")
 
         if self.state.vessel.location_node != "CAL":
@@ -133,7 +199,7 @@ class HistoricalCampaignPrototype(PlayablePrototype):
             raise RuntimeError("Expedição permaneceu ativa após a décima perna")
         self.message = (
             f"Smoke concluído: Calecute em {self.state.vessel.clock.current_date}; "
-            f"cronologia {self.state.chronology_mode.value}."
+            f"cronologia {self.state.chronology_mode.value}; piloto {pilot_id}."
         )
 
 

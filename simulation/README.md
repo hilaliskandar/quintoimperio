@@ -2,7 +2,7 @@
 
 Este diretório contém **parâmetros de balanceamento**, não dados históricos.
 
-Os arquivos em `data/` registram evidência histórica e inferências explicitamente marcadas. Os arquivos em `simulation/` traduzem essa estrutura em índices e regras para testar economia, navegação, conhecimento, informação, acesso institucional, viagem, eventos marítimos, serviços portuários, comércio e aprendizagem da sessão. Nenhum número deste diretório deve ser citado como preço, produção, alíquota, frete, velocidade, consumo, desgaste, capacidade portuária, margem comercial, probabilidade histórica, frequência histórica de avarias, duração histórica de uma conversa ou duração histórica de uma negociação.
+Os arquivos em `data/` registram evidência histórica e inferências explicitamente marcadas. Os arquivos em `simulation/` traduzem essa estrutura em índices e regras para testar economia, navegação, conhecimento, informação, acesso institucional, relações, viagem, eventos marítimos, serviços portuários, comércio e aprendizagem da sessão. Nenhum número deste diretório deve ser citado como preço, produção, alíquota, frete, velocidade, consumo, desgaste, capacidade portuária, margem comercial, probabilidade histórica, frequência histórica de avarias, duração histórica de uma conversa ou duração histórica de uma negociação.
 
 ## Escalas
 
@@ -23,6 +23,7 @@ Capital, capacidade de carga e quantidades comerciais também são índices abst
 - `route_knowledge_rules.csv`: conversão separada dos estados textuais de `routes.csv` em conhecimento náutico de cada rota. Conhecer um nó não habilita automaticamente suas conexões.
 - `information_rules.csv`: custos de tempo e limites mínimos dos canais `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`. São escolhas de jogabilidade e não registros de conversas históricas.
 - `access_rules.csv`: tradução dos `access_regime` de `nodes.csv` em `OPEN`, `NEGOTIATION_REQUIRED`, `RESTRICTED` ou `NONCOMMERCIAL`, além do tempo abstrato de negociação. Não define impostos, valor de presentes ou protocolo diplomático histórico.
+- `relationship_rules.csv`: custo temporal abstrato de contato com autoridade documentada e requisitos relacionais específicos para atribuição de intermediários/pilotos ao personagem. Não define duração histórica de audiência nem pontuação de confiança.
 - `session_rules.csv`: níveis mínimos de conhecimento adquiridos após chegar fisicamente a um porto e após completar uma rota. São regras de jogabilidade, não medições históricas.
 - `travel_rules.csv`: consumo em dias-equivalentes, desgaste abstrato por tipo de rota e condição mínima de partida. Esses valores existem somente para fazer o primeiro loop de viagem funcionar e permanecem separados da evidência histórica.
 - `voyage_event_rules.csv`: probabilidades e limites de efeitos para calmaria, mau tempo, avaria menor de aparelho e perturbação de junho/julho. Todos os eventos são hipóteses `SIMULATION`, não incidentes históricos documentados.
@@ -44,6 +45,8 @@ No comércio, ausência de uma relação porto–mercadoria em `data/node_goods.
 Na aquisição de informação, oportunidades só apontam para nós e rotas já documentados. `RUMOR` não ultrapassa `RUMORED`, contato mercantil não produz navegação operacional e `PILOT_CONSULTATION` não ultrapassa `PARTIAL`. O estado de conhecimento da Coroa nunca é copiado silenciosamente para o personagem. Uma interação custa um dia de simulação na v0.1 e pode consumir parte de uma permanência histórica, mas não concede recursos materiais.
 
 No acesso institucional, `FOREIGN_NEGOTIATED` exige uma ação explícita antes da compra/venda. O custo de um dia é apenas uma regra de loop; não representa uma audiência de duração conhecida. A v0.1 não cobra taxas, não avalia presentes, não atribui probabilidade de êxito diplomático e não converte monopólio régio em acesso comum. Ancoradouros e marcos náuticos continuam não comerciais.
+
+Nas relações, `CONTACT_TIME_DAYS=1` é apenas um custo de loop para tornar o contato uma escolha temporal. `PILOT_REQUIRES_ACTOR_CONTACT` não afirma que exista uma medida histórica de “confiança”: apenas exige que o personagem tenha estabelecido contato com o ator documentado antes de receber, em sua própria camada de navegação, um piloto que a fonte associa àquela autoridade. A disponibilidade histórica do piloto para a armada continua sendo lida em `data/pilots.csv` e `data/pilot_routes.csv`.
 
 Nos eventos marítimos, probabilidades e intensidades pertencem inteiramente à simulação. Uma observação histórica exata de rota e data pode suprimir a camada aleatória quando o plano deve preservar a cronologia documentada. Fora desse caso, o sistema seleciona no máximo um evento por viagem e limita seus efeitos a dias adicionais, provisões correspondentes e condição abstrata. Nenhum evento genérico implica morte, perda de carga, combate ou naufrágio.
 
