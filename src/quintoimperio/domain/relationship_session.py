@@ -64,6 +64,23 @@ class RelationshipSessionModel(GameSessionModel):
             )
         return value
 
+    def _optional_actor_rule(self, rule_type: str, key: str) -> str | None:
+        raw = self.relationship_rules.get((rule_type, key))
+        if raw is None:
+            return None
+        actor_id = raw.strip()
+        if not actor_id:
+            raise ValueError(
+                f"Regra relacional {rule_type}/{key} em {self.RULES_FILE} "
+                "deve referenciar um actor_id não vazio"
+            )
+        if actor_id not in self.relationship.actors:
+            raise KeyError(
+                f"Regra relacional {rule_type}/{key} em {self.RULES_FILE} "
+                f"referencia ator inexistente: {actor_id}"
+            )
+        return actor_id
+
     def contact_authority(self, state: GameSessionState) -> SessionRelationshipResult:
         """Estabelece contato com autoridade normalizada sem conceder outros efeitos.
 
@@ -126,8 +143,8 @@ class RelationshipSessionModel(GameSessionModel):
         if not self.travel.pilot_can_guide(pilot_id, route_id, on_date, origin):
             return False
 
-        required_actor = self.relationship_rules.get(
-            ("PILOT_REQUIRES_ACTOR_CONTACT", pilot_id)
+        required_actor = self._optional_actor_rule(
+            "PILOT_REQUIRES_ACTOR_CONTACT", pilot_id
         )
         if required_actor is None:
             return True
