@@ -3,6 +3,10 @@
 A disponibilidade histórica continua pertencendo a ``PortServiceModel``. Esta
 camada registra apenas o que o personagem já pode distinguir sobre essa
 evidência e nunca converte campo histórico vazio em disponibilidade simulada.
+
+A partir da v0.3, esta é também a fronteira jogável que impede antecipação do
+evento marítimo: o plano exibido ao jogador é convertido novamente ao cenário-
+base e a contingência é resolvida somente na execução.
 """
 
 from __future__ import annotations
@@ -223,6 +227,13 @@ class ServiceKnowledgeSessionModel(RelationshipSessionModel):
         result = super().repair(state, requested_points)
         return self._translate_indeterminate(state, result)
 
+    def plan_voyage(self, state: GameSessionState, route_id: str, **kwargs):
+        """Expõe somente o cenário-base; o evento específico permanece oculto."""
+        resolved_preview = super().plan_voyage(state, route_id, **kwargs)
+        return self.travel.defer_plan(state.vessel, resolved_preview)
+
     def execute_voyage(self, state: GameSessionState, plan):
-        after = super().execute_voyage(state, plan)
+        """Resolve o evento na confirmação e só então delega a execução da sessão."""
+        resolved = self.travel.resolve_voyage(state.vessel, plan)
+        after = super().execute_voyage(state, resolved)
         return self.observe_port_services(after, after.vessel.location_node)
