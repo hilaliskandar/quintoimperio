@@ -7,6 +7,7 @@ PROTOTYPE_DIR = Path(__file__).resolve().parents[1] / "prototype"
 if str(PROTOTYPE_DIR) not in sys.path:
     sys.path.insert(0, str(PROTOTYPE_DIR))
 
+from quintoimperio.domain import SAVE_SCHEMA_VERSION
 from game_m6 import M6HistoricalCampaignPrototype
 
 
@@ -33,7 +34,7 @@ class InterfaceM6Tests(unittest.TestCase):
             self.assertEqual(app.session_seed, 1777)
             self.assertIsNone(app.selected_route)
             self.assertIsNone(app.pending_travel_route)
-            self.assertIn("schema v1", app.message)
+            self.assertIn(f"schema v{SAVE_SCHEMA_VERSION}", app.message)
 
     def test_missing_slot_does_not_change_state(self):
         with tempfile.TemporaryDirectory() as directory:
