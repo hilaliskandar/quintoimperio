@@ -1,5 +1,7 @@
 rule_type,key,value,notes
 DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION,DEFAULT,50,"Dias-equivalentes abstratos que uma ação específica de permanência documentada pode acrescentar; parâmetro de SIMULATION, não quantidade histórica nem disponibilidade portuária genérica."
+DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION,SMI,5,"Limite abstrato da ação alimentar específica nos Ilhéus de Santa Maria, restrito ao trecho curto seguinte até Anjediva; parâmetro de SIMULATION, não quantidade histórica."
 DOCUMENTED_STOP_PROVISION_SERVICE_DAYS,DEFAULT,1,"Tempo abstrato consumido por uma ação de provisões durante permanência documental do retorno; parâmetro de SIMULATION."
+DOCUMENTED_STOP_PROVISION_SERVICE_DAYS,SMI,0,"Contato breve no mesmo dia documentado em Santa Maria; não acrescenta um dia inteiro e não transforma o marco náutico em escala portuária."
 DOCUMENTED_STOP_REPAIR_POINTS_PER_DAY,DEFAULT,5,"Pontos abstratos de condição por dia de ação específica de carena/reparo documentado; parâmetro de SIMULATION, não taxa histórica nem disponibilidade portuária genérica."
 DOCUMENTED_STOP_REPAIR_MAX_DAYS_PER_ACTION,DEFAULT,2,"Máximo de dias consumidos por uma ação específica de carena/reparo documental; parâmetro de SIMULATION."
