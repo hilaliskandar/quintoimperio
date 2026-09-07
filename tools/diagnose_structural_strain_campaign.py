@@ -12,14 +12,10 @@ import csv
 import json
 from pathlib import Path
 
-from quintoimperio.domain import CampaignProgressModel, HistoricalCampaignModel
+from quintoimperio.domain import HistoricalCampaignModel
 from quintoimperio.domain.risk_mitigation import secure_provision_reserve_for_voyage
 from quintoimperio.domain.voyage_event import VoyageEventType
-from simulate_player_archetype import (
-    ARCHETYPES,
-    apply_planning,
-    proactive_floor,
-)
+from simulate_player_archetype import ARCHETYPES, apply_planning, proactive_floor
 from simulate_synthetic_player import Metrics, RESOURCE_BLOCKERS, reprovision, wait_guided
 
 COMPETENT = (
@@ -51,23 +47,39 @@ def execute_leg(model, state, metrics, policy, seed):
             metrics.executed()
             pre_condition = state.vessel.condition
             route_id = plan.route_id
+            history_before = len(state.voyage_event_history)
+            departure_date = plan.departure_date
             if policy.secured_reserve_days > 0:
                 secured = min(policy.secured_reserve_days, state.vessel.provision_days)
                 prepared, resolved, _ = secure_provision_reserve_for_voyage(
                     model.session, state, plan, secured
                 )
                 state = model.execute_voyage(prepared, resolved)
-                plan = resolved
             else:
                 state = model.execute_voyage(state, plan)
+            resolved_events = state.voyage_event_history[history_before:]
             metrics.executed()
             metrics.voyage_actions += 1
             metrics.observe(state)
-            return state, plan, pre_condition, route_id, True
+            return (
+                state,
+                tuple(resolved_events),
+                pre_condition,
+                route_id,
+                departure_date,
+                True,
+            )
 
         metrics.blocked(plan.blockers)
         if recovery >= policy.max_recovery_steps:
-            return state, plan, state.vessel.condition, getattr(plan, "route_id", ""), False
+            return (
+                state,
+                (),
+                state.vessel.condition,
+                getattr(plan, "route_id", ""),
+                getattr(plan, "departure_date", state.vessel.clock.current_date),
+                False,
+            )
         if "HISTORICAL_DEPARTURE_NOT_REACHED" in plan.blockers:
             state, changed = wait_guided(model, state, metrics)
             recovery += 1
@@ -81,13 +93,19 @@ def execute_leg(model, state, metrics, policy, seed):
             recovery += 1
             if changed:
                 continue
-        return state, plan, state.vessel.condition, getattr(plan, "route_id", ""), False
+        return (
+            state,
+            (),
+            state.vessel.condition,
+            getattr(plan, "route_id", ""),
+            getattr(plan, "departure_date", state.vessel.clock.current_date),
+            False,
+        )
 
 
 def run_one(archetype: str, seed: int):
     policy = ARCHETYPES[archetype]
     model = HistoricalCampaignModel()
-    progress_model = CampaignProgressModel(model.session)
     state = model.initial_playable_state()
     metrics = Metrics(player_id=seed, profile=archetype, seed=seed, wave=17)
     metrics.observe(state)
@@ -104,18 +122,14 @@ def run_one(archetype: str, seed: int):
         ):
             state, _ = wait_guided(model, state, metrics)
 
-        state_after, plan, pre_condition, route_id, ok = execute_leg(
+        state_after, events, pre_condition, route_id, departure_date, ok = execute_leg(
             model, state, metrics, policy, seed
         )
         if not ok:
             break
 
         structural = next(
-            (
-                e
-                for e in plan.events
-                if e.event_type is VoyageEventType.STRUCTURAL_STRAIN
-            ),
+            (e for e in events if e.event_type is VoyageEventType.STRUCTURAL_STRAIN),
             None,
         )
         if structural is not None:
@@ -129,7 +143,7 @@ def run_one(archetype: str, seed: int):
                     "seed": seed,
                     "archetype": archetype,
                     "route_id": route_id,
-                    "departure_date": plan.departure_date.isoformat(),
+                    "departure_date": departure_date.isoformat(),
                     "condition_before": round(pre_condition, 4),
                     "condition_loss_event": round(structural.condition_loss, 4),
                     "condition_after": round(state_after.vessel.condition, 4),
@@ -150,8 +164,7 @@ def run_one(archetype: str, seed: int):
             if contacted.executed:
                 state = contacted.state_after
 
-    progress = progress_model.progress(state)
-    return rows, progress.completed, round(metrics.min_condition, 4)
+    return rows, state.vessel.location_node == "CAL", round(metrics.min_condition, 4)
 
 
 def main():
@@ -161,13 +174,13 @@ def main():
     campaigns = []
     for archetype in COMPETENT:
         for seed in range(args.seed_start, args.seed_start + args.seed_count):
-            rows, completed, min_condition = run_one(archetype, seed)
+            rows, reached_calicut, min_condition = run_one(archetype, seed)
             all_rows.extend(rows)
             campaigns.append(
                 {
                     "seed": seed,
                     "archetype": archetype,
-                    "completed": completed,
+                    "reached_calicut": reached_calicut,
                     "min_condition": min_condition,
                     "structural_events": len(rows),
                 }
@@ -184,13 +197,13 @@ def main():
         w.writerows(all_rows)
 
     affected_campaigns = sum(c["structural_events"] > 0 for c in campaigns)
-    completed = sum(c["completed"] for c in campaigns)
+    reached = sum(c["reached_calicut"] for c in campaigns)
     summary = {
         "seed_start": args.seed_start,
         "seed_count": args.seed_count,
         "archetypes": list(COMPETENT),
         "campaigns": len(campaigns),
-        "completed_campaigns": completed,
+        "campaigns_reaching_calicut": reached,
         "structural_events": len(all_rows),
         "campaigns_with_structural_event": affected_campaigns,
         "events_after_condition_below_40": sum(r["crossed_40"] for r in all_rows),
@@ -204,7 +217,7 @@ def main():
         subset = [c for c in campaigns if c["archetype"] == archetype]
         events = [r for r in all_rows if r["archetype"] == archetype]
         summary["by_archetype"][archetype] = {
-            "completed": sum(c["completed"] for c in subset),
+            "reached_calicut": sum(c["reached_calicut"] for c in subset),
             "campaigns": len(subset),
             "structural_events": len(events),
             "condition_blockers": sum(r["next_leg_condition_blocker"] for r in events),
