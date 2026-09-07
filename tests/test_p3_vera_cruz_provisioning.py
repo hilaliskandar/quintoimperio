@@ -28,8 +28,8 @@ class P3VeraCruzProvisioningTests(unittest.TestCase):
         before = state.vessel.provision_days
         result = self.model.reprovision_at_documented_cabral_stop(state)
         self.assertTrue(result.executed, result.reasons)
-        self.assertEqual(result.port_result.effect, 5.0)
-        self.assertEqual(result.port_result.days_spent, 0)
+        self.assertEqual(result.service_result.effect, 5.0)
+        self.assertEqual(result.service_result.days_spent, 0)
         self.assertEqual(result.state_after.vessel.clock.current_date, before_date)
         self.assertEqual(result.state_after.vessel.provision_days, before + 5.0)
         self.assertFalse(
