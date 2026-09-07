@@ -96,8 +96,11 @@ def execute_return(state, seed: int):
     routes = []
     blockers = []
     provision_actions = 0
+    trace = []
+    blocked_route = None
 
     initial_provisions = state.vessel.provision_days
+    initial_condition = state.vessel.condition
     first_view = model.logistics_planning_view(state, seed=seed)
 
     while state.active_expedition_id == model.RETURN_EXPEDITION_ID:
@@ -124,11 +127,40 @@ def execute_return(state, seed: int):
             blockers.append("RETURN_ACTIVE_WITHOUT_LEG")
             break
         plan = model.plan_current_leg(state, seed=seed)
+        step = {
+            "route_id": leg.route_id,
+            "departure_date": state.vessel.clock.current_date.isoformat(),
+            "condition_before": round(state.vessel.condition, 4),
+            "provisions_before": round(state.vessel.provision_days, 4),
+            "required_provisions": round(plan.provision_days_required, 4),
+            "feasible": plan.feasible,
+            "blockers": list(plan.blockers),
+            "events": [
+                {
+                    "event_id": event.event_id,
+                    "event_type": event.event_type.value,
+                    "condition_loss": round(event.condition_loss, 4),
+                    "provision_delta": round(event.provision_delta, 4),
+                }
+                for event in plan.events
+            ],
+        }
         if not plan.feasible:
+            blocked_route = leg.route_id
             blockers.extend(plan.blockers)
+            trace.append(step)
             break
         routes.append(leg.route_id)
         state = model.execute_voyage(state, plan)
+        step.update(
+            {
+                "arrival_node": state.vessel.location_node,
+                "arrival_date": state.vessel.clock.current_date.isoformat(),
+                "condition_after": round(state.vessel.condition, 4),
+                "provisions_after": round(state.vessel.provision_days, 4),
+            }
+        )
+        trace.append(step)
 
     completed = (
         state.active_expedition_id is None
@@ -137,6 +169,7 @@ def execute_return(state, seed: int):
     return {
         "completed": completed,
         "initial_provisions": round(initial_provisions, 4),
+        "initial_condition": round(initial_condition, 4),
         "first_leg_required": (
             None
             if first_view.next_leg_required_days is None
@@ -148,12 +181,15 @@ def execute_return(state, seed: int):
             else round(first_view.logistics_horizon_required_days, 4)
         ),
         "routes_completed": routes,
+        "blocked_route": blocked_route,
         "blockers": blockers,
         "provision_actions": provision_actions,
+        "trace": trace,
         "final_location": state.vessel.location_node,
         "final_date": state.vessel.clock.current_date.isoformat(),
         "chronology_mode": state.chronology_mode.value,
         "final_provisions": round(state.vessel.provision_days, 4),
+        "final_condition": round(state.vessel.condition, 4),
     }
 
 
@@ -170,6 +206,7 @@ def main():
                 "mvp_final_location": state.vessel.location_node,
                 "mvp_final_date": state.vessel.clock.current_date.isoformat(),
                 "mvp_final_provisions": round(state.vessel.provision_days, 4),
+                "mvp_final_condition": round(state.vessel.condition, 4),
             }
             if mvp_completed:
                 row["return"] = execute_return(state, seed)
@@ -182,6 +219,7 @@ def main():
         if case.get("return", {}).get("completed")
     ]
     blocker_counts = Counter()
+    blocked_routes = Counter()
     by_archetype = defaultdict(lambda: {"mvp_completed": 0, "return_completed": 0})
     for case in cases:
         bucket = by_archetype[case["archetype"]]
@@ -190,7 +228,10 @@ def main():
             if case.get("return", {}).get("completed"):
                 bucket["return_completed"] += 1
             else:
-                blocker_counts.update(case.get("return", {}).get("blockers", []))
+                return_result = case.get("return", {})
+                blocker_counts.update(return_result.get("blockers", []))
+                if return_result.get("blocked_route"):
+                    blocked_routes.update([return_result["blocked_route"]])
 
     report = {
         "diagnostic": "P1_RETURN_FROM_MVP_WAVE17",
@@ -200,6 +241,7 @@ def main():
         "mvp_completed": len(mvp_completed_cases),
         "return_completed": len(return_completed_cases),
         "blockers": dict(sorted(blocker_counts.items())),
+        "blocked_routes": dict(sorted(blocked_routes.items())),
         "by_archetype": dict(sorted(by_archetype.items())),
         "cases": cases,
     }
