@@ -53,12 +53,15 @@ class ReturnVoyageDataTests(unittest.TestCase):
 
     def test_new_return_nodes_do_not_invent_markets(self):
         self.assertEqual(self.nodes["ANJ"]["market_scale"], "NONE")
-        self.assertEqual(self.nodes["BSR"]["node_type"], "NAVIGATION_POINT")
-        self.assertEqual(self.nodes["BSR"]["access_regime"], "NAVIGATION_ONLY")
-        self.assertEqual(self.nodes["BRG"]["node_type"], "NAVIGATION_POINT")
-        self.assertEqual(self.nodes["BRG"]["access_regime"], "NAVIGATION_ONLY")
-        self.assertEqual(self.nodes["BSR"]["latitude"], "")
-        self.assertEqual(self.nodes["BRG"]["latitude"], "")
+        for node_id in ("BSR", "BRG"):
+            node = self.nodes[node_id]
+            self.assertEqual(node["node_type"], "NAVIGATION_POINT")
+            self.assertEqual(node["access_regime"], "NAVIGATION_ONLY")
+            self.assertEqual(node["market_scale"], "NONE")
+            self.assertTrue(node["latitude"])
+            self.assertTrue(node["longitude"])
+            self.assertEqual(node["coordinate_confidence"], "LOW")
+            self.assertIn("proxy", node["historical_notes"].lower())
 
     def test_anjediva_is_only_new_full_logistical_stop(self):
         stop = next(row for row in self.stops if row["stop_id"] == "GAMA1498_RET_ANJ")
