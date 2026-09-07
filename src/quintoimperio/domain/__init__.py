@@ -37,6 +37,7 @@ from .port import (
 )
 from .relationship import HistoricalActor, NodeActor, RelationshipModel, RelationshipStatus
 from .relationship_session import RelationshipSessionModel, SessionRelationshipResult
+from .return_campaign import ReturnCampaignModel
 from .route_knowledge import RouteKnowledgeModel
 from .service_knowledge import (
     ServiceAwareSessionState,
@@ -122,6 +123,7 @@ __all__ = [
     "RelationshipRecord",
     "RelationshipSessionModel",
     "RelationshipStatus",
+    "ReturnCampaignModel",
     "RouteKnowledgeModel",
     "RouteKnowledgeRecord",
     "SAVE_SCHEMA_VERSION",
