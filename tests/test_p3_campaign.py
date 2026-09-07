@@ -100,7 +100,7 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(at_mozambique.vessel.clock.current_date, date(1500, 7, 20))
         self.assertEqual(at_mozambique.active_expedition_id, "EXP_CABRAL_1500")
         self.assertEqual(at_mozambique.expedition_leg_sequence, 3)
-        self.assertIsNone(at_mozambique.active_stop_id)
+        self.assertEqual(at_mozambique.active_stop_id, "CABRAL1500_MOZ")
 
     def test_mozambique_to_kilwa_reaches_documented_reunion_and_activates_stop(self):
         at_mozambique = self.advance_to_mozambique()
