@@ -1,0 +1,39 @@
+name: Structural strain diagnostic v0.5
+
+on:
+  push:
+    branches:
+      - diag/structural-strain-v05
+    paths:
+      - "tools/diagnose_structural_strain.py"
+      - ".github/workflows/structural-strain-diagnostic-v05.yml"
+      - "src/quintoimperio/domain/travel.py"
+      - "src/quintoimperio/domain/voyage_event.py"
+      - "simulation/voyage_event_rules.csv"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Run structural strain diagnostic
+        run: |
+          mkdir -p build/diagnostics
+          python tools/diagnose_structural_strain.py \
+            --seeds 10000 \
+            --csv build/diagnostics/structural-strain-v05.csv \
+            --summary build/diagnostics/structural-strain-v05-summary.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: structural-strain-v05-diagnostic
+          path: |
+            build/diagnostics/structural-strain-v05.csv
+            build/diagnostics/structural-strain-v05-summary.json
