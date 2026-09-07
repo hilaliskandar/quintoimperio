@@ -1,0 +1,30 @@
+name: P3 generic reprovision diagnostic
+
+on:
+  push:
+    branches: [p3-func-a-116]
+    paths:
+      - "tools/diagnose_p3_generic_reprovision.py"
+      - ".github/workflows/p3-generic-reprovision-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Diagnose generic reprovision attempts
+        run: python tools/diagnose_p3_generic_reprovision.py | tee /tmp/p3-generic-reprovision.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p3-generic-reprovision-diagnostic
+          path: /tmp/p3-generic-reprovision.json
+          if-no-files-found: error
