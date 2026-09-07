@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .expedition_event import ExpeditionEvent, ExpeditionEventModel
 from .p3_campaign import P3CampaignModel
-from .session import GameSessionState
+from .session import GameSessionState, SessionWaitResult
 from .stop import ChronologyMode
 
 
@@ -26,6 +26,8 @@ class JoaoNovaCampaignModel(P3CampaignModel):
     MALABAR_WARNING_EVENT_ID = "NOVA1501_E01"
     MALABAR_WARNING_KEY = "P3_INFO:CABRAL_MALABAR_WARNING"
     WARNING_REQUIRED_BLOCKER = "CABRAL_MALABAR_WARNING_NOT_ACQUIRED"
+    CANNANORE_BLOCKADE_EVENT_ID = "NOVA1501_E03"
+    CANNANORE_BLOCKADE_START = date(1501, 12, 30)
 
     def __init__(self, root: Path | None = None) -> None:
         super().__init__(root)
@@ -51,16 +53,23 @@ class JoaoNovaCampaignModel(P3CampaignModel):
             chronology_mode=ChronologyMode.GUIDED,
         )
 
-    def malabar_warning_event(self) -> ExpeditionEvent:
-        """Retorna o evento documental preferido de aquisição em São Brás."""
+    def _preferred_event(self, event_id: str) -> ExpeditionEvent:
         matches = tuple(
             event
             for event in self.expedition_events.preferred_for_expedition(self.EXPEDITION_ID)
-            if event.event_id == self.MALABAR_WARNING_EVENT_ID
+            if event.event_id == event_id
         )
         if len(matches) != 1:
-            raise ValueError("Evento documental único de São Brás não encontrado.")
+            raise ValueError(f"Evento documental único não encontrado: {event_id}")
         return matches[0]
+
+    def malabar_warning_event(self) -> ExpeditionEvent:
+        """Retorna o evento documental preferido de aquisição em São Brás."""
+        return self._preferred_event(self.MALABAR_WARNING_EVENT_ID)
+
+    def cannanore_blockade_event(self) -> ExpeditionEvent:
+        """Retorna apenas o marco exato de início do bloqueio em 30/12/1501."""
+        return self._preferred_event(self.CANNANORE_BLOCKADE_EVENT_ID)
 
     def joao_nova_has_malabar_warning(self, state: GameSessionState) -> bool:
         return self.MALABAR_WARNING_KEY in state.information_history
@@ -107,3 +116,58 @@ class JoaoNovaCampaignModel(P3CampaignModel):
             )
             return replace(plan, feasible=False, blockers=blockers)
         return plan
+
+    def wait_until_cannanore_blockade(self, state: GameSessionState) -> SessionWaitResult:
+        """Sincroniza o relógio com 30/12 sem tratar a data como chegada a Cananor.
+
+        As pernas intermediárias de F1 não possuem observações diárias e podem
+        terminar antes do marco exato documentado. Esta espera representa somente
+        permanência temporal entre a conclusão simulada da sequência comercial e o
+        início conhecido do bloqueio; não cria atividades, recursos ou uma data de
+        chegada histórica inexistente.
+        """
+        if state.chronology_mode is not ChronologyMode.GUIDED:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("COUNTERFACTUAL_CHRONOLOGY_NO_FORCED_WAIT",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        if state.vessel.location_node != "CAN":
+            return SessionWaitResult(
+                executed=False,
+                reasons=("VESSEL_NOT_AT_CANNANORE_BLOCKADE_MARKER",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        current = state.vessel.clock.current_date
+        if current == self.CANNANORE_BLOCKADE_START:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("CANNANORE_BLOCKADE_DATE_REACHED",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        if current > self.CANNANORE_BLOCKADE_START:
+            return SessionWaitResult(
+                executed=False,
+                reasons=("CANNANORE_BLOCKADE_DATE_ALREADY_PASSED",),
+                days_waited=0,
+                state_before=state,
+                state_after=state,
+            )
+        days = (self.CANNANORE_BLOCKADE_START - current).days
+        after = replace(
+            state,
+            vessel=replace(state.vessel, clock=state.vessel.clock.advance(days)),
+        )
+        return SessionWaitResult(
+            executed=True,
+            reasons=(),
+            days_waited=days,
+            state_before=state,
+            state_after=after,
+        )
