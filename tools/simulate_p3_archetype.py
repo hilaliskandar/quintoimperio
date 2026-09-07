@@ -36,8 +36,6 @@ def parse_args() -> argparse.Namespace:
 def policy_for_leg(archetype: str, seed: int, leg_sequence: int) -> tuple[str, ArchetypePolicy]:
     if archetype != RANDOM_PER_LEG:
         return archetype, ARCHETYPES[archetype]
-    # Fluxo separado da seed usada pelo motor de risco. A escolha depende apenas
-    # da seed da sessão e do número da perna, não do número de ações/retries.
     rng = random.Random(seed * 1009 + leg_sequence * 9173 + 1500)
     name = rng.choice(POLICIES)
     return name, ARCHETYPES[name]
@@ -56,6 +54,51 @@ def wait_for_release(model: P3CampaignModel, state, metrics: Metrics):
         metrics.observe(state)
         return state, result.executed
     return wait_guided(model, state, metrics)
+
+
+def documented_reprovision(model: P3CampaignModel, state, metrics: Metrics):
+    """Usa primeiro a ação material específica da escala, quando disponível."""
+    if not model.documented_cabral_stop_can_reprovision(state):
+        return reprovision(model, state, metrics)
+    metrics.attempt()
+    result = model.reprovision_at_documented_cabral_stop(state)
+    if result.executed:
+        metrics.executed()
+        metrics.reprovision_actions += 1
+        metrics.reprovision_total += result.port_result.effect
+        state = result.state_after
+    else:
+        metrics.blocked(result.reasons)
+    metrics.observe(state)
+    return state, result.executed
+
+
+def resource_blocked(plan) -> bool:
+    return any(
+        reason in RESOURCE_BLOCKERS or "PROVISION" in reason for reason in plan.blockers
+    )
+
+
+def recover_documented_stop_before_wait(
+    model: P3CampaignModel,
+    state,
+    metrics: Metrics,
+    policy: ArchetypePolicy,
+    seed: int,
+):
+    """Evita perder uma ação one-shot ao liberar a escala antes de tratar recursos."""
+    if not policy.recover_resources_after_block:
+        return state
+    if not model.documented_cabral_stop_can_reprovision(state):
+        return state
+    metrics.attempt()
+    plan = model.plan_current_leg(state, seed=seed)
+    if not resource_blocked(plan):
+        metrics.executed()
+        return state
+    metrics.blocked(plan.blockers)
+    state, _ = documented_reprovision(model, state, metrics)
+    return state
 
 
 def execute_leg(model: P3CampaignModel, state, metrics: Metrics, policy: ArchetypePolicy, seed: int):
@@ -83,6 +126,17 @@ def execute_leg(model: P3CampaignModel, state, metrics: Metrics, policy: Archety
         if recovery >= policy.max_recovery_steps:
             return state, False
 
+        resource_block = resource_blocked(plan)
+        if (
+            resource_block
+            and policy.recover_resources_after_block
+            and model.documented_cabral_stop_can_reprovision(state)
+        ):
+            state, changed = documented_reprovision(model, state, metrics)
+            recovery += 1
+            if changed:
+                continue
+
         if "HISTORICAL_STOP_NOT_RELEASED" in plan.blockers:
             state, changed = wait_for_release(model, state, metrics)
             recovery += 1
@@ -95,9 +149,6 @@ def execute_leg(model: P3CampaignModel, state, metrics: Metrics, policy: Archety
             if changed:
                 continue
 
-        resource_block = any(
-            reason in RESOURCE_BLOCKERS or "PROVISION" in reason for reason in plan.blockers
-        )
         if resource_block and policy.recover_resources_after_block:
             state, changed = reprovision(model, state, metrics)
             recovery += 1
@@ -157,6 +208,7 @@ def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dic
 
         state = proactive_floor(model, state, metrics, policy.proactive_floor_days)
         state = apply_planning(model, state, metrics, policy, seed)
+        state = recover_documented_stop_before_wait(model, state, metrics, policy, seed)
 
         departure = model.guided_departure_date(state)
         if (
