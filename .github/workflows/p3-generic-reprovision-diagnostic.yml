@@ -5,6 +5,7 @@ on:
     branches: [p3-func-a-116]
     paths:
       - "tools/diagnose_p3_generic_reprovision.py"
+      - "tools/simulate_p3_archetype.py"
       - ".github/workflows/p3-generic-reprovision-diagnostic.yml"
   workflow_dispatch:
 
