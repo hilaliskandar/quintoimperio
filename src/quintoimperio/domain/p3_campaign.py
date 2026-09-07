@@ -28,7 +28,7 @@ class P3CampaignModel(HistoricalCampaignModel):
     CABRAL_DEPARTURE = date(1500, 3, 9)
     CABRAL_EXPEDITION_ID = "EXP_CABRAL_1500"
     CABRAL_DOCUMENTED_PROVISION_ACTIVITIES = frozenset({"WATER", "WOOD", "REFRESHMENTS"})
-    CABRAL_ONE_SHOT_PROVISION_NODES = frozenset({"VCR", "MOZ"})
+    CABRAL_ONE_SHOT_PROVISION_NODES = frozenset({"VCR", "MOZ", "MAL"})
 
     def __init__(self, root: Path | None = None) -> None:
         super().__init__(root)
@@ -118,10 +118,10 @@ class P3CampaignModel(HistoricalCampaignModel):
     def reprovision_at_documented_cabral_stop(
         self, state: GameSessionState
     ) -> SessionPortServiceResult:
-        """Projeta aguada/refrescos documentados em pequena autonomia abstrata.
+        """Projeta aguada/refrescos documentados em autonomia abstrata one-shot.
 
         O efeito é parametrizado em ``simulation/p3_rules.csv`` e não transforma
-        Vera Cruz ou Moçambique em serviços genéricos de provisões.
+        Vera Cruz, Moçambique ou Melinde em serviços genéricos de provisões.
         """
         stop = self.session.active_stop(state)
         blockers: tuple[str, ...] = ()
