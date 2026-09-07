@@ -183,8 +183,9 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(at_calicut.vessel.location_node, "CAL")
         self.assertEqual(at_calicut.vessel.clock.current_date, date(1500, 9, 13))
         self.assertEqual(at_calicut.chronology_mode, ChronologyMode.GUIDED)
-        self.assertIsNone(at_calicut.active_expedition_id)
-        self.assertIsNone(at_calicut.expedition_leg_sequence)
+        self.assertEqual(at_calicut.active_expedition_id, "EXP_CABRAL_1500")
+        self.assertEqual(at_calicut.expedition_leg_sequence, 7)
+        self.assertEqual(at_calicut.active_stop_id, "CABRAL1500_CAL")
 
     def test_two_gujarati_pilots_remain_documentary_event_in_1500(self):
         events = self.expedition_events.preferred_for_expedition("EXP_CABRAL_1500")
