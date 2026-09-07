@@ -1,4 +1,5 @@
 rule_type,key,value,notes
+EXPEDITION_PROVISION_MAX_ONBOARD,EXP_CABRAL_1500,150,"Teto abstrato específico da armada de Cabral. A Relação do Piloto Anônimo descreve a expedição como provida para longo horizonte; 150 é o menor candidato da sensibilidade que produz 16/20 conclusões, enquanto 160 não acrescenta ganho. Não representa dias históricos literais nem altera o teto global do MVP."
 DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION,VCR,5,"Dias-equivalentes abstratos atribuídos à ação específica WATER|WOOD da escala de Cabral em Vera Cruz. Valor mínimo de sensibilidade que resolve 18/20 seeds sem alterar o teto global; não representa quantidade histórica."
 DOCUMENTED_STOP_PROVISION_SERVICE_DAYS,VCR,0,"A ação ocorre dentro da permanência histórica já normalizada em Vera Cruz e não acrescenta dias ao calendário guiado."
 DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION,MOZ,10,"Dias-equivalentes abstratos para a aguada/refrescos documentados na passagem de Cabral por Moçambique em 20/07/1500. Na sensibilidade das seeds 24001–24020, 10 é o menor candidato que leva 17/20 sessões até Melinde; 12 não produz ganho adicional. Não representa quantidade histórica."
