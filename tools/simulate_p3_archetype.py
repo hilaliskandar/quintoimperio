@@ -15,7 +15,7 @@ from pathlib import Path
 
 from quintoimperio.domain import ChronologyMode, P3CampaignModel
 from quintoimperio.domain.risk_mitigation import secure_provision_reserve_for_voyage
-from simulate_player_archetype import ARCHETYPES, ArchetypePolicy, proactive_floor
+from simulate_player_archetype import ARCHETYPES, ArchetypePolicy
 from simulate_synthetic_player import Metrics, RESOURCE_BLOCKERS, reprovision, wait_guided
 
 RANDOM_PER_LEG = "RANDOM_PER_LEG"
@@ -73,6 +73,26 @@ def documented_reprovision(model: P3CampaignModel, state, metrics: Metrics):
     return state, result.executed
 
 
+def p3_proactive_floor(
+    model: P3CampaignModel,
+    state,
+    metrics: Metrics,
+    floor: float,
+):
+    """Aplica piso preventivo sem encadear serviço genérico após ação documentada."""
+    while floor > 0 and state.vessel.provision_days < floor:
+        documented = model.documented_cabral_stop_can_reprovision(state)
+        if documented:
+            state, changed = documented_reprovision(model, state, metrics)
+            if not changed or state.vessel.provision_days < floor:
+                break
+            continue
+        state, changed = reprovision(model, state, metrics)
+        if not changed:
+            break
+    return state
+
+
 def resource_blocked(plan) -> bool:
     return any(
         reason in RESOURCE_BLOCKERS or "PROVISION" in reason for reason in plan.blockers
@@ -86,11 +106,12 @@ def apply_p3_planning(
     policy: ArchetypePolicy,
     seed: int,
 ):
-    """Aplica o horizonte logístico sem mascarar escalas documentadas como porto genérico.
+    """Aplica horizonte logístico respeitando o limite da evidência da escala.
 
-    Mantém a mesma política do runner do MVP. A única diferença é a ordem da
-    tentativa de reposição: se a escala ativa de Cabral documenta aguada ou
-    refrescos, essa ação específica é usada antes do serviço portuário genérico.
+    Se uma ação específica documentada é usada e ainda não satisfaz a meta,
+    registra-se a recomendação como atendida apenas parcialmente e encerra-se a
+    tentativa nessa escala. Não se procura em seguida um serviço genérico sem
+    evidência histórica apenas para completar a margem desejada.
     """
     if not policy.consult_logistics:
         return state
@@ -110,7 +131,9 @@ def apply_p3_planning(
         if not policy.follow_recommended_margin:
             metrics.recommendation_ignored += 1
             return state
-        if model.documented_cabral_stop_can_reprovision(state):
+
+        documented = model.documented_cabral_stop_can_reprovision(state)
+        if documented:
             state, changed = documented_reprovision(model, state, metrics)
         else:
             state, changed = reprovision(model, state, metrics)
@@ -118,6 +141,10 @@ def apply_p3_planning(
             metrics.recommendation_ignored += 1
             return state
         metrics.recommendation_followed += 1
+
+        if documented and state.vessel.provision_days < target:
+            metrics.recommendation_ignored += 1
+            return state
     return state
 
 
@@ -250,7 +277,7 @@ def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dic
             }
         )
 
-        state = proactive_floor(model, state, metrics, policy.proactive_floor_days)
+        state = p3_proactive_floor(model, state, metrics, policy.proactive_floor_days)
         state = apply_p3_planning(model, state, metrics, policy, seed)
         state = recover_documented_stop_before_wait(model, state, metrics, policy, seed)
 
