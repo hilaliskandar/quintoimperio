@@ -15,19 +15,23 @@ class ReturnVoyageDataTests(unittest.TestCase):
         cls.observations = cls.repo.historical("voyage_observations.csv")
 
     def test_mvp_outbound_expedition_remains_exactly_ten_legs(self):
-        outbound = [
-            row for row in self.legs if row["expedition_id"] == "EXP_GAMA_1497"
-        ]
+        outbound = sorted(
+            (row for row in self.legs if row["expedition_id"] == "EXP_GAMA_1497"),
+            key=lambda row: int(row["sequence"]),
+        )
         self.assertEqual(len(outbound), 10)
         self.assertEqual([int(row["sequence"]) for row in outbound], list(range(1, 11)))
         self.assertEqual(outbound[-1]["route_id"], "R_MAL_CAL")
 
     def test_return_subcampaign_is_continuous_to_rio_grande(self):
-        return_legs = [
-            row
-            for row in self.legs
-            if row["expedition_id"] == "EXP_GAMA_RETURN_1498"
-        ]
+        return_legs = sorted(
+            (
+                row
+                for row in self.legs
+                if row["expedition_id"] == "EXP_GAMA_RETURN_1498"
+            ),
+            key=lambda row: int(row["sequence"]),
+        )
         self.assertEqual(len(return_legs), 6)
         self.assertEqual([int(row["sequence"]) for row in return_legs], list(range(1, 7)))
         expected = [
@@ -87,12 +91,15 @@ class ReturnVoyageDataTests(unittest.TestCase):
             "R_SBR_CGH_RET": 8,
             "R_CGH_BRG": 36,
         }
-        rows = {
-            row["route_id"]: row
-            for row in self.observations
-            if row["route_id"] in expected
+        selected = [
+            row for row in self.observations if row["route_id"] in expected
+        ]
+        counts = {
+            route_id: sum(row["route_id"] == route_id for row in selected)
+            for route_id in expected
         }
-        self.assertEqual(set(rows), set(expected))
+        self.assertEqual(counts, {route_id: 1 for route_id in expected})
+        rows = {row["route_id"]: row for row in selected}
         for route_id, days in expected.items():
             row = rows[route_id]
             self.assertEqual(int(row["observed_days"]), days)
