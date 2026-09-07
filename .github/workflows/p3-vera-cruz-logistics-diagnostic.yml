@@ -1,0 +1,33 @@
+name: P3 Vera Cruz logistics diagnostic
+
+on:
+  push:
+    branches: [p3-func-a-116]
+    paths:
+      - "tools/diagnose_p3_vera_cruz_logistics.py"
+      - ".github/workflows/p3-vera-cruz-logistics-diagnostic.yml"
+      - "data/**"
+      - "simulation/**"
+      - "src/quintoimperio/domain/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Diagnose VCR logistics sensitivity
+        run: python tools/diagnose_p3_vera_cruz_logistics.py | tee /tmp/p3-vcr-logistics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p3-vera-cruz-logistics-diagnostic
+          path: /tmp/p3-vcr-logistics.json
+          if-no-files-found: error
