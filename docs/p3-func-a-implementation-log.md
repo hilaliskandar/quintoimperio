@@ -65,15 +65,19 @@ A autorização usa `FLEET_COMMAND`: a participação na armada permite navegar 
 
 O run `34132142727`, commit `dcc09234cdaf760f561ed599e8bdeb3cbf5b3216`, passou integralmente após corrigir um teste que confundia autorização institucional com aprendizagem posterior à viagem.
 
-## Limite ainda aberto: duração Lisboa–Vera Cruz
+## Cronologia Lisboa–Vera Cruz ancorada
 
-A documentação sustenta partida em `1500-03-09` e avistamento de Vera Cruz em `1500-04-22`, diferença operacional de 44 dias. A tentativa inicial de inserir essa observação em `voyage_observations.csv` foi bloqueada pela camada de escrita antes de chegar ao GitHub; portanto, **a observação ainda não integra a base**.
+A documentação sustenta partida em `1500-03-09` e avistamento de Vera Cruz em `1500-04-22`, diferença operacional de 44 dias. A primeira tentativa de escrever essa linha em `voyage_observations.csv` pela API de conteúdo foi bloqueada antes de chegar ao GitHub.
 
-Até que essa linha seja incorporada e testada, a primeira perna executável usa a duração derivada pelo modelo de navegação a partir da rota e de seus parâmetros de simulação. Não se deve apresentar essa duração provisória como duração histórica de Cabral.
+A pendência foi resolvida sem mudar o schema: o arquivo foi reconstruído como blob Git, preservando todas as observações anteriores e acrescentando `CABRAL1500_LIS_VCR`. O commit `5deefbd83835d68f9d9793de0b99e6a0f0f7b57c` passou a fornecer a duração documental à rota.
+
+O teste P3 exige agora explicitamente `travel_days == 44`, `arrival_date == 1500-04-22` e relógio da sessão em 22/04 após a execução. O run `34132527761`, commit `6a6a0713ca0de670c6c79635760f80cd1b8428a3`, passou integralmente.
+
+A duração Lisboa–Vera Cruz deixa, portanto, de ser provisória. Continua sendo uma observação histórica específica da viagem de Cabral, não uma velocidade universal para travessias atlânticas.
 
 ## Próximos gates da implementação
 
-1. incorporar de forma segura a observação documental Lisboa–Vera Cruz e testar chegada em 22/04/1500;
+1. normalizar a permanência em Vera Cruz até 02/05/1500 para impedir partida guiada prematura;
 2. expandir Cabral por incrementos: `VCR → CGH → MOZ → KIL → MAL → ANJ → CAL`, usando datas observadas apenas onde o corpus sustenta precisão suficiente;
 3. projetar a ruptura de Calecute e os estados de Cochim/Cananor a partir das novas camadas temporais, sem combate genérico;
 4. completar o retorno principal de Cabral mantendo perdas e trajetórias assíncronas em `expedition_events.csv`;
