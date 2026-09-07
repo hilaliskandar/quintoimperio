@@ -56,6 +56,17 @@ class P3EventModelTests(unittest.TestCase):
         self.assertEqual(blockade[0].origin_node, "CAN")
         self.assertEqual(blockade[0].destination_node, "CAN")
 
+    def test_cannanore_blockade_ends_on_january_2_without_return_route_inference(self):
+        before = self.expedition_events.available_by("EXP_JOAO_NOVA_1501", date(1502, 1, 1))
+        self.assertFalse(any(event.event_id == "NOVA1502_E04" for event in before))
+        on_date = self.expedition_events.available_by("EXP_JOAO_NOVA_1501", date(1502, 1, 2))
+        resolved = [event for event in on_date if event.event_id == "NOVA1502_E04"]
+        self.assertEqual(len(resolved), 1)
+        self.assertEqual(resolved[0].event_type, "NAVAL_BLOCKADE_ENDS")
+        self.assertEqual(resolved[0].origin_node, "CAN")
+        self.assertEqual(resolved[0].destination_node, "CAN")
+        self.assertIn("não fixa a partida transoceânica", resolved[0].notes)
+
     def test_cabral_trajectory_events_are_separate_from_generic_fleet_state(self):
         events = self.expedition_events.preferred_for_expedition("EXP_CABRAL_1500")
         event_types = {event.event_type for event in events}
