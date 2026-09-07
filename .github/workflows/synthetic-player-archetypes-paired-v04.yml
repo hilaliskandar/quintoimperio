@@ -1,0 +1,73 @@
+name: Synthetic player archetypes paired seeds v0.4 wave 15
+
+on:
+  push:
+    branches:
+      - test/player-archetypes-paired-v04
+    paths:
+      - "tools/simulate_player_archetype.py"
+      - "tools/simulate_synthetic_player.py"
+      - "tools/aggregate_paired_archetype_playtest.py"
+      - ".github/workflows/synthetic-player-archetypes-paired-v04.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  play:
+    name: paired-${{ matrix.archetype }}-20-sessions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        archetype:
+          - GRAND_STRATEGIST
+          - SURVIVALIST
+          - MERCHANT
+          - SPEEDRUNNER
+          - ROGUELIKE
+          - ROLEPLAYER
+          - EXPLORER
+          - OPTIMIZER
+          - COMPLETIONIST
+          - CASUAL
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Run paired 20 seeds
+        run: |
+          mkdir -p build/paired/${{ matrix.archetype }}
+          for i in $(seq 1 20); do
+            seed=$((21000 + i))
+            python tools/simulate_player_archetype.py --player-id "$i" --archetype "${{ matrix.archetype }}" --seed "$seed" --wave 15 --output "build/paired/${{ matrix.archetype }}/seed-${seed}.json"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paired-${{ matrix.archetype }}-wave15
+          path: build/paired/${{ matrix.archetype }}/*.json
+
+  aggregate:
+    needs: play
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: paired-*-wave15
+          path: build/paired-results
+          merge-multiple: false
+      - name: Aggregate paired results
+        run: python tools/aggregate_paired_archetype_playtest.py --input-dir build/paired-results --csv build/synthetic-player-archetypes-wave15.csv --summary build/synthetic-player-archetypes-wave15-summary.json --paired-csv build/synthetic-player-archetypes-wave15-paired.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-player-archetypes-wave15-paired-results
+          path: |
+            build/synthetic-player-archetypes-wave15.csv
+            build/synthetic-player-archetypes-wave15-summary.json
+            build/synthetic-player-archetypes-wave15-paired.csv
