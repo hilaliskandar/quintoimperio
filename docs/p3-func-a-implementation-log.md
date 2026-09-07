@@ -75,12 +75,36 @@ O teste P3 exige agora explicitamente `travel_days == 44`, `arrival_date == 1500
 
 A duração Lisboa–Vera Cruz deixa, portanto, de ser provisória. Continua sendo uma observação histórica específica da viagem de Cabral, não uma velocidade universal para travessias atlânticas.
 
+## Vera Cruz e correção da passagem pelo Cabo
+
+A escala `CABRAL1500_VCR` foi normalizada de 22/04 a 02/05/1500. O modo guiado bloqueia a partida antes de 02/05 por `HISTORICAL_STOP_NOT_RELEASED`, sem conceder mercado, assentamento ou abastecimento genérico em Vera Cruz.
+
+Uma primeira tentativa operacional segmentou a sequência como `VCR → CGH`. A CI `34133197779` revelou apenas dois erros de teste — chamadas a APIs inexistentes — e não falha de dados ou domínio. Os testes foram corrigidos no commit `dd75a80375ea157f6eb4c8d72e458bd05cbd9d78`; a CI `34133817081` fechou integralmente verde.
+
+A auditoria posterior do modo guiado mostrou, porém, que `CGH` não deve ser endpoint operacional: não há data segura de partida do Cabo para 1500. Sem observação, `guided_departure_date()` retornaria `None` e a campanha poderia sair do marco sem vínculo cronológico. Para não fabricar uma escala, `R_VCR_CGH_CAB` foi reclassificada como `STRATEGIC_AGGREGATE` e a perna executável passou a ser `R_VCR_MOZ_CAB`.
+
+A observação `CABRAL1500_VCR_MOZ` usa 02/05 → 20/07/1500, 79 dias, como agregação operacional. As perdas de quatro embarcações e a separação de Diogo Dias permanecem em `expedition_events.csv`, localizadas no marco `CGH`, sem sistema geral de naufrágio. O run `34134148269`, commit `01cdd1ed53480c5423e227a834b444a88eb8c84e`, passou integralmente, inclusive interfaces, persistência e cartografia.
+
+## Moçambique e Quiloa
+
+A campanha foi estendida por `R_MOZ_KIL_CAB`, com observação 20/07 → 26/07/1500. Não foi criada escala em Moçambique: o nó funciona aqui como referência/passagem da cronologia especializada.
+
+Em Quiloa foi criada a escala `CABRAL1500_KIL`, de 26/07 a 29/07, com atividade mínima `FLEET_REUNION`. A linha registra apenas a reunião documentada de seis embarcações; não infere mercado, abastecimento ou efeitos diplomáticos.
+
+O teste da campanha percorre Lisboa → Vera Cruz → Moçambique → Quiloa, exige 44, 79 e 6 dias respectivamente e verifica a ativação da escala em Quiloa. O run `34134459694`, commit `c4a6da0bc81a208f33f754819e86bbbf6163607d`, passou integralmente.
+
+## Melinde e os dois pilotos guzerates
+
+A matriz documental registra chegada a Melinde em 02/08/1500, obtenção de dois pilotos guzerates em 06/08 e partida em 07/08. O modelo atual trata `pilot_id` como entidade operacional individual e `recommended_pilot_id()` retorna um único piloto elegível.
+
+Por isso, não será reutilizado `PIL_MAL_GUJ_1498` e não será criado um falso “piloto coletivo”. No próximo incremento, a chegada e permanência em Melinde podem ser normalizadas e a obtenção dos dois pilotos registrada inicialmente como evento documental. A transformação desses dois indivíduos não identificados em entidades operacionais ficará condicionada à normalização da rota específica que efetivamente guiaram.
+
 ## Próximos gates da implementação
 
-1. normalizar a permanência em Vera Cruz até 02/05/1500 para impedir partida guiada prematura;
-2. expandir Cabral por incrementos: `VCR → CGH → MOZ → KIL → MAL → ANJ → CAL`, usando datas observadas apenas onde o corpus sustenta precisão suficiente;
-3. projetar a ruptura de Calecute e os estados de Cochim/Cananor a partir das novas camadas temporais, sem combate genérico;
-4. completar o retorno principal de Cabral mantendo perdas e trajetórias assíncronas em `expedition_events.csv`;
+1. normalizar `KIL → MAL`, escala de Melinde 02–07/08 e evento documental dos dois pilotos guzerates em 06/08;
+2. auditar a cronologia fina Melinde → costa indiana → Anjediva antes de criar uma perna guiada, evitando derivar uma data de chegada a Anjediva apenas da expressão “cerca de duas semanas”;
+3. avançar para Calecute e projetar a ruptura de dezembro a partir das camadas temporais, sem combate genérico;
+4. completar Cochim, Cananor e o retorno principal de Cabral mantendo perdas e trajetórias assíncronas em `expedition_events.csv`;
 5. integrar João da Nova e demonstrar em teste que a informação de São Brás não existe no estado inicial em Lisboa;
 6. integrar Gama 1502 e a bifurcação de Vicente Sodré como subcampanha separada, se o modelo atual continuar suficiente;
 7. executar smoke reproduzível da tranche 1500–1503, regressão integral e somente então preparar merge.
