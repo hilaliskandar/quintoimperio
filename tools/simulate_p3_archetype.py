@@ -86,18 +86,51 @@ def recover_documented_stop_before_wait(
     policy: ArchetypePolicy,
     seed: int,
 ):
-    """Evita perder uma ação one-shot ao liberar a escala antes de tratar recursos."""
-    if not policy.recover_resources_after_block:
-        return state
+    """Decide a ação one-shot antes de liberar a escala histórica.
+
+    A ação não é automática. Perfis que seguem a recomendação logística podem
+    usá-la preventivamente quando o horizonte + margem excede o estoque atual.
+    Perfis que só reagem a bloqueios continuam podendo usá-la quando a própria
+    perna corrente já está bloqueada por recursos.
+    """
     if not model.documented_cabral_stop_can_reprovision(state):
         return state
+
     metrics.attempt()
     plan = model.plan_current_leg(state, seed=seed)
-    if not resource_blocked(plan):
+    if plan.feasible:
         metrics.executed()
+    else:
+        metrics.blocked(plan.blockers)
+    blocked_need = resource_blocked(plan) and policy.recover_resources_after_block
+
+    planned_need = False
+    if policy.consult_logistics:
+        metrics.attempt()
+        metrics.recommendation_checks += 1
+        view = model.logistics_planning_view(state, seed=seed)
+        metrics.executed()
+        if view.next_destination_provisions_evidence_indeterminate:
+            metrics.indeterminate_destination_warnings += 1
+        horizon = view.logistics_horizon_required_days
+        if horizon is not None:
+            target = horizon + view.recommended_margin_days + policy.extra_margin_days
+            planned_need = (
+                policy.follow_recommended_margin
+                and state.vessel.provision_days < target
+            )
+
+    if not (blocked_need or planned_need):
+        if policy.consult_logistics and not policy.follow_recommended_margin:
+            metrics.recommendation_ignored += 1
         return state
-    metrics.blocked(plan.blockers)
-    state, _ = documented_reprovision(model, state, metrics)
+
+    state, changed = documented_reprovision(model, state, metrics)
+    if planned_need:
+        if changed:
+            metrics.recommendation_followed += 1
+        else:
+            metrics.recommendation_ignored += 1
     return state
 
 
