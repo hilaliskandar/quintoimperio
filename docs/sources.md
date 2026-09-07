@@ -19,6 +19,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 | `ALPERS_IOWH` | Edward A. Alpers, *The Indian Ocean in World History* | monções, costa suaíli, portos e geografia social do Índico |
 | `IOH_PEARSON` | *Indian Ocean Histories: The Many Worlds of Michael Naylor Pearson* | enquadramento comparativo e oceânico |
 | `OLIVEIRA_COSTA_CABRAL_1500` | João Paulo Oliveira e Costa, cronologia da Armada da Índia de 1500 em *Descobridores do Brasil. Exploradores do Atlântico e Construtores do Estado da Índia*; reprodução EVE/FCSH | cronologia Cabral 1500–1501, composição e fragmentação da armada, perdas, chegada e permanência no Malabar e retorno |
+| `GREENLEE_CABRAL_1938` | William Brooks Greenlee (ed.), *The Voyage of Pedro Álvares Cabral to Brazil and India from Contemporary Documents and Narratives*, Hakluyt Society, 1938 | síntese crítica e edição documental da viagem de Cabral; identificação de Anjediva como terra alcançada na entrada da Índia, carena/pintura dos navios e preparação para Calecute |
 | `EVE_COCHIN` | José Luís Ferreira, “Cochim”, Enciclopédia Virtual da Expansão Portuguesa, FCSH, 2009 | Cochim 1500–1503, feitoria, carregamento de pimenta, contexto político e comunidades locais |
 | `HPIP_COCHIN` | entrada Kochi/Cochim/Santa Cruz de Cochim, Heritage of Portuguese Influence / Património de Influência Portuguesa | âncora cartográfica e morfologia urbana-portuária histórica de Cochim |
 | `CANAVARRO_GGB_2000` | Ana Rita Canavarro, “Gonçalo Gil Barbosa”, em *Descobridores do Brasil*, 2000 | primeiro feitor de Cochim e sucessão Barbosa–Diogo Fernandes Correia |
@@ -42,6 +43,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 - Edward A. Alpers, *The Indian Ocean in World History*.
 - *Indian Ocean Histories: The Many Worlds of Michael Naylor Pearson* — enquadramento comparativo e oceânico.
 - João Paulo Oliveira e Costa, cronologia da Armada da Índia de 1500, para a sequência documental Cabral–Cochim.
+- William Brooks Greenlee, *The Voyage of Pedro Álvares Cabral to Brazil and India from Contemporary Documents and Narratives*, para conferência da sequência e atividades de Anjediva; datas operacionais derivadas continuam marcadas como reconstrução quando não explicitadas.
 - José Luís Ferreira, “Cochim”, EVE/FCSH, para o porto, feitoria inicial e contexto local.
 - EVE/FCSH, “Cananor”, para contacto de 1501, feitoria de João da Nova e reorganização de 1502.
 - Comissão Portuguesa de História Militar, síntese de João da Nova, para a mensagem de São Brás e sequência operacional da terceira armada.
@@ -60,6 +62,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 8. Para Cabral, datas explícitas da Carta de Caminha prevalecem sobre datas divergentes em sínteses: sinais de terra em 21/04/1500 e avistamento em 22/04/1500 devem ser preservados como cronologia testemunhal.
 9. Para João da Nova, a informação produzida por Cabral no Malabar só entra no conhecimento da expedição quando houver veículo de transmissão documentado; o aviso de São Brás é o primeiro evento desse tipo já identificado.
 10. Ceilão não deve ser incorporado à rota de João da Nova em 1501 apenas com base na inscrição de Colombo: a hipótese é historiograficamente discutida e não possui documentação contemporânea suficiente.
+11. Para Cabral em Anjediva, 22/08/1500 pode ser usado como chegada de trabalho apenas pela combinação da cronologia de Oliveira e Costa, que fixa a chegada à costa indiana nesse dia, com Greenlee, que identifica Anjediva como a terra alcançada. A saída derivada de uma permanência de duas semanas deve permanecer marcada como reconstrução operacional, não como data primária independente.
 
 ## Lacunas prioritárias
 
