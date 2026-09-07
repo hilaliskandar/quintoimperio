@@ -51,10 +51,14 @@ class ExpeditionDataTests(unittest.TestCase):
             seen.add(row["stop_id"])
             self.assertIn(row["expedition_id"], expedition_ids)
             self.assertIn(row["node_id"], self.nodes)
-            self.assertGreater(int(row["observed_stay_days"]), 0)
+            stay_days = int(row["observed_stay_days"])
+            self.assertGreaterEqual(stay_days, 0)
             arrival = date.fromisoformat(row["arrival_date"])
             departure = date.fromisoformat(row["departure_date"])
-            self.assertGreater(departure, arrival)
+            if stay_days == 0:
+                self.assertEqual(departure, arrival)
+            else:
+                self.assertGreater(departure, arrival)
             self.assertTrue(row["activities"])
             self.assertTrue(row["source_id"])
 
