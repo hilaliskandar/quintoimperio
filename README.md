@@ -19,7 +19,7 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-A fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, acesso institucional, relações por atores documentados, risco marítimo inicial, cartografia, sessão integrada e a primeira interface jogável Pygame v0.1 estão operacionais.
+O **MVP Lisboa–Calecute está funcionalmente concluído**. A vertical slice reúne fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, acesso institucional, relações por atores documentados, risco marítimo estocástico reproduzível, planejamento logístico, cartografia, persistência, sessão integrada e interface jogável em Pygame. O gate final e os critérios de saída estão registrados em `docs/mvp-gate.md`.
 
 A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas, 5 permanências logísticas documentadas e 3 atores/comunidades historicamente normalizados no primeiro recorte relacional**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
 
@@ -33,8 +33,10 @@ O domínio já oferece:
 - Lisboa–Cabo e Cabo–Moçambique preservadas apenas como conexões estratégicas agregadas e explicitamente não executáveis;
 - permanências históricas em São Thiago, baía de Santa Helena, São Brás, Rio do Cobre e Rio dos Bons Sinais, com água, madeira, carenagem, reparos e transferência de carga registrados separadamente;
 - `ChronologyMode.GUIDED` e `ChronologyMode.COUNTERFACTUAL`, distinguindo campanha ainda alinhada à cronologia documentada de trajetória já divergente;
+- fase simulada de preparação a partir de 6/7/1497, sem antecipar a partida histórica de Lisboa em 8/7/1497;
 - bloqueio de partida antes da data documentada quando há escala guiada ativa;
 - ação explícita de espera até a partida documentada, sem conceder automaticamente provisões, reparos, carga ou dinheiro;
+- planejamento logístico por horizonte até o próximo abastecimento documentado, com margem heurística de 20 dias claramente rotulada como `SIMULATION`;
 - serviços, informação e negociação institucional consumindo o mesmo calendário;
 - quatro dimensões de conhecimento por nó e conhecimento náutico separado por rota;
 - estados separados para personagem e Coroa;
@@ -56,19 +58,22 @@ O domínio já oferece:
 - `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
 - `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
 - `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND` como bases distintas de viagem;
-- eventos marítimos genéricos `SIMULATION` com seleção determinística por semente e no máximo um evento por viagem;
-- calmaria/atraso, mau tempo, avaria menor de aparelho e perturbação adicional de junho/julho, limitados a tempo e condição abstrata;
-- precedência documental: uma observação histórica exata pode suprimir eventos aleatórios em cronologia `GUIDED`, enquanto a mesma rota/data pode receber evento em modo `COUNTERFACTUAL`;
+- eventos marítimos `SIMULATION` com seleção determinística por semente, resolução tardia e no máximo um evento por viagem;
+- calmaria/atraso, mau tempo, avaria menor de aparelho e perturbação adicional de junho/julho em trajetórias onde o timing pode variar;
+- deterioração moderada de provisões, racionamento eficiente, `MAJOR_PROVISION_LOSS` e `STRUCTURAL_STRAIN` como contingências de simulação que podem operar sem reescrever um timing histórico observado quando marcadas `observed_timing_safe`;
+- precedência documental: em `GUIDED`, uma observação histórica exata preserva o timing documentado e suprime eventos que o alterariam, mas não elimina efeitos `observed_timing_safe` sobre recursos ou condição;
+- reserva segregada opcional de 0/5/10/15/20 dias-equivalentes contra `MAJOR_PROVISION_LOSS`, sem criar provisões e com custo de oportunidade em capital;
 - `GameSessionState` imutável reunindo navio, comércio, conhecimento, acesso, relações, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
 - provisões/condição abstratas, reabastecimento e reparo;
 - compra/venda somente em mercados documentados e institucionalmente acessíveis;
 - aprendizagem explícita por chegada e conclusão de rota;
+- objetivos e encerramento explícito da vertical slice em Calecute;
+- persistência JSON versionada e round-trip de save/load;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
 - rótulos cartográficos deslocáveis apenas para legibilidade, sem alterar as coordenadas dos nós, com teste de regressão contra sobreposição nos cenários padrão;
-- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, acesso, informação, relações estabelecidas, mercado, armada ativa, escala histórica, espera, rotas e registro discreto do último evento de viagem;
-- modo `HISTORICAL` iniciado em Lisboa em 8/7/1497 com `EXP_GAMA_1497`;
-- modo `TECHNICAL` separado para testes de integração;
-- testes automatizados, smoke tests e capturas de interface no GitHub Actions.
+- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, acesso, informação, relações estabelecidas, mercado, armada ativa, escala histórica, espera, rotas, planejamento logístico, proteção de provisões e registro discreto do último evento de viagem;
+- modo `HISTORICAL` com `EXP_GAMA_1497` e modo `TECHNICAL` separado para testes de integração;
+- testes automatizados, smoke tests, baterias sintéticas por arquétipos e capturas de interface no GitHub Actions.
 
 A arquitetura do primeiro jogável é **Python 3.12 + pygame-ce**, com núcleo de domínio independente da camada gráfica.
 
@@ -82,9 +87,9 @@ O acesso institucional também é distinto do conhecimento. A chegada a Calecute
 
 A camada relacional começa igualmente de forma conservadora. Calecute não é comprimida em uma reputação única: a autoridade do Samudri Raja e a comunidade mercantil muçulmana/pardesi são atores distintos porque o corpus permite distingui-los. O estado `CONTACTED` registra apenas que houve interação explícita; não concede amizade, hostilidade, crédito, desconto ou influência. Portos sem ator historicamente normalizado permanecem sem relação inventada.
 
-O risco marítimo v0.1 é explicitamente uma camada de simulação. Os eventos não afirmam que determinado incidente ocorreu historicamente; apenas modificam viagens não fixadas pela evidência com dias adicionais e/ou perda de condição. Quando a cronologia guiada possui observação exata de rota e partida, a aleatoriedade é suprimida e o fato documentado tem precedência.
+O risco marítimo é explicitamente uma camada de simulação. Os eventos não afirmam que determinado incidente ocorreu historicamente. A mesma seed aplicada ao mesmo estado é reproduzível, mas seeds diferentes podem produzir resultados distintos. Em cronologia guiada, a evidência histórica continua controlando as datas observadas; a incerteza entra por efeitos compatíveis com esse timing. Playtests pareados e diagnósticos ampliados são registrados em `docs/development-log.md`, `docs/player-archetypes-wave16-paired-results.md` e `docs/structural-strain-campaign-v06-results.md`.
 
-Próximo sistema relacional: efeitos diferenciados de confiança, hostilidade, reputação, privilégios e crédito somente onde houver ator e justificativa histórica suficientes. Cartas persistentes, desinformação, redes pessoais de confiança, perdas de carga, tripulação, combate e naufrágio permanecem para incrementos posteriores.
+A próxima fase é **pós-MVP**. A expansão cronológica e sistêmica deve preservar esta vertical slice como baseline de regressão; novos sistemas continuam condicionados a necessidade jogável e suporte histórico suficiente.
 
 ## Estrutura
 
@@ -134,6 +139,9 @@ docs/
   voyage-event-method.md
   interface-method.md
   roadmap.md
+  mvp-gate.md
+  development-log.md
+  structural-strain-campaign-v06-results.md
   sources.md
   evidence/
     pilot-malindi-1498.md
@@ -152,6 +160,7 @@ src/quintoimperio/domain/
   navigation.py
   port.py
   relationship.py
+  risk_mitigation.py
   route_knowledge.py
   session.py
   stop.py
@@ -172,6 +181,9 @@ prototype/
 
 tools/
   render_cartographic_map.py
+  simulate_player_archetype.py
+  diagnose_structural_strain.py
+  diagnose_structural_strain_campaign.py
 
 tests/
   test_access.py
@@ -189,6 +201,7 @@ tests/
   test_relationship.py
   test_relationship_data.py
   test_relationship_session.py
+  test_risk_mitigation.py
   test_session.py
   test_stop.py
   test_trade.py
