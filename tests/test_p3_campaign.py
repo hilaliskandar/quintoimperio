@@ -1,13 +1,19 @@
 import unittest
 from datetime import date
 
-from quintoimperio.domain import KnowledgeLevel, NavigationBasis, P3CampaignModel
+from quintoimperio.domain import (
+    ExpeditionEventModel,
+    KnowledgeLevel,
+    NavigationBasis,
+    P3CampaignModel,
+)
 
 
 class P3CampaignTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = P3CampaignModel()
+        cls.expedition_events = ExpeditionEventModel()
 
     def test_cabral_state_uses_documented_expedition_and_departure(self):
         state = self.model.initial_cabral_state()
@@ -38,7 +44,7 @@ class P3CampaignTests(unittest.TestCase):
         second = self.model.plan_current_leg(at_vera_cruz, seed=1500)
         self.assertFalse(second.feasible)
         self.assertIn("HISTORICAL_STOP_NOT_RELEASED", second.blockers)
-        waited = self.model.wait_until_guided_departure(at_vera_cruz)
+        waited = self.model.wait_for_stop_release(at_vera_cruz)
         self.assertTrue(waited.executed)
         self.assertEqual(waited.state_after.vessel.clock.current_date, date(1500, 5, 2))
         released = self.model.plan_current_leg(waited.state_after, seed=1500)
@@ -47,7 +53,7 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(released.navigation_basis, NavigationBasis.FLEET_COMMAND)
 
     def test_cape_losses_remain_documentary_events_not_generic_wreck_mechanics(self):
-        events = self.model.session.expedition_events.for_expedition("EXP_CABRAL_1500")
+        events = self.expedition_events.preferred_for_expedition("EXP_CABRAL_1500")
         losses = [event for event in events if event.event_id == "CABRAL1500_E03"]
         splits = [event for event in events if event.event_id == "CABRAL1500_E04"]
         self.assertEqual(len(losses), 1)
