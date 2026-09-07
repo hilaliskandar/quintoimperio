@@ -1,3 +1,5 @@
 rule_type,key,value,notes
 DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION,DEFAULT,50,"Dias-equivalentes abstratos que uma ação específica de permanência documentada pode acrescentar; parâmetro de SIMULATION, não quantidade histórica nem disponibilidade portuária genérica."
 DOCUMENTED_STOP_PROVISION_SERVICE_DAYS,DEFAULT,1,"Tempo abstrato consumido por uma ação de provisões durante permanência documental do retorno; parâmetro de SIMULATION."
+DOCUMENTED_STOP_REPAIR_POINTS_PER_DAY,DEFAULT,5,"Pontos abstratos de condição por dia de ação específica de carena/reparo documentado; parâmetro de SIMULATION, não taxa histórica nem disponibilidade portuária genérica."
+DOCUMENTED_STOP_REPAIR_MAX_DAYS_PER_ACTION,DEFAULT,2,"Máximo de dias consumidos por uma ação específica de carena/reparo documental; parâmetro de SIMULATION."
