@@ -85,6 +85,23 @@ def test_simulated_arrival_at_sao_bras_falls_inside_documented_warning_window():
     assert model.can_acquire_malabar_warning(after)
 
 
+def test_sao_bras_warning_is_required_before_historical_route_continues():
+    model = JoaoNovaCampaignModel()
+    state = model.initial_joao_nova_state(provision_days=180.0)
+    first = model.plan_current_leg(state, seed=1501)
+    at_sao_bras = model.execute_voyage(state, first)
+
+    blocked = model.plan_current_leg(at_sao_bras, seed=1501)
+    assert blocked.route_id == "R_SBR_KIL_NOVA"
+    assert not blocked.feasible
+    assert model.WARNING_REQUIRED_BLOCKER in blocked.blockers
+
+    informed = model.acquire_malabar_warning(at_sao_bras)
+    released = model.plan_current_leg(informed, seed=1501)
+    assert model.WARNING_REQUIRED_BLOCKER not in released.blockers
+    assert released.navigation_basis is NavigationBasis.FLEET_COMMAND
+
+
 def test_joao_nova_route_order_avoids_calicut():
     model = JoaoNovaCampaignModel()
     legs = model.session.expedition.legs[model.EXPEDITION_ID]
