@@ -1,0 +1,3 @@
+rule_type,key,value,notes
+DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION,VCR,5,"Dias-equivalentes abstratos atribuídos à ação específica WATER|WOOD da escala de Cabral em Vera Cruz. Valor mínimo de sensibilidade que resolve 18/20 seeds sem alterar o teto global; não representa quantidade histórica."
+DOCUMENTED_STOP_PROVISION_SERVICE_DAYS,VCR,0,"A ação ocorre dentro da permanência histórica já normalizada em Vera Cruz e não acrescenta dias ao calendário guiado."
