@@ -37,6 +37,8 @@ jobs:
         run: python prototype/session.py
       - name: Smoke-test return campaign to Rio Grande
         run: python prototype/return_campaign.py
+      - name: Diagnose return from completed MVP states
+        run: python tools/diagnose_return_from_mvp.py --output /tmp/return-from-mvp-wave17.json
       - name: Smoke-test playable interface
         env:
           SDL_VIDEODRIVER: dummy
@@ -66,7 +68,7 @@ jobs:
           python prototype/game_m6.py --roundtrip-smoke --save-path /tmp/quintoimperio-save.json --output /tmp/quintoimperio-interface-m6.png
           test -s /tmp/quintoimperio-save.json
           test -s /tmp/quintoimperio-interface-m6.png
-      - name: Publish playable interface screenshots
+      - name: Publish playable interface screenshots and return diagnostic
         uses: actions/upload-artifact@v4
         with:
           name: playable-interface-screenshots
@@ -77,6 +79,7 @@ jobs:
             /tmp/quintoimperio-interface-v02.png
             /tmp/quintoimperio-interface-v02-calicut.png
             /tmp/quintoimperio-interface-m6.png
+            /tmp/return-from-mvp-wave17.json
           if-no-files-found: error
       - name: Smoke-test coordinate map
         env:
