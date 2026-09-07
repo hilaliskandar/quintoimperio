@@ -1,10 +1,9 @@
 """Gate funcional mínimo para João da Nova 1501–1502.
 
-Este módulo introduz apenas o estado inicial da expedição e a aquisição tardia
-do aviso deixado pela armada de Cabral em São Brás. A data exata do encontro
-não é inventada: a ação só é elegível dentro da janela documental já registrada
-em ``expedition_events.csv`` e o teste conservador usa o limite superior dessa
-janela. Rotas posteriores continuam fora deste incremento.
+Este módulo preserva o estado inicial da expedição, a aquisição tardia do aviso
+deixado pela armada de Cabral em São Brás e a ordem das pernas normalizadas.
+Datas diárias não documentadas permanecem fora de ``voyage_observations.csv``:
+essas pernas usam timing de simulação sem abandonar ``ChronologyMode.GUIDED``.
 """
 
 from __future__ import annotations
@@ -26,6 +25,7 @@ class JoaoNovaCampaignModel(P3CampaignModel):
     DEPARTURE = date(1501, 3, 5)
     MALABAR_WARNING_EVENT_ID = "NOVA1501_E01"
     MALABAR_WARNING_KEY = "P3_INFO:CABRAL_MALABAR_WARNING"
+    WARNING_REQUIRED_BLOCKER = "CABRAL_MALABAR_WARNING_NOT_ACQUIRED"
 
     def __init__(self, root: Path | None = None) -> None:
         super().__init__(root)
@@ -85,3 +85,25 @@ class JoaoNovaCampaignModel(P3CampaignModel):
             state,
             information_history=state.information_history + (self.MALABAR_WARNING_KEY,),
         )
+
+    def plan_current_leg(self, state: GameSessionState, *, seed: int = 0):
+        """Impede SBR→KIL no histórico guiado enquanto o aviso não foi adquirido.
+
+        A restrição é específica desta expedição e não cria um sistema geral de
+        mensagens. Ela torna causal a latência já documentada: João da Nova parte
+        de Lisboa sem conhecer a ruptura em Calecute e só prossegue pela sequência
+        historicamente informada depois de encontrar o aviso em São Brás.
+        """
+        plan = super().plan_current_leg(state, seed=seed)
+        if (
+            state.active_expedition_id == self.EXPEDITION_ID
+            and state.expedition_leg_sequence == 2
+            and state.vessel.location_node == "SBR"
+            and state.chronology_mode is ChronologyMode.GUIDED
+            and not self.joao_nova_has_malabar_warning(state)
+        ):
+            blockers = tuple(
+                dict.fromkeys((*plan.blockers, self.WARNING_REQUIRED_BLOCKER))
+            )
+            return replace(plan, feasible=False, blockers=blockers)
+        return plan
