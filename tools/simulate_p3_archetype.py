@@ -56,6 +56,35 @@ def wait_for_release(model: P3CampaignModel, state, metrics: Metrics):
     return wait_guided(model, state, metrics)
 
 
+def generic_reprovision_signature(state) -> tuple[object, ...]:
+    """Identifica uma tentativa determinística sem depender do chamador."""
+    return (
+        state.vessel.location_node,
+        state.vessel.clock.current_date,
+        round(float(state.vessel.provision_days), 6),
+        round(float(state.vessel.condition), 6),
+    )
+
+
+def generic_reprovision_once(
+    model: P3CampaignModel,
+    state,
+    metrics: Metrics,
+    attempted_states: set[tuple[object, ...]],
+):
+    """Evita repetir serviço genérico no mesmo estado dentro da mesma perna.
+
+    A disponibilidade histórica é determinística. Se uma tentativa falha sem
+    alterar nó, data, provisões ou condição, repeti-la no mesmo estado não cria
+    uma decisão nova nem pode produzir resultado diferente.
+    """
+    signature = generic_reprovision_signature(state)
+    if signature in attempted_states:
+        return state, False
+    attempted_states.add(signature)
+    return reprovision(model, state, metrics)
+
+
 def documented_reprovision(model: P3CampaignModel, state, metrics: Metrics):
     """Usa primeiro a ação material específica da escala, quando disponível."""
     if not model.documented_cabral_stop_can_reprovision(state):
@@ -78,6 +107,7 @@ def p3_proactive_floor(
     state,
     metrics: Metrics,
     floor: float,
+    attempted_generic: set[tuple[object, ...]],
 ):
     """Aplica piso preventivo sem encadear serviço genérico após ação documentada."""
     while floor > 0 and state.vessel.provision_days < floor:
@@ -87,7 +117,7 @@ def p3_proactive_floor(
             if not changed or state.vessel.provision_days < floor:
                 break
             continue
-        state, changed = reprovision(model, state, metrics)
+        state, changed = generic_reprovision_once(model, state, metrics, attempted_generic)
         if not changed:
             break
     return state
@@ -105,6 +135,7 @@ def apply_p3_planning(
     metrics: Metrics,
     policy: ArchetypePolicy,
     seed: int,
+    attempted_generic: set[tuple[object, ...]],
 ):
     """Aplica horizonte logístico respeitando evidência e capacidade da expedição.
 
@@ -140,7 +171,9 @@ def apply_p3_planning(
         if documented:
             state, changed = documented_reprovision(model, state, metrics)
         else:
-            state, changed = reprovision(model, state, metrics)
+            state, changed = generic_reprovision_once(
+                model, state, metrics, attempted_generic
+            )
         if not changed:
             metrics.recommendation_ignored += 1
             return state
@@ -176,7 +209,14 @@ def recover_documented_stop_before_wait(
     return state
 
 
-def execute_leg(model: P3CampaignModel, state, metrics: Metrics, policy: ArchetypePolicy, seed: int):
+def execute_leg(
+    model: P3CampaignModel,
+    state,
+    metrics: Metrics,
+    policy: ArchetypePolicy,
+    seed: int,
+    attempted_generic: set[tuple[object, ...]],
+):
     recovery = 0
     while True:
         metrics.attempt()
@@ -225,7 +265,9 @@ def execute_leg(model: P3CampaignModel, state, metrics: Metrics, policy: Archety
                 continue
 
         if resource_block and policy.recover_resources_after_block:
-            state, changed = reprovision(model, state, metrics)
+            state, changed = generic_reprovision_once(
+                model, state, metrics, attempted_generic
+            )
             recovery += 1
             if changed:
                 continue
@@ -280,9 +322,14 @@ def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dic
                 "archetype": policy_name,
             }
         )
+        attempted_generic: set[tuple[object, ...]] = set()
 
-        state = p3_proactive_floor(model, state, metrics, policy.proactive_floor_days)
-        state = apply_p3_planning(model, state, metrics, policy, seed)
+        state = p3_proactive_floor(
+            model, state, metrics, policy.proactive_floor_days, attempted_generic
+        )
+        state = apply_p3_planning(
+            model, state, metrics, policy, seed, attempted_generic
+        )
         state = recover_documented_stop_before_wait(model, state, metrics, policy, seed)
 
         departure = model.guided_departure_date(state)
@@ -293,7 +340,9 @@ def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dic
         ):
             state, _ = wait_for_release(model, state, metrics)
 
-        state, ok = execute_leg(model, state, metrics, policy, seed)
+        state, ok = execute_leg(
+            model, state, metrics, policy, seed, attempted_generic
+        )
         if not ok:
             break
 
