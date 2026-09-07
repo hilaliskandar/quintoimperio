@@ -1,6 +1,7 @@
 import unittest
 from datetime import date
 
+from quintoimperio.domain.persistence import CampaignPersistence
 from quintoimperio.domain.port import PortServiceKind, ServiceAvailability
 from quintoimperio.domain.return_campaign import ReturnCampaignModel
 from quintoimperio.domain.stop import ChronologyMode
@@ -9,6 +10,7 @@ from quintoimperio.domain.stop import ChronologyMode
 class ReturnCampaignTests(unittest.TestCase):
     def setUp(self):
         self.model = ReturnCampaignModel()
+        self.persistence = CampaignPersistence()
 
     def completed_mvp_state(self, *, provisions: float = 120.0, on_date=date(1498, 5, 22)):
         return self.model.session.initial_state(
@@ -37,6 +39,9 @@ class ReturnCampaignTests(unittest.TestCase):
         plan = self.model.plan_current_leg(state, seed=1498)
         self.assertTrue(plan.feasible, plan.blockers)
         return self.model.execute_voyage(state, plan)
+
+    def round_trip(self, state):
+        return self.persistence.loads(self.persistence.dumps(state, seed=1498)).state
 
     def test_return_is_explicit_and_preserves_mvp_completion_state(self):
         state = self.completed_mvp_state()
@@ -86,6 +91,7 @@ class ReturnCampaignTests(unittest.TestCase):
         self.assertEqual(result.service_result.days_spent, 0)
         self.assertEqual(result.state_after.vessel.clock.current_date, date(1498, 9, 15))
         self.assertAlmostEqual(result.state_after.vessel.provision_days, before + 2.0)
+        self.assertFalse(self.model.documented_stop_can_reprovision(result.state_after))
         plan = self.model.plan_current_leg(result.state_after, seed=1498)
         self.assertTrue(plan.feasible, plan.blockers)
 
@@ -95,6 +101,18 @@ class ReturnCampaignTests(unittest.TestCase):
         self.assertTrue(result.executed)
         self.assertAlmostEqual(result.service_result.effect, 5.0)
         self.assertEqual(result.service_result.days_spent, 0)
+        repeated = self.model.reprovision_at_documented_stop(result.state_after, 1.0)
+        self.assertFalse(repeated.executed)
+        self.assertIn("DOCUMENTED_PROVISION_ACTION_ALREADY_USED", repeated.reasons)
+
+    def test_santa_maria_one_shot_survives_save_load(self):
+        state = self.state_at_santa_maria(provisions=30.0)
+        result = self.model.reprovision_at_documented_stop(state, 5.0)
+        loaded = self.round_trip(result.state_after)
+        self.assertFalse(self.model.documented_stop_can_reprovision(loaded))
+        repeated = self.model.reprovision_at_documented_stop(loaded, 1.0)
+        self.assertFalse(repeated.executed)
+        self.assertIn("DOCUMENTED_PROVISION_ACTION_ALREADY_USED", repeated.reasons)
 
     def test_documented_stop_reprovision_is_specific_not_generic(self):
         state = self.state_at_anjediva()
@@ -118,10 +136,21 @@ class ReturnCampaignTests(unittest.TestCase):
         self.assertAlmostEqual(result.service_result.effect, 1.0)
         self.assertEqual(result.service_result.days_spent, 1)
         self.assertAlmostEqual(result.state_after.vessel.condition, before + 1.0)
+        self.assertFalse(self.model.documented_stop_can_repair(result.state_after))
         self.assertEqual(
             self.model.session.port.availability("ANJ", PortServiceKind.REPAIR),
             ServiceAvailability.UNKNOWN,
         )
+
+    def test_careening_one_shot_survives_save_load(self):
+        state = self.state_at_anjediva()
+        result = self.model.repair_at_documented_stop(state, 2.0)
+        self.assertTrue(result.executed)
+        loaded = self.round_trip(result.state_after)
+        self.assertFalse(self.model.documented_stop_can_repair(loaded))
+        repeated = self.model.repair_at_documented_stop(loaded, 1.0)
+        self.assertFalse(repeated.executed)
+        self.assertIn("DOCUMENTED_REPAIR_ACTION_ALREADY_USED", repeated.reasons)
 
     def test_guided_return_reaches_rio_grande(self):
         state = self.completed_mvp_state(provisions=120.0)
