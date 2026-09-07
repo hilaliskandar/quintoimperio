@@ -187,7 +187,7 @@ def maybe_calicut_trade(model: P3CampaignModel, state, metrics: Metrics, policy:
 
 def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dict:
     model = P3CampaignModel()
-    state = model.initial_cabral_state()
+    state = model.initial_cabral_playable_state()
     metrics = Metrics(player_id=player_id, profile=archetype, seed=seed, wave=wave)
     metrics.observe(state)
     start = state.vessel.clock.current_date
