@@ -1,0 +1,31 @@
+name: P3 wave20 qualitative analysis
+
+on:
+  push:
+    branches: [p3-func-a-116]
+    paths:
+      - "tools/analyze_p3_wave20_qualitative.py"
+      - "tools/simulate_p3_archetype.py"
+      - ".github/workflows/p3-wave20-qualitative-analysis.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Analyze paired wave20
+        run: python tools/analyze_p3_wave20_qualitative.py | tee /tmp/p3-wave20-qualitative.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p3-wave20-qualitative-analysis
+          path: /tmp/p3-wave20-qualitative.json
+          if-no-files-found: error
