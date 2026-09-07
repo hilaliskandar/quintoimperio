@@ -138,7 +138,14 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(event.subject_label, "Dois pilotos guzerates")
         self.assertEqual(event.date_from, date(1500, 8, 6))
         self.assertEqual(event.date_to, date(1500, 8, 6))
-        self.assertNotIn("PIL_MAL_GUJ_1498", self.model.session.travel.pilots_for_route("R_KIL_MAL_CAB", date(1500, 8, 2), "KIL"))
+        self.assertFalse(
+            self.model.session.travel.pilot_can_guide(
+                "PIL_MAL_GUJ_1498",
+                "R_KIL_MAL_CAB",
+                date(1500, 8, 2),
+                "KIL",
+            )
+        )
 
     def test_cape_is_documentary_marker_not_operational_stop(self):
         route = self.model.session.routes["R_VCR_CGH_CAB"]
