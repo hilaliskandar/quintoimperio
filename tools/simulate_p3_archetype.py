@@ -15,7 +15,7 @@ from pathlib import Path
 
 from quintoimperio.domain import ChronologyMode, P3CampaignModel
 from quintoimperio.domain.risk_mitigation import secure_provision_reserve_for_voyage
-from simulate_player_archetype import ARCHETYPES, ArchetypePolicy, apply_planning, proactive_floor
+from simulate_player_archetype import ARCHETYPES, ArchetypePolicy, proactive_floor
 from simulate_synthetic_player import Metrics, RESOURCE_BLOCKERS, reprovision, wait_guided
 
 RANDOM_PER_LEG = "RANDOM_PER_LEG"
@@ -79,33 +79,22 @@ def resource_blocked(plan) -> bool:
     )
 
 
-def recover_documented_stop_before_wait(
+def apply_p3_planning(
     model: P3CampaignModel,
     state,
     metrics: Metrics,
     policy: ArchetypePolicy,
     seed: int,
 ):
-    """Decide a ação one-shot antes de liberar a escala histórica.
+    """Aplica o horizonte logístico sem mascarar escalas documentadas como porto genérico.
 
-    A ação não é automática. Perfis que seguem a recomendação logística podem
-    usá-la preventivamente quando o horizonte + margem excede o estoque atual.
-    Perfis que só reagem a bloqueios continuam podendo usá-la quando a própria
-    perna corrente já está bloqueada por recursos.
+    Mantém a mesma política do runner do MVP. A única diferença é a ordem da
+    tentativa de reposição: se a escala ativa de Cabral documenta aguada ou
+    refrescos, essa ação específica é usada antes do serviço portuário genérico.
     """
-    if not model.documented_cabral_stop_can_reprovision(state):
+    if not policy.consult_logistics:
         return state
-
-    metrics.attempt()
-    plan = model.plan_current_leg(state, seed=seed)
-    if plan.feasible:
-        metrics.executed()
-    else:
-        metrics.blocked(plan.blockers)
-    blocked_need = resource_blocked(plan) and policy.recover_resources_after_block
-
-    planned_need = False
-    if policy.consult_logistics:
+    for _ in range(8):
         metrics.attempt()
         metrics.recommendation_checks += 1
         view = model.logistics_planning_view(state, seed=seed)
@@ -113,24 +102,46 @@ def recover_documented_stop_before_wait(
         if view.next_destination_provisions_evidence_indeterminate:
             metrics.indeterminate_destination_warnings += 1
         horizon = view.logistics_horizon_required_days
-        if horizon is not None:
-            target = horizon + view.recommended_margin_days + policy.extra_margin_days
-            planned_need = (
-                policy.follow_recommended_margin
-                and state.vessel.provision_days < target
-            )
-
-    if not (blocked_need or planned_need):
-        if policy.consult_logistics and not policy.follow_recommended_margin:
+        if horizon is None:
+            return state
+        target = horizon + view.recommended_margin_days + policy.extra_margin_days
+        if state.vessel.provision_days >= target:
+            return state
+        if not policy.follow_recommended_margin:
             metrics.recommendation_ignored += 1
-        return state
-
-    state, changed = documented_reprovision(model, state, metrics)
-    if planned_need:
-        if changed:
-            metrics.recommendation_followed += 1
+            return state
+        if model.documented_cabral_stop_can_reprovision(state):
+            state, changed = documented_reprovision(model, state, metrics)
         else:
+            state, changed = reprovision(model, state, metrics)
+        if not changed:
             metrics.recommendation_ignored += 1
+            return state
+        metrics.recommendation_followed += 1
+    return state
+
+
+def recover_documented_stop_before_wait(
+    model: P3CampaignModel,
+    state,
+    metrics: Metrics,
+    policy: ArchetypePolicy,
+    seed: int,
+):
+    """Preserva a ação one-shot quando a perna corrente ainda exige recuperação."""
+    if not policy.recover_resources_after_block:
+        return state
+    if not model.documented_cabral_stop_can_reprovision(state):
+        return state
+    metrics.attempt()
+    plan = model.plan_current_leg(state, seed=seed)
+    if plan.feasible:
+        metrics.executed()
+        return state
+    metrics.blocked(plan.blockers)
+    if not resource_blocked(plan):
+        return state
+    state, _ = documented_reprovision(model, state, metrics)
     return state
 
 
@@ -240,7 +251,7 @@ def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dic
         )
 
         state = proactive_floor(model, state, metrics, policy.proactive_floor_days)
-        state = apply_planning(model, state, metrics, policy, seed)
+        state = apply_p3_planning(model, state, metrics, policy, seed)
         state = recover_documented_stop_before_wait(model, state, metrics, policy, seed)
 
         departure = model.guided_departure_date(state)
