@@ -16,9 +16,9 @@ from pathlib import Path
 from quintoimperio.data.loader import RepositoryData
 
 from .campaign import HistoricalCampaignModel
-from .port import PortServiceKind, PortServiceResult
+from .port import PortServiceKind, PortServiceResult, ServiceAvailability
 from .session import GameSessionState, SessionPortServiceResult
-from .stop import ChronologyMode
+from .stop import ChronologyMode, ExpeditionStop
 
 
 class ReturnCampaignModel(HistoricalCampaignModel):
@@ -63,13 +63,70 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             chronology_mode=chronology,
         )
 
+    def _stop_has_documented_provisions(self, stop: ExpeditionStop | None) -> bool:
+        return bool(stop and self.PROVISION_ACTIVITIES.intersection(stop.activities))
+
+    def _logistics_horizon(
+        self,
+        state: GameSessionState,
+        *,
+        current_required: float,
+        seed: int = 0,
+    ) -> tuple[float, str]:
+        """Encerra o horizonte também em permanência documental com provisões.
+
+        Isso não modifica a disponibilidade genérica do nó. O horizonte apenas
+        reconhece que, para esta expedição específica, existe uma futura decisão
+        de provisões sustentada por `expedition_stops.csv`.
+        """
+        if state.active_expedition_id != self.RETURN_EXPEDITION_ID:
+            return super()._logistics_horizon(
+                state,
+                current_required=current_required,
+                seed=seed,
+            )
+
+        leg = self.current_leg(state)
+        if leg is None:
+            raise ValueError("Nenhuma perna ativa para horizonte logístico")
+
+        expedition_id = state.active_expedition_id
+        route = self.session.routes[leg.route_id]
+        total = current_required
+        end_node = route["destination_node"]
+        stop = self.session.stops.for_leg(expedition_id, leg.sequence)
+        if self._stop_has_documented_provisions(stop):
+            return total, end_node
+        availability = self.session.port.availability(end_node, PortServiceKind.PROVISIONS)
+        if availability not in {ServiceAvailability.UNKNOWN, ServiceAvailability.NONE}:
+            return total, end_node
+
+        for future_leg in self.session.expedition.legs.get(expedition_id, ()):
+            if future_leg.sequence <= leg.sequence:
+                continue
+            required = self._historical_leg_provision_requirement(future_leg, seed=seed)
+            if required is None:
+                break
+            total += required
+            future_route = self.session.routes[future_leg.route_id]
+            end_node = future_route["destination_node"]
+            stop = self.session.stops.for_leg(expedition_id, future_leg.sequence)
+            if self._stop_has_documented_provisions(stop):
+                break
+            availability = self.session.port.availability(
+                end_node, PortServiceKind.PROVISIONS
+            )
+            if availability not in {ServiceAvailability.UNKNOWN, ServiceAvailability.NONE}:
+                break
+        return total, end_node
+
     def documented_stop_can_reprovision(self, state: GameSessionState) -> bool:
         stop = self.session.active_stop(state)
         return bool(
             stop is not None
             and stop.expedition_id == self.RETURN_EXPEDITION_ID
             and stop.node_id == state.vessel.location_node
-            and self.PROVISION_ACTIVITIES.intersection(stop.activities)
+            and self._stop_has_documented_provisions(stop)
         )
 
     def reprovision_at_documented_stop(
@@ -91,7 +148,7 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             blockers = ("STOP_NOT_PART_OF_RETURN_EXPEDITION",)
         elif stop.node_id != state.vessel.location_node:
             blockers = ("VESSEL_NOT_AT_DOCUMENTED_STOP",)
-        elif not self.PROVISION_ACTIVITIES.intersection(stop.activities):
+        elif not self._stop_has_documented_provisions(stop):
             blockers = ("STOP_HAS_NO_DOCUMENTED_PROVISION_ACTIVITY",)
         else:
             blockers = ()
