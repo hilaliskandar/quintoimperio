@@ -9,7 +9,6 @@ históricos nem recomendações de balanceamento.
 from __future__ import annotations
 
 import json
-from dataclasses import replace
 
 from quintoimperio.domain import P3CampaignModel
 
