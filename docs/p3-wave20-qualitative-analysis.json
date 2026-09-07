@@ -1,0 +1,834 @@
+{
+  "by_archetype": {
+    "CASUAL": {
+      "blockers_failed": {
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 15,
+        "INSUFFICIENT_PROVISIONS": 4
+      },
+      "completed": 16,
+      "failed_seeds": [
+        24001,
+        24002,
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 2,
+        "CAL": 1,
+        "COC": 1
+      }
+    },
+    "COMPLETIONIST": {
+      "blockers_failed": {
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 8,
+        "INSUFFICIENT_PROVISIONS": 2,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 2
+      },
+      "completed": 18,
+      "failed_seeds": [
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 1,
+        "COC": 1
+      }
+    },
+    "EXPLORER": {
+      "blockers_failed": {
+        "HISTORICAL_DEPARTURE_NOT_REACHED": 5,
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 19,
+        "HISTORICAL_STOP_NOT_RELEASED": 5,
+        "INSUFFICIENT_PROVISIONS": 6,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 5
+      },
+      "completed": 15,
+      "failed_seeds": [
+        24001,
+        24002,
+        24009,
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 3,
+        "COC": 2
+      }
+    },
+    "GRAND_STRATEGIST": {
+      "blockers_failed": {
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 18,
+        "INSUFFICIENT_PROVISIONS": 4,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 4
+      },
+      "completed": 16,
+      "failed_seeds": [
+        24001,
+        24002,
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 1,
+        "COC": 3
+      }
+    },
+    "MERCHANT": {
+      "blockers_failed": {
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 15,
+        "INSUFFICIENT_PROVISIONS": 4,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 4
+      },
+      "completed": 16,
+      "failed_seeds": [
+        24001,
+        24002,
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 2,
+        "CAL": 1,
+        "COC": 1
+      }
+    },
+    "OPTIMIZER": {
+      "blockers_failed": {
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 15,
+        "INSUFFICIENT_PROVISIONS": 4
+      },
+      "completed": 16,
+      "failed_seeds": [
+        24001,
+        24002,
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 2,
+        "CAL": 1,
+        "COC": 1
+      }
+    },
+    "RANDOM_PER_LEG": {
+      "blockers_failed": {
+        "HISTORICAL_DEPARTURE_NOT_REACHED": 11,
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 25,
+        "HISTORICAL_STOP_NOT_RELEASED": 11,
+        "INSUFFICIENT_PROVISIONS": 11,
+        "NAVIGATION_KNOWLEDGE_OR_PILOT_REQUIRED": 2,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 6
+      },
+      "completed": 12,
+      "failed_seeds": [
+        24001,
+        24002,
+        24003,
+        24005,
+        24006,
+        24008,
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 3,
+        "CAL": 2,
+        "COC": 3
+      }
+    },
+    "ROGUELIKE": {
+      "blockers_failed": {
+        "INSUFFICIENT_PROVISIONS": 20,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 17
+      },
+      "completed": 0,
+      "failed_seeds": [
+        24001,
+        24002,
+        24003,
+        24004,
+        24005,
+        24006,
+        24007,
+        24008,
+        24009,
+        24010,
+        24011,
+        24012,
+        24013,
+        24014,
+        24015,
+        24016,
+        24017,
+        24018,
+        24019,
+        24020
+      ],
+      "final_locations_failed": {
+        "ANJ": 12,
+        "KIL": 1,
+        "MAL": 5,
+        "MOZ": 2
+      }
+    },
+    "ROLEPLAYER": {
+      "blockers_failed": {
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 17,
+        "INSUFFICIENT_PROVISIONS": 4,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 4
+      },
+      "completed": 16,
+      "failed_seeds": [
+        24001,
+        24002,
+        24010,
+        24019
+      ],
+      "final_locations_failed": {
+        "ANJ": 1,
+        "CAL": 1,
+        "COC": 2
+      }
+    },
+    "SPEEDRUNNER": {
+      "blockers_failed": {
+        "HISTORICAL_DEPARTURE_NOT_REACHED": 138,
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 20,
+        "HISTORICAL_STOP_NOT_RELEASED": 118,
+        "INSUFFICIENT_PROVISIONS": 49,
+        "NAVIGATION_KNOWLEDGE_OR_PILOT_REQUIRED": 1
+      },
+      "completed": 0,
+      "failed_seeds": [
+        24001,
+        24002,
+        24003,
+        24004,
+        24005,
+        24006,
+        24007,
+        24008,
+        24009,
+        24010,
+        24011,
+        24012,
+        24013,
+        24014,
+        24015,
+        24016,
+        24017,
+        24018,
+        24019,
+        24020
+      ],
+      "final_locations_failed": {
+        "ANJ": 15,
+        "CAL": 2,
+        "COC": 1,
+        "KIL": 2
+      }
+    },
+    "SURVIVALIST": {
+      "blockers_failed": {
+        "HISTORICAL_SERVICE_EVIDENCE_INDETERMINATE": 5,
+        "INSUFFICIENT_PROVISIONS": 1,
+        "NO_DOCUMENTED_AUTHORITY_ACTOR": 1
+      },
+      "completed": 19,
+      "failed_seeds": [
+        24019
+      ],
+      "final_locations_failed": {
+        "COC": 1
+      }
+    }
+  },
+  "by_seed": {
+    "24001": {
+      "completed_archetypes": [
+        "COMPLETIONIST",
+        "SURVIVALIST"
+      ],
+      "completed_count": 2,
+      "failed_archetypes": [
+        "CASUAL",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "ROLEPLAYER",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2,
+        "COC": 7
+      },
+      "failed_net_event_provision_delta": {
+        "CASUAL": -22.77,
+        "EXPLORER": -22.77,
+        "GRAND_STRATEGIST": -12.77,
+        "MERCHANT": -22.77,
+        "OPTIMIZER": -22.77,
+        "RANDOM_PER_LEG": -22.77,
+        "ROGUELIKE": 4.61,
+        "ROLEPLAYER": -17.77,
+        "SPEEDRUNNER": 4.61
+      }
+    },
+    "24002": {
+      "completed_archetypes": [
+        "COMPLETIONIST",
+        "SURVIVALIST"
+      ],
+      "completed_count": 2,
+      "failed_archetypes": [
+        "CASUAL",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "ROLEPLAYER",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 5,
+        "CAL": 1,
+        "COC": 1,
+        "KIL": 1,
+        "MOZ": 1
+      },
+      "failed_net_event_provision_delta": {
+        "CASUAL": -24.64,
+        "EXPLORER": -24.64,
+        "GRAND_STRATEGIST": -14.64,
+        "MERCHANT": -24.64,
+        "OPTIMIZER": -24.64,
+        "RANDOM_PER_LEG": -24.64,
+        "ROGUELIKE": -24.64,
+        "ROLEPLAYER": -19.64,
+        "SPEEDRUNNER": -24.64
+      }
+    },
+    "24003": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 8,
+      "failed_archetypes": [
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 1,
+        "CAL": 1,
+        "MAL": 1
+      },
+      "failed_net_event_provision_delta": {
+        "RANDOM_PER_LEG": -9.45,
+        "ROGUELIKE": -3.01,
+        "SPEEDRUNNER": -9.45
+      }
+    },
+    "24004": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0.0,
+        "SPEEDRUNNER": 0.0
+      }
+    },
+    "24005": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 8,
+      "failed_archetypes": [
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2,
+        "COC": 1
+      },
+      "failed_net_event_provision_delta": {
+        "RANDOM_PER_LEG": 2.59,
+        "ROGUELIKE": 0,
+        "SPEEDRUNNER": 0
+      }
+    },
+    "24006": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 8,
+      "failed_archetypes": [
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "CAL": 2,
+        "MAL": 1
+      },
+      "failed_net_event_provision_delta": {
+        "RANDOM_PER_LEG": -6.97,
+        "ROGUELIKE": -6.97,
+        "SPEEDRUNNER": -6.97
+      }
+    },
+    "24007": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "CAL": 1,
+        "MAL": 1
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": -6.06,
+        "SPEEDRUNNER": -6.06
+      }
+    },
+    "24008": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 8,
+      "failed_archetypes": [
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "COC": 2,
+        "MAL": 1
+      },
+      "failed_net_event_provision_delta": {
+        "RANDOM_PER_LEG": -1.14,
+        "ROGUELIKE": -3.35,
+        "SPEEDRUNNER": -1.14
+      }
+    },
+    "24009": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 8,
+      "failed_archetypes": [
+        "EXPLORER",
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 1,
+        "COC": 1,
+        "MAL": 1
+      },
+      "failed_net_event_provision_delta": {
+        "EXPLORER": -9.33,
+        "ROGUELIKE": -9.33,
+        "SPEEDRUNNER": -9.33
+      }
+    },
+    "24010": {
+      "completed_archetypes": [
+        "SURVIVALIST"
+      ],
+      "completed_count": 1,
+      "failed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "ROLEPLAYER",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2,
+        "CAL": 3,
+        "COC": 3,
+        "KIL": 2
+      },
+      "failed_net_event_provision_delta": {
+        "CASUAL": -19.93,
+        "COMPLETIONIST": -13.61,
+        "EXPLORER": -19.93,
+        "GRAND_STRATEGIST": -23.61,
+        "MERCHANT": -19.93,
+        "OPTIMIZER": -19.93,
+        "RANDOM_PER_LEG": -9.93,
+        "ROGUELIKE": -19.93,
+        "ROLEPLAYER": -33.61,
+        "SPEEDRUNNER": -19.93
+      }
+    },
+    "24011": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 4.92,
+        "SPEEDRUNNER": 4.92
+      }
+    },
+    "24012": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0,
+        "SPEEDRUNNER": 0
+      }
+    },
+    "24013": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0,
+        "SPEEDRUNNER": 0
+      }
+    },
+    "24014": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0,
+        "SPEEDRUNNER": 0
+      }
+    },
+    "24015": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0.89,
+        "SPEEDRUNNER": 0.89
+      }
+    },
+    "24016": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0.0,
+        "SPEEDRUNNER": 0.0
+      }
+    },
+    "24017": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0,
+        "SPEEDRUNNER": 0
+      }
+    },
+    "24018": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0,
+        "SPEEDRUNNER": 0
+      }
+    },
+    "24019": {
+      "completed_archetypes": [],
+      "completed_count": 0,
+      "failed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROGUELIKE",
+        "ROLEPLAYER",
+        "SPEEDRUNNER",
+        "SURVIVALIST"
+      ],
+      "failed_final_locations": {
+        "ANJ": 9,
+        "COC": 1,
+        "MOZ": 1
+      },
+      "failed_net_event_provision_delta": {
+        "CASUAL": -54.15,
+        "COMPLETIONIST": -24.15,
+        "EXPLORER": -54.15,
+        "GRAND_STRATEGIST": -34.15,
+        "MERCHANT": -54.15,
+        "OPTIMIZER": -54.15,
+        "RANDOM_PER_LEG": -54.15,
+        "ROGUELIKE": -27.1,
+        "ROLEPLAYER": -44.15,
+        "SPEEDRUNNER": -54.15,
+        "SURVIVALIST": -19.77
+      }
+    },
+    "24020": {
+      "completed_archetypes": [
+        "CASUAL",
+        "COMPLETIONIST",
+        "EXPLORER",
+        "GRAND_STRATEGIST",
+        "MERCHANT",
+        "OPTIMIZER",
+        "RANDOM_PER_LEG",
+        "ROLEPLAYER",
+        "SURVIVALIST"
+      ],
+      "completed_count": 9,
+      "failed_archetypes": [
+        "ROGUELIKE",
+        "SPEEDRUNNER"
+      ],
+      "failed_final_locations": {
+        "ANJ": 2
+      },
+      "failed_net_event_provision_delta": {
+        "ROGUELIKE": 0.0,
+        "SPEEDRUNNER": 0.0
+      }
+    }
+  },
+  "completed": 144,
+  "completion_rate": 0.654545,
+  "seed_classes": {
+    "discriminating": [
+      24003,
+      24005,
+      24006,
+      24008,
+      24009
+    ],
+    "high_stress": [
+      24001,
+      24002,
+      24010
+    ],
+    "low_stress": [
+      24004,
+      24007,
+      24011,
+      24012,
+      24013,
+      24014,
+      24015,
+      24016,
+      24017,
+      24018,
+      24020
+    ],
+    "universal_failure": [
+      24019
+    ]
+  },
+  "sessions": 220
+}

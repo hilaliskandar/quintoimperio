@@ -46,16 +46,22 @@ Pessoas ou registros historicos de pilotos que podem ser associados a um local e
 Competencias de piloto documentadas por rota e periodo. Esta tabela nao atribui bonus de velocidade ou consumo: apenas registra que a fonte sustenta capacidade de guia em determinada conexao.
 
 ### `expeditions.csv`
-Expedicoes ou armadas historicamente documentadas. A primeira linha registra a armada de Vasco da Gama de 1497-1499, sua autoridade, lideranca e o carater misto do financiamento documentado. A tabela nao fixa a identidade do protagonista.
+Expedicoes ou armadas historicamente documentadas. A primeira linha registra a armada de Vasco da Gama de 1497-1499, sua autoridade, lideranca e o carater misto do financiamento documentado. P3 acrescenta as armadas de Cabral, Joao da Nova e Vasco da Gama 1502 como unidades documentais; a existencia de uma linha nao implica que toda a campanha ja esteja jogavel. A tabela nao fixa a identidade do protagonista.
 
 ### `expedition_routes.csv`
-Sequencia de pernas operacionais associadas a uma expedicao. `FLEET_COMMAND` registra uma base institucional de participacao na viagem; nao e conhecimento nautico individual e nao concede bonus quantitativo. Para a armada de 1497, as antigas pernas agregadas Lisboa-Cabo e Cabo-Mocambique foram substituidas por escalas documentadas no `Roteiro`.
+Sequencia de pernas operacionais associadas a uma expedicao. `FLEET_COMMAND` registra uma base institucional de participacao na viagem; nao e conhecimento nautico individual e nao concede bonus quantitativo. Para a armada de 1497, as antigas pernas agregadas Lisboa-Cabo e Cabo-Mocambique foram substituidas por escalas documentadas no `Roteiro`. P3 amplia a tabela de forma incremental, apenas quando uma perna entra efetivamente no recorte executavel.
 
 ### `expedition_stops.csv`
 Permanencias documentadas da expedicao em pontos de escala. Registra duracao declarada, atividades como agua, madeira, carenagem, reparos e transferencia de carga, e proveniencia. A duracao declarada pela fonte nao precisa coincidir aritmeticamente com datas editoriais reconstruidas quando a propria fonte usa contagem inclusiva.
 
 ### `expedition_epilogue_events.csv`
 Eventos historicos de fechamento cuja evidencia nao cabe com seguranca numa unica sequencia de pernas operacionais. A tabela foi introduzida para o trecho posterior ao fim do manuscrito do `Roteiro`, quando as embarcacoes se separam, o comando do S. Gabriel muda e a trajetoria pessoal de Vasco da Gama deixa de coincidir com a do navio. `trajectory_id` separa linhas narrativas sem criar ainda um sistema geral de personagens ou frota. `date_precision` admite `EXACT`, `BEFORE`, `AFTER` e `RANGE`; datas concorrentes usam linhas distintas no mesmo `variant_group`. `preferred_for_simulation` so pode selecionar uma variante quando existe uma escolha editorial de trabalho defensavel; quando a divergencia permanece irresolvida, todas as variantes ficam `FALSE`. A tabela e historica/documental e nao e consumida ainda pelo loop jogavel.
+
+### `expedition_events.csv`
+Eventos historicos reutilizaveis durante uma campanha, e nao apenas em seu epilogo. P3 usa esta camada para perdas e separacoes de embarcacoes, destacamentos, aquisicao de informacao e mudancas institucionais. Os eventos podem ser consultados pelo dominio, mas nao produzem automaticamente efeitos materiais, combate ou alteracoes de frota. `preferred_for_simulation` indica apenas que a variante documental pode servir de referencia de trabalho quando a evidencia permite.
+
+### `node_state_events.csv`
+Transicoes temporais documentadas de um no. A tabela existe para impedir que uma feitoria, fortificacao, guarnicao, crise de acesso ou mudanca relacional seja retroprojetada para todo o periodo coberto por `nodes.csv`. O modelo aplica intervalos incertos de forma conservadora: uma transicao so integra o estado efetivo quando a data consultada alcanca o limite superior documentado. Fortificacao ou guarnicao portuguesa nao implica mudanca de soberania, que permanece explicitada em `sovereignty_note`.
 
 ## Campos de evidencia
 

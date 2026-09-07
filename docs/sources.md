@@ -10,6 +10,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 |---|---|---|
 | `ROTEIRO_GAMA_1497` | *Roteiro da primeira viagem de Vasco da Gama à Índia*, relato de participante da expedição; edição/tradução de E. G. Ravenstein, Hakluyt Society, 1898 | itinerário 1497–1499, escalas, abastecimento, reparos, encontros e cronologia fina |
 | `CAMINHA_1500_ANTT` | Pêro Vaz de Caminha, carta a D. Manuel I, Porto Seguro/Vera Cruz, 1 de maio de 1500; ANTT, PT/TT/GAV/8/2/8, transcrição paleográfica e contemporânea | cronologia testemunhal da armada de Cabral entre Lisboa e Vera Cruz, desaparecimento de Vasco de Ataíde, sinais/avistamento de terra, contactos e permanência até a véspera da retomada da viagem |
+| `PILOTO_ANONIMO_CABRAL_1500` | *Relação do Piloto Anônimo*, narrativa contemporânea da armada de Pedro Álvares Cabral, preservada em tradição impressa e edições documentais | viagem de 1500–1501 após Vera Cruz; passagem por Moçambique em 20/07/1500 com aguada, refrescos e piloto para Quiloa; retorno e reparos em Moçambique |
 | `NEWITT_PEW` | Malyn Newitt, *Portugal in European and World History* | expansão atlântica, ilhas, África Ocidental, Mina, Kongo e Cabo |
 | `NEWITT_WA` | Malyn Newitt, *The Portuguese in West Africa, 1415–1670: A Documentary History* | África Ocidental e fontes documentais |
 | `VILASANTA_KE` | Nuno Vila-Santa, *Knowledge Exchanges Between Portugal and Europe* | pilotos, cartografia, circulação e proteção do conhecimento náutico |
@@ -19,6 +20,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 | `ALPERS_IOWH` | Edward A. Alpers, *The Indian Ocean in World History* | monções, costa suaíli, portos e geografia social do Índico |
 | `IOH_PEARSON` | *Indian Ocean Histories: The Many Worlds of Michael Naylor Pearson* | enquadramento comparativo e oceânico |
 | `OLIVEIRA_COSTA_CABRAL_1500` | João Paulo Oliveira e Costa, cronologia da Armada da Índia de 1500 em *Descobridores do Brasil. Exploradores do Atlântico e Construtores do Estado da Índia*; reprodução EVE/FCSH | cronologia Cabral 1500–1501, composição e fragmentação da armada, perdas, chegada e permanência no Malabar e retorno |
+| `GREENLEE_CABRAL_1938` | William Brooks Greenlee (ed.), *The Voyage of Pedro Álvares Cabral to Brazil and India from Contemporary Documents and Narratives*, Hakluyt Society, 1938 | síntese crítica e edição documental da viagem de Cabral; identificação de Anjediva como terra alcançada na entrada da Índia, carena/pintura dos navios e preparação para Calecute |
 | `EVE_COCHIN` | José Luís Ferreira, “Cochim”, Enciclopédia Virtual da Expansão Portuguesa, FCSH, 2009 | Cochim 1500–1503, feitoria, carregamento de pimenta, contexto político e comunidades locais |
 | `HPIP_COCHIN` | entrada Kochi/Cochim/Santa Cruz de Cochim, Heritage of Portuguese Influence / Património de Influência Portuguesa | âncora cartográfica e morfologia urbana-portuária histórica de Cochim |
 | `CANAVARRO_GGB_2000` | Ana Rita Canavarro, “Gonçalo Gil Barbosa”, em *Descobridores do Brasil*, 2000 | primeiro feitor de Cochim e sucessão Barbosa–Diogo Fernandes Correia |
@@ -30,6 +32,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 
 - *Roteiro da primeira viagem de Vasco da Gama à Índia* — fonte primária para o itinerário de 1497–1499; a edição Ravenstein explicita que palavras e datas ausentes do manuscrito foram colocadas entre colchetes, distinção que deve ser preservada nas notas de evidência.
 - Pêro Vaz de Caminha, carta de 1 de maio de 1500 — fonte primária para a cronologia atlântica inicial de Cabral; usar a transcrição do Arquivo Nacional da Torre do Tombo e dar precedência às datas explícitas do documento quando divergirem de sínteses posteriores.
+- *Relação do Piloto Anônimo* — fonte narrativa contemporânea para a continuação da armada de Cabral após Vera Cruz; para Moçambique em 20/07/1500, sustenta diretamente aguada, refrescos e obtenção de piloto para Quiloa. A magnitude de qualquer efeito logístico no jogo continua sendo parâmetro de simulação, não dado histórico.
 - Malyn Newitt, *Portugal in European and World History*.
 - Malyn Newitt, *The Portuguese in West Africa, 1415–1670: A Documentary History*.
 - Nuno Vila-Santa, *Knowledge Exchanges Between Portugal and Europe*.
@@ -42,6 +45,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 - Edward A. Alpers, *The Indian Ocean in World History*.
 - *Indian Ocean Histories: The Many Worlds of Michael Naylor Pearson* — enquadramento comparativo e oceânico.
 - João Paulo Oliveira e Costa, cronologia da Armada da Índia de 1500, para a sequência documental Cabral–Cochim.
+- William Brooks Greenlee, *The Voyage of Pedro Álvares Cabral to Brazil and India from Contemporary Documents and Narratives*, para conferência da sequência e atividades de Anjediva; datas operacionais derivadas continuam marcadas como reconstrução quando não explicitadas.
 - José Luís Ferreira, “Cochim”, EVE/FCSH, para o porto, feitoria inicial e contexto local.
 - EVE/FCSH, “Cananor”, para contacto de 1501, feitoria de João da Nova e reorganização de 1502.
 - Comissão Portuguesa de História Militar, síntese de João da Nova, para a mensagem de São Brás e sequência operacional da terceira armada.
@@ -60,6 +64,8 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 8. Para Cabral, datas explícitas da Carta de Caminha prevalecem sobre datas divergentes em sínteses: sinais de terra em 21/04/1500 e avistamento em 22/04/1500 devem ser preservados como cronologia testemunhal.
 9. Para João da Nova, a informação produzida por Cabral no Malabar só entra no conhecimento da expedição quando houver veículo de transmissão documentado; o aviso de São Brás é o primeiro evento desse tipo já identificado.
 10. Ceilão não deve ser incorporado à rota de João da Nova em 1501 apenas com base na inscrição de Colombo: a hipótese é historiograficamente discutida e não possui documentação contemporânea suficiente.
+11. Para Cabral em Anjediva, 22/08/1500 pode ser usado como chegada de trabalho apenas pela combinação da cronologia de Oliveira e Costa, que fixa a chegada à costa indiana nesse dia, com Greenlee, que identifica Anjediva como a terra alcançada. A saída derivada de uma permanência de duas semanas deve permanecer marcada como reconstrução operacional, não como data primária independente.
+12. Para Cabral em Moçambique em 20/07/1500, a *Relação do Piloto Anônimo* autoriza aguada, refrescos e obtenção de piloto para Quiloa. Isso não transforma `MOZ` em serviço portuário universal nem determina quantitativamente o efeito de provisões no modelo.
 
 ## Lacunas prioritárias
 
