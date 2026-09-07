@@ -38,15 +38,27 @@ class P3CampaignModel(HistoricalCampaignModel):
             for row in repository.simulation("p3_rules.csv")
         }
 
+    @property
+    def cabral_provision_cap(self) -> float:
+        """Teto abstrato específico da armada, sem alterar o teto global do MVP."""
+        return self.p3_rules[("EXPEDITION_PROVISION_MAX_ONBOARD", self.CABRAL_EXPEDITION_ID)]
+
     def initial_cabral_state(
         self,
         *,
-        provision_days: float = 60.0,
+        provision_days: float | None = None,
         condition: float = 100.0,
         capital_index: float = 100.0,
         capacity_total: float = 30.0,
     ) -> GameSessionState:
-        """Abre a tranche Cabral na partida documental de 09/03/1500."""
+        """Abre a tranche Cabral na partida documental de 09/03/1500.
+
+        Quando ``provision_days`` não é informado, usa o teto abstrato específico
+        da expedição. Isso representa a escala do aprestamento documentado sem
+        converter literalmente a indicação histórica de longo horizonte em dias.
+        """
+        if provision_days is None:
+            provision_days = self.cabral_provision_cap
         return self.session.initial_state(
             location_node="LIS",
             start_date=self.CABRAL_DEPARTURE,
@@ -61,7 +73,7 @@ class P3CampaignModel(HistoricalCampaignModel):
     def initial_cabral_playable_state(
         self,
         *,
-        provision_days: float = 60.0,
+        provision_days: float | None = None,
         condition: float = 100.0,
         capital_index: float = 100.0,
         capacity_total: float = 30.0,
@@ -69,9 +81,12 @@ class P3CampaignModel(HistoricalCampaignModel):
         """Abre dois dias simulados de preparação antes da partida documental.
 
         07/03/1500 é uma camada de jogo, não uma alegação histórica sobre o início
-        do aprestamento da armada. A partida guiada continua fixada em 09/03/1500
-        pela observação da primeira perna, reproduzindo a separação já usada no MVP.
+        do aprestamento da armada. A partida guiada continua fixada em 09/03/1500.
+        O estado padrão já traz o teto abstrato específico de Cabral, refletindo a
+        armada documentada como preparada para longo horizonte.
         """
+        if provision_days is None:
+            provision_days = self.cabral_provision_cap
         return self.session.initial_state(
             location_node="LIS",
             start_date=self.CABRAL_PREDEPARTURE_START,
@@ -159,8 +174,7 @@ class P3CampaignModel(HistoricalCampaignModel):
         service_days = int(
             self.p3_rules[("DOCUMENTED_STOP_PROVISION_SERVICE_DAYS", stop.node_id)]
         )
-        max_onboard = self.session.port.rules[("PROVISION_MAX_ONBOARD", "DEFAULT")]
-        remaining_capacity = max(0.0, max_onboard - state.vessel.provision_days)
+        remaining_capacity = max(0.0, self.cabral_provision_cap - state.vessel.provision_days)
         added = min(capacity, remaining_capacity)
         if added <= 0:
             blockers = ("ONBOARD_PROVISION_CAP_REACHED",)
