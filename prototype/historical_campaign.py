@@ -20,6 +20,7 @@ import pygame
 from game import (
     BG,
     BUTTON,
+    BUTTON_DISABLED,
     HEIGHT,
     INK,
     LINE,
@@ -36,19 +37,40 @@ from quintoimperio.domain import (
     RelationshipStatus,
 )
 from quintoimperio.domain.campaign_progress import CampaignProgressModel
+from quintoimperio.domain.risk_mitigation import (
+    SECURED_RESERVE_COST_PER_DAY,
+    secure_provision_reserve_for_voyage,
+)
 
 
 class HistoricalCampaignPrototype(M3PlayablePrototype):
     """Versão histórica do painel do MVP com cronologia guiada ponta a ponta."""
+
+    RESERVE_CHOICES = (0.0, 5.0, 10.0, 15.0, 20.0)
 
     def __init__(self) -> None:
         super().__init__("HISTORICAL")
         self.session = HistoricalCampaignModel()
         self.progress_model = CampaignProgressModel(self.session.session)
         self.state = self.session.initial_playable_state()
+        self.secured_reserve_days = 0.0
+        self.risk_reserve_rect = pygame.Rect(
+            MAP_RECT.right - 300, MAP_RECT.top + 78, 284, 78
+        )
         self.message = (
             "Preparação simulada em Lisboa: partida histórica em 1497-07-08; "
             "margem logística de 20 dias-equivalentes é heurística de simulação."
+        )
+
+    def set_secured_reserve(self, days: float) -> None:
+        value = float(days)
+        if value not in self.RESERVE_CHOICES:
+            raise ValueError("Reserva deve ser 0, 5, 10, 15 ou 20 dias-equivalentes")
+        self.secured_reserve_days = value
+        cost = value * SECURED_RESERVE_COST_PER_DAY
+        self.message = (
+            f"Reserva segregada SIM selecionada: {value:g} dias-eq. por viagem; "
+            f"custo de preparação {cost:.2f} capital. Estoque não aumenta."
         )
 
     def plan_for_route(self, route_id: str):
@@ -58,6 +80,66 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
             route_id,
             pilot_id=pilot_id,
             seed=SEED,
+        )
+
+    def travel_selected(self) -> None:
+        if not self.selected_route:
+            self.message = "Nenhuma rota selecionada."
+            return
+        plan = self.plan_for_route(self.selected_route)
+        if not plan.feasible:
+            self.message = "Viagem bloqueada: " + ", ".join(plan.blockers)
+            return
+
+        mitigation = None
+        try:
+            if self.secured_reserve_days > 0:
+                secured = min(
+                    self.secured_reserve_days,
+                    self.state.vessel.provision_days,
+                )
+                prepared, resolved, mitigation = secure_provision_reserve_for_voyage(
+                    self.session.session,
+                    self.state,
+                    plan,
+                    secured,
+                )
+            else:
+                prepared = self.state
+                resolved = self.session.session.travel.resolve_voyage(
+                    self.state.vessel, plan
+                )
+        except ValueError as exc:
+            self.message = f"Preparação de risco bloqueada: {exc}."
+            return
+
+        self.state = self.session.execute_voyage(prepared, resolved)
+        self.selected_route = None
+        self.selected_good = None
+        pilot = f"; piloto={resolved.pilot_id}" if resolved.pilot_id else ""
+        basis = resolved.navigation_basis.value if resolved.navigation_basis else "SEM_BASE"
+        event_note = ""
+        if resolved.events:
+            event = resolved.events[0]
+            event_note = (
+                f"; evento SIM={event.event_type.value} "
+                f"(+{event.extra_days}d, condição -{event.condition_loss:.1f}, "
+                f"provisões {event.provision_delta:+.1f}d)"
+            )
+        if mitigation is not None and mitigation.mitigated_days > 0:
+            event_note += (
+                f"; reserva mitigou {mitigation.mitigated_days:.1f}d "
+                f"(perda bruta {mitigation.raw_event_provision_delta:.1f}d, "
+                f"líquida {mitigation.effective_event_provision_delta:.1f}d)"
+            )
+        elif self.secured_reserve_days > 0:
+            event_note += (
+                f"; proteção SIM {self.secured_reserve_days:g}d preparada, "
+                "sem perda severa mitigada nesta perna"
+            )
+        self.message = (
+            f"Chegada a {resolved.destination_node} em {resolved.arrival_date}; "
+            f"{resolved.travel_days} dias; base={basis}{pilot}{event_note}."
         )
 
     def wait_stop(self) -> None:
@@ -134,6 +216,37 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
         surface.blit(font.render(line3, True, MUTED), (rect.x + 8, rect.y + 47))
         self.targets.append(ClickTarget(rect, "action", "wait_stop"))
 
+    def _risk_reserve_overlay(self, surface: pygame.Surface) -> None:
+        rect = self.risk_reserve_rect
+        pygame.draw.rect(surface, BG, rect, border_radius=4)
+        pygame.draw.rect(surface, LINE, rect, width=1, border_radius=4)
+        font = pygame.font.SysFont("monospace", 10)
+        cost = self.secured_reserve_days * SECURED_RESERVE_COST_PER_DAY
+        line1 = (
+            f"Proteção de provisões SIM: {self.secured_reserve_days:g}d | "
+            f"custo/viagem {cost:.2f} capital"
+        )
+        line2 = "Reserva não aumenta estoque nem revela o evento futuro."
+        surface.blit(font.render(line1, True, INK), (rect.x + 7, rect.y + 6))
+        surface.blit(font.render(line2, True, MUTED), (rect.x + 7, rect.y + 22))
+        x = rect.x + 7
+        for choice in self.RESERVE_CHOICES:
+            button = pygame.Rect(x, rect.y + 43, 48, 25)
+            selected = choice == self.secured_reserve_days
+            affordable = choice * SECURED_RESERVE_COST_PER_DAY <= self.state.commerce.capital_index
+            pygame.draw.rect(
+                surface,
+                BUTTON if affordable else BUTTON_DISABLED,
+                button,
+                border_radius=3,
+            )
+            pygame.draw.rect(surface, LINE, button, width=2 if selected else 1, border_radius=3)
+            label = f"{choice:g}d"
+            surface.blit(font.render(label, True, INK), (button.x + 13, button.y + 7))
+            if affordable:
+                self.targets.append(ClickTarget(button, "risk_reserve", str(choice)))
+            x += 54
+
     def _authority_contact_overlay(self, surface: pygame.Surface) -> None:
         node_id = self.state.vessel.location_node
         on_date = self.state.vessel.clock.current_date
@@ -172,11 +285,15 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
     def render(self, surface: pygame.Surface) -> None:
         super().render(surface)
         self._campaign_progress_overlay(surface)
+        self._risk_reserve_overlay(surface)
         self._authority_contact_overlay(surface)
         self._guided_wait_overlay(surface)
 
     def handle_click(self, pos: tuple[int, int]) -> None:
         for target in reversed(self.targets):
+            if target.rect.collidepoint(pos) and target.kind == "risk_reserve":
+                self.set_secured_reserve(float(target.value))
+                return
             if (
                 target.rect.collidepoint(pos)
                 and target.kind == "action"
@@ -184,6 +301,8 @@ class HistoricalCampaignPrototype(M3PlayablePrototype):
             ):
                 self.contact_authority_action()
                 return
+        if self.risk_reserve_rect.collidepoint(pos):
+            return
         super().handle_click(pos)
 
     def _travel(self, route_id: str) -> None:
