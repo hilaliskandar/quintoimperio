@@ -72,6 +72,22 @@ Para riscos de cauda, a ordem de intervenção passa a ser:
 4. medir novamente com seeds pareadas;
 5. recalibrar probabilidade ou severidade apenas se a agência continuar insuficiente.
 
-## Próximo gate — risco estrutural
+## Diagnóstico preliminar de `STRUCTURAL_STRAIN`
 
-A próxima dimensão a ser testada é `STRUCTURAL_STRAIN`. O objetivo é verificar se manutenção preventiva, sobressalentes ou preparação estrutural podem criar agência com custo limitado, sem funcionar como reparo automático, sem impedir outras perdas de condição e sem alterar a distribuição estocástica antes da medição.
+Antes de acrescentar uma segunda mitigação, os resultados da própria onda 16 foram reexaminados como diagnóstico de condição estrutural.
+
+Nos `200` playtests:
+
+- a condição mínima global foi `36,79`;
+- nenhuma sessão caiu abaixo do limiar de partida `20`;
+- não houve blocker `VESSEL_CONDITION_TOO_LOW` no agregado;
+- `8/200` sessões chegaram a condição mínima inferior a `40`;
+- somente uma dessas oito sessões falhou, sem indicação de que a falha tenha sido causada por condição estrutural.
+
+O resultado muda o próximo passo. Não há evidência suficiente para introduzir imediatamente manutenção preventiva, sobressalentes ou uma proteção específica contra `STRUCTURAL_STRAIN`. Fazer isso agora acrescentaria uma mecânica sem problema demonstrado.
+
+Foi aberta a issue `#87` para um diagnóstico dirigido em um universo ampliado de seeds, mantendo `simulation/voyage_event_rules.csv` congelado. O gate deve registrar ocorrência de `STRUCTURAL_STRAIN`, condição antes/depois, condição mínima e blockers posteriores, separando falhas por condição das falhas por provisões, navegação ou política do arquétipo.
+
+## Próximo gate — medir antes de mitigar
+
+A próxima etapa é executar o diagnóstico da issue `#87`. Nova mecânica estrutural somente será considerada se o teste demonstrar concentração de becos sem saída ou derrotas inevitáveis associadas a `STRUCTURAL_STRAIN` entre políticas competentes. Caso contrário, a decisão correta será preservar o risco atual sem adicionar proteção redundante.
