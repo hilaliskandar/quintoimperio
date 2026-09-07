@@ -17,6 +17,10 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 | `SUBRAHMANYAM_PEA` | Sanjay Subrahmanyam, *The Portuguese Empire in Asia, 1500–1700* | primeiras expedições, política, instituições e redes portuguesas na Ásia |
 | `ALPERS_IOWH` | Edward A. Alpers, *The Indian Ocean in World History* | monções, costa suaíli, portos e geografia social do Índico |
 | `IOH_PEARSON` | *Indian Ocean Histories: The Many Worlds of Michael Naylor Pearson* | enquadramento comparativo e oceânico |
+| `OLIVEIRA_COSTA_CABRAL_1500` | João Paulo Oliveira e Costa, cronologia da Armada da Índia de 1500 em *Descobridores do Brasil. Exploradores do Atlântico e Construtores do Estado da Índia*; reprodução EVE/FCSH | cronologia Cabral 1500–1501, chegada e permanência em Cochim, primeiros agentes portugueses residentes |
+| `EVE_COCHIN` | José Luís Ferreira, “Cochim”, Enciclopédia Virtual da Expansão Portuguesa, FCSH, 2009 | Cochim 1500–1503, feitoria, carregamento de pimenta, contexto político e comunidades locais |
+| `HPIP_COCHIN` | entrada Kochi/Cochim/Santa Cruz de Cochim, Heritage of Portuguese Influence / Património de Influência Portuguesa | âncora cartográfica e morfologia urbana-portuária histórica de Cochim |
+| `CANAVARRO_GGB_2000` | Ana Rita Canavarro, “Gonçalo Gil Barbosa”, em *Descobridores do Brasil*, 2000 | primeiro feitor de Cochim e sucessão Barbosa–Diogo Fernandes Correia |
 
 ## Expansão atlântica portuguesa
 
@@ -32,6 +36,9 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 - Sanjay Subrahmanyam, *The Portuguese Empire in Asia, 1500–1700*.
 - Edward A. Alpers, *The Indian Ocean in World History*.
 - *Indian Ocean Histories: The Many Worlds of Michael Naylor Pearson* — enquadramento comparativo e oceânico.
+- João Paulo Oliveira e Costa, cronologia da Armada da Índia de 1500, para a sequência documental Cabral–Cochim.
+- José Luís Ferreira, “Cochim”, EVE/FCSH, para o porto, feitoria inicial e contexto local.
+- HPIP, entrada Kochi/Cochim, para a âncora cartográfica e a leitura da paisagem estuarina histórica.
 
 ## Regras de uso
 
@@ -41,6 +48,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 4. Toda associação entre porto e mercadoria deve distinguir produção de simples circulação.
 5. Coordenadas em `nodes.csv` são âncoras cartográficas modernas. Elas não afirmam a posição exata do cais ou assentamento no século XV.
 6. Datas entre colchetes na edição Ravenstein do `Roteiro` são reconstruções editoriais e devem ser identificadas como tal; não recebem automaticamente o mesmo grau de evidência de uma data explícita no manuscrito.
+7. Para Cochim, a instalação inicial de agentes portugueses sob Cabral em 1500–1501 e a reorganização/substituição do feitor por Vasco da Gama em 1502 permanecem distinguidas; a formulação divergente de Subrahmanyam sobre a feitoria em 1502 é preservada na documentação do P2.
 
 ## Lacunas prioritárias
 
