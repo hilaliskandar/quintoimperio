@@ -26,6 +26,7 @@ from .information import (
     InformationOpportunity,
     InformationRule,
 )
+from .joao_nova_campaign import JoaoNovaCampaignModel
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .navigation import NavigationModel, great_circle_nm
 from .node_state_event import NodeHistoricalState, NodeStateEvent, NodeStateEventModel
@@ -105,6 +106,7 @@ __all__ = [
     "InformationModel",
     "InformationOpportunity",
     "InformationRule",
+    "JoaoNovaCampaignModel",
     "KnowledgeLevel",
     "KnowledgeModel",
     "KnowledgeState",
