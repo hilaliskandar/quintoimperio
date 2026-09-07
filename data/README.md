@@ -54,6 +54,9 @@ Sequencia de pernas operacionais associadas a uma expedicao. `FLEET_COMMAND` reg
 ### `expedition_stops.csv`
 Permanencias documentadas da expedicao em pontos de escala. Registra duracao declarada, atividades como agua, madeira, carenagem, reparos e transferencia de carga, e proveniencia. A duracao declarada pela fonte nao precisa coincidir aritmeticamente com datas editoriais reconstruidas quando a propria fonte usa contagem inclusiva.
 
+### `expedition_epilogue_events.csv`
+Eventos historicos de fechamento cuja evidencia nao cabe com seguranca numa unica sequencia de pernas operacionais. A tabela foi introduzida para o trecho posterior ao fim do manuscrito do `Roteiro`, quando as embarcacoes se separam, o comando do S. Gabriel muda e a trajetoria pessoal de Vasco da Gama deixa de coincidir com a do navio. `trajectory_id` separa linhas narrativas sem criar ainda um sistema geral de personagens ou frota. `date_precision` admite `EXACT`, `BEFORE`, `AFTER` e `RANGE`; datas concorrentes usam linhas distintas no mesmo `variant_group`. `preferred_for_simulation` so pode selecionar uma variante quando existe uma escolha editorial de trabalho defensavel; quando a divergencia permanece irresolvida, todas as variantes ficam `FALSE`. A tabela e historica/documental e nao e consumida ainda pelo loop jogavel.
+
 ## Campos de evidencia
 
 `evidence_grade` usa `A`, `B`, `C` ou `D`, conforme `docs/historical-method.md`.
@@ -64,6 +67,7 @@ Permanencias documentadas da expedicao em pontos de escala. Registra duracao dec
 - `REGIONAL`
 - `NETWORK`
 - `LATER_PERIOD_ANALOGY`
+- `EDITORIAL_SYNTHESIS` para continuacoes editoriais explicitamente posteriores ao corpo da fonte primaria.
 
 ## Regra para coordenadas
 
