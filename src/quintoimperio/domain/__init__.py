@@ -29,6 +29,7 @@ from .information import (
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .navigation import NavigationModel, great_circle_nm
 from .node_state_event import NodeHistoricalState, NodeStateEvent, NodeStateEventModel
+from .p3_campaign import P3CampaignModel
 from .persistence import CampaignPersistence, CampaignSave, SAVE_SCHEMA_VERSION
 from .port import (
     PortServiceKind,
@@ -120,6 +121,7 @@ __all__ = [
     "NodeKnowledgeRecord",
     "NodeStateEvent",
     "NodeStateEventModel",
+    "P3CampaignModel",
     "PhysicalVessel",
     "PortServiceKind",
     "PortServiceModel",
