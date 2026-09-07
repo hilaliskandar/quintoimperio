@@ -56,3 +56,7 @@ O smoke percorre a campanha do MVP, ativa explicitamente o retorno pela mesma fa
 ## Decisão
 
 Com CI final verde da branch `p1-ui-102`, a #102 pode ser encerrada e a branch integrada ao `main`. O gate funcional #99 passa então a ter critérios suficientes para encerramento, mantendo doença/mortalidade sistêmica, frota geral, epílogo pós-BRG e P2/Cochim fora deste escopo.
+
+## Integração
+
+A branch `p1-ui-102` foi integrada ao `main` por fast-forward no commit `47fb82baad1289077c048576f3bc52815d6b192f`, após CI integralmente verde no run `34118033883`. Esta nota de integração dispara a validação final diretamente sobre `main`; o encerramento formal das issues #102 e #99 depende apenas desse último gate verde.
