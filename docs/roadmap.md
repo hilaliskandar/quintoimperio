@@ -2,9 +2,9 @@
 
 ## Estado consolidado
 
-A vertical slice Lisboa–Calecute está concluída. Os gates **M0–M8 estão atendidos**. O gate documental de **P1 — retorno da primeira viagem** também está concluído; a expansão pós-MVP entrou no gate funcional do retorno.
+A vertical slice Lisboa–Calecute está concluída. Os gates **M0–M8 estão atendidos**. O **P1 — retorno da primeira viagem** também está concluído nos gates documental, funcional, playtest e interface/persistência.
 
-A definição funcional e metodológica do MVP está em `docs/mvp-gate.md`. O histórico de balanceamento, agência e risco está em `docs/development-log.md`; o fechamento documental do retorno está em `docs/p1-closeout.md` e o procedimento de continuidade em `docs/p1-roadmap-handoff-2026-09-07.md`.
+A definição funcional e metodológica do MVP está em `docs/mvp-gate.md`. O histórico de balanceamento, agência e risco está em `docs/development-log.md`; o fechamento documental do retorno está em `docs/p1-closeout.md`; o procedimento de continuidade em `docs/p1-roadmap-handoff-2026-09-07.md`; e o fechamento funcional/interface em `docs/return-p1-wave19-results.md` e `docs/p1-ui-return-interface-results.md`.
 
 Princípio permanente: **dados históricos e parâmetros de simulação permanecem separados; fatos históricos não são recalibrados para resolver jogabilidade**.
 
@@ -71,7 +71,7 @@ Conclusão: **não criar mitigação estrutural sem problema de agência demonst
 
 ## Marco de versão do MVP
 
-O commit `f308fb0e97687e34365fd23ed257a0114fd81613` permanece a referência documental do fechamento do MVP Lisboa–Calecute. A vertical slice deve continuar como baseline de comparação para toda expansão posterior.
+O commit `f308fb0e97687e34365fd23ed257a0114fd81613` permanece a referência documental do fechamento do MVP Lisboa–Calecute. A vertical slice continua como baseline de comparação para toda expansão posterior.
 
 ## Pós-MVP — primeira expansão 1498–1505
 
@@ -79,44 +79,54 @@ A expansão ocorre em gates pequenos e reversíveis, sem inserir todos os sistem
 
 ### P1 — Retorno e reconfiguração da primeira viagem
 
-**Gate documental: CONCLUÍDO em 07/09/2026 — issue #92.**
+**Status: CONCLUÍDO em 07/09/2026.**
 
-Foram auditados itinerário, cronologia, composição da frota, perdas documentadas, escalas, reparos, reabastecimentos, confiança cartográfica e a quebra de proveniência após 25/04/1499. O retorno documental primário foi normalizado até os Baixos do Rio Grande; o trecho posterior permanece em epílogo documental com trajetórias e datas divergentes.
+- gate documental: issue #92 — concluída;
+- schema/epílogo divergente: issue #93 — concluída;
+- integração funcional: issue #99 — concluída;
+- agência logística Calecute–Anjediva/Santa Maria: issue #100 — concluída;
+- carena documentada em Anjediva: issue #101 — concluída;
+- interface e persistência do retorno: issue #102 — concluída.
 
-A sequência operacional já incorporada até o fim do manuscrito é:
+A sequência operacional estabilizada até o limite do corpo primário do `Roteiro` é:
 
-`CAL → ANJ → MAL → BSR → SBR → CGH → BRG`.
+`CAL → SMI → ANJ → MAL → BSR → SBR → CGH → BRG`.
 
-A issue técnica #93 resolveu a representação mínima de datas incertas, mudança de comando e trajetórias divergentes sem refatoração ampla.
+A segmentação `CAL→SMI→ANJ` substitui a antiga perna agregada `CAL→ANJ` porque a pesquisa posterior materializou o contato documentado nos Ilhéus de Santa Maria. `SMI` permanece marco náutico, sem mercado nem serviço portuário genérico.
 
-**Gate funcional atual: issue #99.**
+O retorno é **opt-in**: a conclusão canônica do MVP em Calecute permanece inalterada quando a expansão não é ativada. Na interface histórica v0.2, a subcampanha pode ser continuada explicitamente até BRG.
 
-Objetivo: tornar jogável o retorno até BRG consumindo os dados já auditados, sem reabrir a pesquisa documental ampla e sem alterar o baseline Lisboa–Calecute.
+As decisões materiais novas do retorno permanecem separadas da disponibilidade genérica dos nós:
 
-Critérios principais:
+- em SMI, uma oportunidade alimentar específica, one-shot, limitada por parâmetro `SIMULATION` e sem consumir um dia inteiro;
+- em ANJ, provisões específicas da permanência documentada e carena explícita; a referência mínima validada é +2 pontos abstratos de condição;
+- em BSR, abandono/queima do S. Rafael e transferência de carga permanecem eventos específicos da expedição, sem sistema geral de frota/tripulação.
 
-- preservar as dez pernas do MVP e os saves existentes;
-- habilitar as seis pernas do retorno até BRG;
-- consumir permanências documentadas sem transformar ocorrências específicas em serviços genéricos;
-- representar a queima do S. Rafael como evento específico, sem sistema geral de frota/tripulação;
-- manter doença/mortalidade sistêmica fora deste gate;
-- manter o epílogo pós-manuscrito fora do loop jogável;
-- executar smoke test e pequena bateria sintética reproduzível antes de qualquer balanceamento.
+A wave19 fechou o gate de robustez com **18/18 estados elegíveis concluindo o retorno, zero blockers e cronologia `GUIDED` até BRG em 25/04/1499**. Save/load durante o retorno preserva seed, expedição, sequência, escala ativa, cronologia e histórico das ações one-shot.
+
+O epílogo posterior a 25/04/1499 continua documental e divergente, fora do loop jogável. Doença/mortalidade sistêmica, controle individual de tripulação e sistema geral de frota permanecem fora do escopo.
+
+**Baseline funcional pós-retorno:** commit `47fb82baad1289077c048576f3bc52815d6b192f`; validação pós-integração no `main`: GitHub Actions run `34118123204`, integralmente verde.
 
 ### P2 — Cochim e primeiros apoios portugueses no Malabar
 
-Somente após P1 funcional estabilizado:
+**Próximo gate: documental. Nenhuma alteração executável deve precedê-lo.**
 
-- normalizar Cochim e atores relevantes;
-- registrar mercados e regimes de acesso documentados;
-- introduzir consequências relacionais locais quando sustentadas;
-- ampliar o comércio sem inventar séries de preços inexistentes.
+Objetivos do gate documental P2:
 
-P2 deve começar por gate documental próprio antes de alterações executáveis.
+1. identificar e normalizar Cochim/Kochi no recorte cronológico pertinente;
+2. identificar autoridades, comunidades mercantis e outros atores relevantes apenas quando sustentados por fonte;
+3. documentar regime político e de acesso, distinguindo autoridade local, soberania e relações com Calecute;
+4. documentar mercados, mercadorias e conexões comerciais necessárias ao loop sem inventar séries de preços;
+5. registrar rotas e escalas pertinentes com proveniência e confiança cartográfica;
+6. distinguir fatos do período de 1498, 1500–1503 e desenvolvimentos posteriores, evitando retroprojeção;
+7. produzir matriz de evidências, lacunas e proposta mínima de integração antes de qualquer código jogável.
+
+Somente após o fechamento desse gate serão avaliadas consequências relacionais locais, ampliação comercial e integração mínima ao loop.
 
 ### P3 — Novas expedições 1500–1505
 
-Depois de retorno e Cochim:
+Depois de P2:
 
 - expedições portuguesas subsequentes;
 - competição institucional e comercial;
@@ -188,4 +198,4 @@ Ao final de cada gate relevante: registrar decisão, evidência, testes, issue/P
 
 ## Próximo gate
 
-Executar **#99 — P1-func: integrar retorno jogável até os Baixos do Rio Grande**. O primeiro subgate é uma auditoria do domínio atual para identificar a menor alteração necessária para consumir `EXP_GAMA_RETURN_1498`, preservando o encerramento e o comportamento do MVP quando a expansão não estiver ativada.
+Abrir **P2-doc — Cochim e primeiros apoios portugueses no Malabar**. O trabalho inicial é exclusivamente documental e deve produzir uma matriz de evidências e uma proposta mínima de normalização antes de qualquer alteração executável.
