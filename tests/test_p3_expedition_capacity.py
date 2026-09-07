@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 
 from quintoimperio.domain import P3CampaignModel
 
@@ -24,9 +25,17 @@ class P3ExpeditionCapacityTests(unittest.TestCase):
         first = self.model.plan_current_leg(state, seed=24001)
         self.assertTrue(first.feasible, first.blockers)
         state = self.model.execute_voyage(state, first)
-        self.assertGreater(state.vessel.provision_days, 120.0)
+
+        # Isola a propriedade que o teste pretende medir: a ação específica de
+        # Cabral pode operar acima do teto genérico de 120, mas nunca acima de 150.
+        state = replace(
+            state,
+            vessel=replace(state.vessel, provision_days=123.0),
+        )
         result = self.model.reprovision_at_documented_cabral_stop(state)
         self.assertTrue(result.executed, result.reasons)
+        self.assertEqual(result.state_after.vessel.provision_days, 128.0)
+        self.assertGreater(result.state_after.vessel.provision_days, 120.0)
         self.assertLessEqual(result.state_after.vessel.provision_days, 150.0)
         self.assertEqual(result.service_result.effect, 5.0)
 
