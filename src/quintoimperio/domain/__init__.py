@@ -11,6 +11,7 @@ from .campaign_progress import (
 )
 from .economy import EconomyModel
 from .expedition import ExpeditionLeg, ExpeditionModel
+from .expedition_event import ExpeditionEvent, ExpeditionEventModel
 from .fleet import (
     ConsumableRates,
     EvidenceClass,
@@ -27,6 +28,7 @@ from .information import (
 )
 from .knowledge import KnowledgeLevel, KnowledgeModel, KnowledgeState
 from .navigation import NavigationModel, great_circle_nm
+from .node_state_event import NodeHistoricalState, NodeStateEvent, NodeStateEventModel
 from .persistence import CampaignPersistence, CampaignSave, SAVE_SCHEMA_VERSION
 from .port import (
     PortServiceKind,
@@ -85,6 +87,8 @@ __all__ = [
     "ConsumableRates",
     "EconomyModel",
     "EvidenceClass",
+    "ExpeditionEvent",
+    "ExpeditionEventModel",
     "ExpeditionLeg",
     "ExpeditionModel",
     "ExpeditionStop",
@@ -112,7 +116,10 @@ __all__ = [
     "NavigationBasis",
     "NavigationModel",
     "NodeActor",
+    "NodeHistoricalState",
     "NodeKnowledgeRecord",
+    "NodeStateEvent",
+    "NodeStateEventModel",
     "PhysicalVessel",
     "PortServiceKind",
     "PortServiceModel",
