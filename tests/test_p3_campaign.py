@@ -37,20 +37,40 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(after.expedition_leg_sequence, 2)
         self.assertEqual(after.active_stop_id, "CABRAL1500_VCR")
 
-    def test_vera_cruz_stop_blocks_early_departure_and_releases_on_may_second(self):
+    def test_vera_cruz_stop_blocks_early_departure_and_second_leg_reaches_mozambique(self):
         state = self.model.initial_cabral_state(provision_days=180.0)
         first = self.model.plan_current_leg(state, seed=1500)
         at_vera_cruz = self.model.execute_voyage(state, first)
         second = self.model.plan_current_leg(at_vera_cruz, seed=1500)
         self.assertFalse(second.feasible)
         self.assertIn("HISTORICAL_STOP_NOT_RELEASED", second.blockers)
+
         waited = self.model.wait_for_stop_release(at_vera_cruz)
         self.assertTrue(waited.executed)
         self.assertEqual(waited.state_after.vessel.clock.current_date, date(1500, 5, 2))
+
         released = self.model.plan_current_leg(waited.state_after, seed=1500)
         self.assertTrue(released.feasible, released.blockers)
-        self.assertEqual(released.route_id, "R_VCR_CGH_CAB")
+        self.assertEqual(released.route_id, "R_VCR_MOZ_CAB")
         self.assertEqual(released.navigation_basis, NavigationBasis.FLEET_COMMAND)
+        self.assertEqual(released.travel_days, 79)
+        self.assertEqual(released.arrival_date, date(1500, 7, 20))
+
+        at_mozambique = self.model.execute_voyage(waited.state_after, released)
+        self.assertEqual(at_mozambique.vessel.location_node, "MOZ")
+        self.assertEqual(at_mozambique.vessel.clock.current_date, date(1500, 7, 20))
+        self.assertIsNone(at_mozambique.active_expedition_id)
+        self.assertIsNone(at_mozambique.expedition_leg_sequence)
+
+    def test_cape_is_documentary_marker_not_operational_stop(self):
+        route = self.model.session.routes["R_VCR_CGH_CAB"]
+        self.assertEqual(route["route_type"], "STRATEGIC_AGGREGATE")
+        self.assertNotEqual(
+            self.model.current_leg(
+                self.model.initial_cabral_state(provision_days=180.0)
+            ).route_id,
+            "R_VCR_CGH_CAB",
+        )
 
     def test_cape_losses_remain_documentary_events_not_generic_wreck_mechanics(self):
         events = self.expedition_events.preferred_for_expedition("EXP_CABRAL_1500")
