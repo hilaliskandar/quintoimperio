@@ -40,6 +40,8 @@ class ReturnCampaignModel(HistoricalCampaignModel):
         }
     )
     REPAIR_ACTIVITIES = frozenset({"CARENING", "MAST_REPAIR"})
+    ONE_SHOT_PROVISION_NODES = frozenset({"SMI"})
+    ONE_SHOT_REPAIR_NODES = frozenset({"ANJ"})
 
     def __init__(self, root: Path | None = None) -> None:
         super().__init__(root)
@@ -55,6 +57,21 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             (rule_type, node_id),
             self.return_rules[(rule_type, "DEFAULT")],
         )
+
+    @staticmethod
+    def _action_key(stop: ExpeditionStop, action: str) -> str:
+        return f"RETURN_ACTION:{stop.stop_id}:{action}"
+
+    def _action_used(self, state: GameSessionState, stop: ExpeditionStop, action: str) -> bool:
+        return self._action_key(stop, action) in state.information_history
+
+    def _record_action(
+        self, state: GameSessionState, stop: ExpeditionStop, action: str
+    ) -> GameSessionState:
+        key = self._action_key(stop, action)
+        if key in state.information_history:
+            return state
+        return replace(state, information_history=state.information_history + (key,))
 
     def activate_return(self, state: GameSessionState) -> GameSessionState:
         """Ativa a subcampanha de retorno sem alterar o encerramento do MVP.
@@ -92,12 +109,7 @@ class ReturnCampaignModel(HistoricalCampaignModel):
         current_required: float,
         seed: int = 0,
     ) -> tuple[float, str]:
-        """Encerra o horizonte também em permanência documental com provisões.
-
-        Isso não modifica a disponibilidade genérica do nó. O horizonte apenas
-        reconhece que, para esta expedição específica, existe uma futura decisão
-        de provisões sustentada por ``expedition_stops.csv``.
-        """
+        """Encerra o horizonte também em permanência documental com provisões."""
         if state.active_expedition_id != self.RETURN_EXPEDITION_ID:
             return super()._logistics_horizon(
                 state,
@@ -141,20 +153,30 @@ class ReturnCampaignModel(HistoricalCampaignModel):
 
     def documented_stop_can_reprovision(self, state: GameSessionState) -> bool:
         stop = self.session.active_stop(state)
-        return bool(
+        if not (
             stop is not None
             and stop.expedition_id == self.RETURN_EXPEDITION_ID
             and stop.node_id == state.vessel.location_node
             and self._stop_has_documented_provisions(stop)
+        ):
+            return False
+        return not (
+            stop.node_id in self.ONE_SHOT_PROVISION_NODES
+            and self._action_used(state, stop, "PROVISIONS")
         )
 
     def documented_stop_can_repair(self, state: GameSessionState) -> bool:
         stop = self.session.active_stop(state)
-        return bool(
+        if not (
             stop is not None
             and stop.expedition_id == self.RETURN_EXPEDITION_ID
             and stop.node_id == state.vessel.location_node
             and self._stop_has_documented_repair(stop)
+        ):
+            return False
+        return not (
+            stop.node_id in self.ONE_SHOT_REPAIR_NODES
+            and self._action_used(state, stop, "REPAIR")
         )
 
     def _specific_stop_blockers(
@@ -175,6 +197,18 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             return ("STOP_HAS_NO_DOCUMENTED_PROVISION_ACTIVITY",)
         if require_repair and not self._stop_has_documented_repair(stop):
             return ("STOP_HAS_NO_DOCUMENTED_REPAIR_ACTIVITY",)
+        if (
+            require_provisions
+            and stop.node_id in self.ONE_SHOT_PROVISION_NODES
+            and self._action_used(state, stop, "PROVISIONS")
+        ):
+            return ("DOCUMENTED_PROVISION_ACTION_ALREADY_USED",)
+        if (
+            require_repair
+            and stop.node_id in self.ONE_SHOT_REPAIR_NODES
+            and self._action_used(state, stop, "REPAIR")
+        ):
+            return ("DOCUMENTED_REPAIR_ACTION_ALREADY_USED",)
         return ()
 
     def reprovision_at_documented_stop(
@@ -196,14 +230,11 @@ class ReturnCampaignModel(HistoricalCampaignModel):
                 days_spent=0,
                 blockers=blockers,
             )
-            return SessionPortServiceResult(
-                executed=False,
-                reasons=blockers,
-                state_before=state,
-                state_after=state,
-                service_result=port_result,
-            )
+            return SessionPortServiceResult(False, blockers, state, state, port_result)
 
+        stop = self.session.active_stop(state)
+        if stop is None:
+            raise RuntimeError("Ação documental sem permanência ativa")
         capacity = self._return_rule(
             "DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION",
             state.vessel.location_node,
@@ -229,13 +260,7 @@ class ReturnCampaignModel(HistoricalCampaignModel):
                 days_spent=0,
                 blockers=blockers,
             )
-            return SessionPortServiceResult(
-                executed=False,
-                reasons=blockers,
-                state_before=state,
-                state_after=state,
-                service_result=port_result,
-            )
+            return SessionPortServiceResult(False, blockers, state, state, port_result)
 
         vessel_after = replace(
             state.vessel,
@@ -243,6 +268,8 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             provision_days=state.vessel.provision_days + added,
         )
         after = replace(state, vessel=vessel_after)
+        if stop.node_id in self.ONE_SHOT_PROVISION_NODES:
+            after = self._record_action(after, stop, "PROVISIONS")
         port_result = PortServiceResult(
             node_id=state.vessel.location_node,
             service=PortServiceKind.PROVISIONS,
@@ -253,22 +280,12 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             days_spent=service_days,
             blockers=(),
         )
-        return SessionPortServiceResult(
-            executed=True,
-            reasons=(),
-            state_before=state,
-            state_after=after,
-            service_result=port_result,
-        )
+        return SessionPortServiceResult(True, (), state, after, port_result)
 
     def repair_at_documented_stop(
         self, state: GameSessionState, requested_points: float
     ) -> SessionPortServiceResult:
-        """Projeta carena/reparo documentado em restauração abstrata de condição.
-
-        A existência da ação deriva exclusivamente da permanência histórica ativa;
-        magnitude e duração são ``SIMULATION`` e não mudam ``nodes.csv``.
-        """
+        """Projeta carena/reparo documentado em restauração abstrata de condição."""
         if requested_points <= 0:
             raise ValueError("requested_points deve ser positivo")
 
@@ -284,14 +301,11 @@ class ReturnCampaignModel(HistoricalCampaignModel):
                 days_spent=0,
                 blockers=blockers,
             )
-            return SessionPortServiceResult(
-                executed=False,
-                reasons=blockers,
-                state_before=state,
-                state_after=state,
-                service_result=port_result,
-            )
+            return SessionPortServiceResult(False, blockers, state, state, port_result)
 
+        stop = self.session.active_stop(state)
+        if stop is None:
+            raise RuntimeError("Ação documental sem permanência ativa")
         missing = max(0.0, 100.0 - state.vessel.condition)
         if missing <= 0:
             blockers = ("VESSEL_ALREADY_FULL_CONDITION",)
@@ -305,13 +319,7 @@ class ReturnCampaignModel(HistoricalCampaignModel):
                 days_spent=0,
                 blockers=blockers,
             )
-            return SessionPortServiceResult(
-                executed=False,
-                reasons=blockers,
-                state_before=state,
-                state_after=state,
-                service_result=port_result,
-            )
+            return SessionPortServiceResult(False, blockers, state, state, port_result)
 
         rate = self._return_rule(
             "DOCUMENTED_STOP_REPAIR_POINTS_PER_DAY",
@@ -331,6 +339,8 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             condition=min(100.0, state.vessel.condition + restored),
         )
         after = replace(state, vessel=vessel_after)
+        if stop.node_id in self.ONE_SHOT_REPAIR_NODES:
+            after = self._record_action(after, stop, "REPAIR")
         port_result = PortServiceResult(
             node_id=state.vessel.location_node,
             service=PortServiceKind.REPAIR,
@@ -341,10 +351,4 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             days_spent=service_days,
             blockers=(),
         )
-        return SessionPortServiceResult(
-            executed=True,
-            reasons=(),
-            state_before=state,
-            state_after=after,
-            service_result=port_result,
-        )
+        return SessionPortServiceResult(True, (), state, after, port_result)
