@@ -1,13 +1,14 @@
-name: Synthetic player archetypes paired seeds v0.4 wave 15
+name: Synthetic player archetypes paired seeds v0.5 wave 16
 
 on:
   push:
     branches:
-      - test/player-archetypes-paired-v04
+      - feat/secured-provision-reserve-v05
     paths:
       - "tools/simulate_player_archetype.py"
       - "tools/simulate_synthetic_player.py"
       - "tools/aggregate_paired_archetype_playtest.py"
+      - "src/quintoimperio/domain/risk_mitigation.py"
       - ".github/workflows/synthetic-player-archetypes-paired-v04.yml"
   workflow_dispatch:
 
@@ -43,11 +44,11 @@ jobs:
           mkdir -p build/paired/${{ matrix.archetype }}
           for i in $(seq 1 20); do
             seed=$((21000 + i))
-            python tools/simulate_player_archetype.py --player-id "$i" --archetype "${{ matrix.archetype }}" --seed "$seed" --wave 15 --output "build/paired/${{ matrix.archetype }}/seed-${seed}.json"
+            python tools/simulate_player_archetype.py --player-id "$i" --archetype "${{ matrix.archetype }}" --seed "$seed" --wave 16 --output "build/paired/${{ matrix.archetype }}/seed-${seed}.json"
           done
       - uses: actions/upload-artifact@v4
         with:
-          name: paired-${{ matrix.archetype }}-wave15
+          name: paired-${{ matrix.archetype }}-wave16
           path: build/paired/${{ matrix.archetype }}/*.json
 
   aggregate:
@@ -59,15 +60,15 @@ jobs:
         with: {python-version: "3.12"}
       - uses: actions/download-artifact@v4
         with:
-          pattern: paired-*-wave15
+          pattern: paired-*-wave16
           path: build/paired-results
           merge-multiple: false
       - name: Aggregate paired results
-        run: python tools/aggregate_paired_archetype_playtest.py --input-dir build/paired-results --csv build/synthetic-player-archetypes-wave15.csv --summary build/synthetic-player-archetypes-wave15-summary.json --paired-csv build/synthetic-player-archetypes-wave15-paired.csv
+        run: python tools/aggregate_paired_archetype_playtest.py --input-dir build/paired-results --csv build/synthetic-player-archetypes-wave16.csv --summary build/synthetic-player-archetypes-wave16-summary.json --paired-csv build/synthetic-player-archetypes-wave16-paired.csv
       - uses: actions/upload-artifact@v4
         with:
-          name: synthetic-player-archetypes-wave15-paired-results
+          name: synthetic-player-archetypes-wave16-paired-results
           path: |
-            build/synthetic-player-archetypes-wave15.csv
-            build/synthetic-player-archetypes-wave15-summary.json
-            build/synthetic-player-archetypes-wave15-paired.csv
+            build/synthetic-player-archetypes-wave16.csv
+            build/synthetic-player-archetypes-wave16-summary.json
+            build/synthetic-player-archetypes-wave16-paired.csv
