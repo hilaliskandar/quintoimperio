@@ -66,18 +66,34 @@ def generic_reprovision_signature(state) -> tuple[object, ...]:
     )
 
 
+def documented_reprovision_already_consumed(model: P3CampaignModel, state) -> bool:
+    """Indica que a oportunidade documental one-shot da escala já foi usada."""
+    stop = model.session.active_stop(state)
+    return bool(
+        stop is not None
+        and stop.expedition_id == model.CABRAL_EXPEDITION_ID
+        and stop.node_id == state.vessel.location_node
+        and stop.node_id in model.CABRAL_ONE_SHOT_PROVISION_NODES
+        and model.CABRAL_DOCUMENTED_PROVISION_ACTIVITIES.intersection(stop.activities)
+        and not model.documented_cabral_stop_can_reprovision(state)
+    )
+
+
 def generic_reprovision_once(
     model: P3CampaignModel,
     state,
     metrics: Metrics,
     attempted_states: set[tuple[object, ...]],
 ):
-    """Evita repetir serviço genérico no mesmo estado dentro da mesma perna.
+    """Evita repetição e fallback genérico após a ação documental da escala.
 
-    A disponibilidade histórica é determinística. Se uma tentativa falha sem
-    alterar nó, data, provisões ou condição, repeti-la no mesmo estado não cria
-    uma decisão nova nem pode produzir resultado diferente.
+    A disponibilidade histórica é determinística. Uma tentativa idêntica não
+    precisa ser refeita; adicionalmente, depois de consumida a oportunidade
+    documental one-shot de Cabral, não se tenta um segundo serviço genérico sem
+    evidência histórica apenas para completar uma margem logística desejada.
     """
+    if documented_reprovision_already_consumed(model, state):
+        return state, False
     signature = generic_reprovision_signature(state)
     if signature in attempted_states:
         return state, False
@@ -88,7 +104,7 @@ def generic_reprovision_once(
 def documented_reprovision(model: P3CampaignModel, state, metrics: Metrics):
     """Usa primeiro a ação material específica da escala, quando disponível."""
     if not model.documented_cabral_stop_can_reprovision(state):
-        return reprovision(model, state, metrics)
+        return state, False
     metrics.attempt()
     result = model.reprovision_at_documented_cabral_stop(state)
     if result.executed:
@@ -137,14 +153,7 @@ def apply_p3_planning(
     seed: int,
     attempted_generic: set[tuple[object, ...]],
 ):
-    """Aplica horizonte logístico respeitando evidência e capacidade da expedição.
-
-    Se uma ação específica documentada é usada e ainda não satisfaz a meta,
-    registra-se a recomendação como atendida apenas parcialmente e encerra-se a
-    tentativa nessa escala. Se o estoque já alcançou o teto abstrato específico
-    de Cabral, uma margem recomendada superior ao teto é registrada como não
-    plenamente atendida, sem tentar uma reposição fisicamente impossível.
-    """
+    """Aplica horizonte logístico respeitando evidência e capacidade da expedição."""
     if not policy.consult_logistics:
         return state
     for _ in range(8):
@@ -171,9 +180,7 @@ def apply_p3_planning(
         if documented:
             state, changed = documented_reprovision(model, state, metrics)
         else:
-            state, changed = generic_reprovision_once(
-                model, state, metrics, attempted_generic
-            )
+            state, changed = generic_reprovision_once(model, state, metrics, attempted_generic)
         if not changed:
             metrics.recommendation_ignored += 1
             return state
@@ -265,9 +272,7 @@ def execute_leg(
                 continue
 
         if resource_block and policy.recover_resources_after_block:
-            state, changed = generic_reprovision_once(
-                model, state, metrics, attempted_generic
-            )
+            state, changed = generic_reprovision_once(model, state, metrics, attempted_generic)
             recovery += 1
             if changed:
                 continue
@@ -315,34 +320,18 @@ def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dic
         leg = model.current_leg(state)
         assert leg is not None
         policy_name, policy = policy_for_leg(archetype, seed, leg.sequence)
-        sequence.append(
-            {
-                "leg_sequence": leg.sequence,
-                "route_id": leg.route_id,
-                "archetype": policy_name,
-            }
-        )
+        sequence.append({"leg_sequence": leg.sequence, "route_id": leg.route_id, "archetype": policy_name})
         attempted_generic: set[tuple[object, ...]] = set()
 
-        state = p3_proactive_floor(
-            model, state, metrics, policy.proactive_floor_days, attempted_generic
-        )
-        state = apply_p3_planning(
-            model, state, metrics, policy, seed, attempted_generic
-        )
+        state = p3_proactive_floor(model, state, metrics, policy.proactive_floor_days, attempted_generic)
+        state = apply_p3_planning(model, state, metrics, policy, seed, attempted_generic)
         state = recover_documented_stop_before_wait(model, state, metrics, policy, seed)
 
         departure = model.guided_departure_date(state)
-        if (
-            policy.wait_before_departure
-            and departure is not None
-            and state.vessel.clock.current_date < departure
-        ):
+        if policy.wait_before_departure and departure is not None and state.vessel.clock.current_date < departure:
             state, _ = wait_for_release(model, state, metrics)
 
-        state, ok = execute_leg(
-            model, state, metrics, policy, seed, attempted_generic
-        )
+        state, ok = execute_leg(model, state, metrics, policy, seed, attempted_generic)
         if not ok:
             break
 
@@ -363,20 +352,14 @@ def run_player(player_id: int, archetype: str, seed: int, wave: int = 20) -> dic
     reached_cannanore = state.vessel.location_node == "CAN" and model.current_leg(state) is None
     completed = reached_cannanore and state.chronology_mode is ChronologyMode.GUIDED
     events = state.voyage_event_history
-    switches = sum(
-        a["archetype"] != b["archetype"] for a, b in zip(sequence, sequence[1:])
-    )
+    switches = sum(a["archetype"] != b["archetype"] for a, b in zip(sequence, sequence[1:]))
 
     return {
         "wave": wave,
         "player_id": player_id,
         "archetype": archetype,
-        "archetype_label": (
-            "Arquétipo aleatório por perna" if archetype == RANDOM_PER_LEG else ARCHETYPES[archetype].label
-        ),
-        "game_style": (
-            "mixed random-per-leg" if archetype == RANDOM_PER_LEG else ARCHETYPES[archetype].game_style
-        ),
+        "archetype_label": "Arquétipo aleatório por perna" if archetype == RANDOM_PER_LEG else ARCHETYPES[archetype].label,
+        "game_style": "mixed random-per-leg" if archetype == RANDOM_PER_LEG else ARCHETYPES[archetype].game_style,
         "seed": seed,
         "completed": completed,
         "actions_attempted": metrics.actions_attempted,
