@@ -21,3 +21,17 @@ def test_joao_nova_commercial_sequence_reaches_cannanore_without_invented_observ
     assert model.joao_nova_has_malabar_warning(state)
     assert state.chronology_mode is ChronologyMode.GUIDED
     assert state.vessel.clock.current_date <= date(1501, 12, 30), state.vessel.clock.current_date
+
+    commercial_arrival = state.vessel.clock.current_date
+    wait = model.wait_until_cannanore_blockade(state)
+    assert wait.executed
+    assert wait.days_waited == (date(1501, 12, 30) - commercial_arrival).days
+    state = wait.state_after
+    assert state.vessel.location_node == "CAN"
+    assert state.vessel.clock.current_date == date(1501, 12, 30)
+    assert state.chronology_mode is ChronologyMode.GUIDED
+
+    event = model.cannanore_blockade_event()
+    assert event.event_type == "NAVAL_BLOCKADE_BEGINS"
+    assert event.date_from == date(1501, 12, 30)
+    assert event.date_to == date(1501, 12, 30)
