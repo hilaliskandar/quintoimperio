@@ -1,0 +1,3 @@
+rule_type,key,value,notes
+DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION,DEFAULT,50,"Dias-equivalentes abstratos que uma ação específica de permanência documentada pode acrescentar; parâmetro de SIMULATION, não quantidade histórica nem disponibilidade portuária genérica."
+DOCUMENTED_STOP_PROVISION_SERVICE_DAYS,DEFAULT,1,"Tempo abstrato consumido por uma ação de provisões durante permanência documental do retorno; parâmetro de SIMULATION."
