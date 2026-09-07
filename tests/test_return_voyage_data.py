@@ -32,10 +32,11 @@ class ReturnVoyageDataTests(unittest.TestCase):
             ),
             key=lambda row: int(row["sequence"]),
         )
-        self.assertEqual(len(return_legs), 6)
-        self.assertEqual([int(row["sequence"]) for row in return_legs], list(range(1, 7)))
+        self.assertEqual(len(return_legs), 7)
+        self.assertEqual([int(row["sequence"]) for row in return_legs], list(range(1, 8)))
         expected = [
-            ("CAL", "ANJ"),
+            ("CAL", "SMI"),
+            ("SMI", "ANJ"),
             ("ANJ", "MAL"),
             ("MAL", "BSR"),
             ("BSR", "SBR"),
@@ -57,15 +58,28 @@ class ReturnVoyageDataTests(unittest.TestCase):
 
     def test_new_return_nodes_do_not_invent_markets(self):
         self.assertEqual(self.nodes["ANJ"]["market_scale"], "NONE")
-        for node_id in ("BSR", "BRG"):
+        for node_id in ("SMI", "BSR", "BRG"):
             node = self.nodes[node_id]
             self.assertEqual(node["node_type"], "NAVIGATION_POINT")
             self.assertEqual(node["access_regime"], "NAVIGATION_ONLY")
             self.assertEqual(node["market_scale"], "NONE")
             self.assertTrue(node["latitude"])
             self.assertTrue(node["longitude"])
-            self.assertEqual(node["coordinate_confidence"], "LOW")
-            self.assertIn("proxy", node["historical_notes"].lower())
+
+        self.assertEqual(self.nodes["SMI"]["coordinate_confidence"], "MEDIUM")
+        self.assertIn("Netrani", self.nodes["SMI"]["modern_name"])
+        self.assertIn("alternativa", self.nodes["SMI"]["historical_notes"])
+        for node_id in ("BSR", "BRG"):
+            self.assertEqual(self.nodes[node_id]["coordinate_confidence"], "LOW")
+            self.assertIn("proxy", self.nodes[node_id]["historical_notes"].lower())
+
+    def test_santa_maria_is_brief_documented_contact_not_full_logistical_stop(self):
+        stop = next(row for row in self.stops if row["stop_id"] == "GAMA1498_RET_SMI")
+        self.assertEqual(stop["node_id"], "SMI")
+        self.assertEqual(stop["observed_stay_days"], "0")
+        self.assertIn("FISH_EXCHANGE", stop["activities"])
+        self.assertNotIn("WATER", stop["activities"])
+        self.assertNotIn("CARENING", stop["activities"])
 
     def test_anjediva_is_only_new_full_logistical_stop(self):
         stop = next(row for row in self.stops if row["stop_id"] == "GAMA1498_RET_ANJ")
@@ -82,9 +96,10 @@ class ReturnVoyageDataTests(unittest.TestCase):
         self.assertIn("CARGO_TRANSFER", stop["activities"])
         self.assertIn("específico", stop["notes"])
 
-    def test_return_observations_preserve_ravenstein_summary_durations(self):
+    def test_return_observations_preserve_segmented_durations(self):
         expected = {
-            "R_CAL_ANJ": 21,
+            "R_CAL_SMI": 16,
+            "R_SMI_ANJ": 5,
             "R_ANJ_MAL": 94,
             "R_MAL_BSR": 2,
             "R_BSR_SBR": 35,
