@@ -30,7 +30,14 @@ class ReturnCampaignModel(HistoricalCampaignModel):
     RETURN_END_NODE = "BRG"
     RETURN_DEPARTURE = date(1498, 8, 30)
     PROVISION_ACTIVITIES = frozenset(
-        {"WATER", "FOOD", "FOOD_EXCHANGE", "FISHING", "FOOD_PRESERVATION"}
+        {
+            "WATER",
+            "FOOD",
+            "FOOD_EXCHANGE",
+            "FISH_EXCHANGE",
+            "FISHING",
+            "FOOD_PRESERVATION",
+        }
     )
     REPAIR_ACTIVITIES = frozenset({"CARENING", "MAST_REPAIR"})
 
@@ -41,6 +48,13 @@ class ReturnCampaignModel(HistoricalCampaignModel):
             (row["rule_type"], row["key"]): float(row["value"])
             for row in repository.simulation("return_rules.csv")
         }
+
+    def _return_rule(self, rule_type: str, node_id: str) -> float:
+        """Resolve regra específica do nó com fallback explícito para DEFAULT."""
+        return self.return_rules.get(
+            (rule_type, node_id),
+            self.return_rules[(rule_type, "DEFAULT")],
+        )
 
     def activate_return(self, state: GameSessionState) -> GameSessionState:
         """Ativa a subcampanha de retorno sem alterar o encerramento do MVP.
@@ -190,11 +204,15 @@ class ReturnCampaignModel(HistoricalCampaignModel):
                 service_result=port_result,
             )
 
-        capacity = self.return_rules[
-            ("DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION", "DEFAULT")
-        ]
+        capacity = self._return_rule(
+            "DOCUMENTED_STOP_PROVISION_CAPACITY_PER_ACTION",
+            state.vessel.location_node,
+        )
         service_days = int(
-            self.return_rules[("DOCUMENTED_STOP_PROVISION_SERVICE_DAYS", "DEFAULT")]
+            self._return_rule(
+                "DOCUMENTED_STOP_PROVISION_SERVICE_DAYS",
+                state.vessel.location_node,
+            )
         )
         max_onboard = self.session.port.rules[("PROVISION_MAX_ONBOARD", "DEFAULT")]
         remaining_capacity = max(0.0, max_onboard - state.vessel.provision_days)
@@ -295,9 +313,15 @@ class ReturnCampaignModel(HistoricalCampaignModel):
                 service_result=port_result,
             )
 
-        rate = self.return_rules[("DOCUMENTED_STOP_REPAIR_POINTS_PER_DAY", "DEFAULT")]
+        rate = self._return_rule(
+            "DOCUMENTED_STOP_REPAIR_POINTS_PER_DAY",
+            state.vessel.location_node,
+        )
         max_days = int(
-            self.return_rules[("DOCUMENTED_STOP_REPAIR_MAX_DAYS_PER_ACTION", "DEFAULT")]
+            self._return_rule(
+                "DOCUMENTED_STOP_REPAIR_MAX_DAYS_PER_ACTION",
+                state.vessel.location_node,
+            )
         )
         restored = min(requested_points, missing, rate * max_days)
         service_days = max(1, ceil(restored / rate))
