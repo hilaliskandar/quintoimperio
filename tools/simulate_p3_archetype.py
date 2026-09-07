@@ -106,12 +106,13 @@ def apply_p3_planning(
     policy: ArchetypePolicy,
     seed: int,
 ):
-    """Aplica horizonte logístico respeitando o limite da evidência da escala.
+    """Aplica horizonte logístico respeitando evidência e capacidade da expedição.
 
     Se uma ação específica documentada é usada e ainda não satisfaz a meta,
     registra-se a recomendação como atendida apenas parcialmente e encerra-se a
-    tentativa nessa escala. Não se procura em seguida um serviço genérico sem
-    evidência histórica apenas para completar a margem desejada.
+    tentativa nessa escala. Se o estoque já alcançou o teto abstrato específico
+    de Cabral, uma margem recomendada superior ao teto é registrada como não
+    plenamente atendida, sem tentar uma reposição fisicamente impossível.
     """
     if not policy.consult_logistics:
         return state
@@ -129,6 +130,9 @@ def apply_p3_planning(
         if state.vessel.provision_days >= target:
             return state
         if not policy.follow_recommended_margin:
+            metrics.recommendation_ignored += 1
+            return state
+        if state.vessel.provision_days >= model.cabral_provision_cap:
             metrics.recommendation_ignored += 1
             return state
 
