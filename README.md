@@ -4,7 +4,7 @@ Projeto de jogo histórico de comércio e navegação inspirado na expansão ult
 
 ## Objetivo
 
-Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo núcleo seja comércio, navegação, informação, relações políticas e adaptação a redes mercantis preexistentes. O ponto de partida é a infraestrutura atlântica portuguesa formada antes de 1497; a chegada ao Índico introduz um sistema econômico muito mais amplo e complexo.
+Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo núcleo seja comércio, navegação, informação, relações políticas e adaptação a redes mercantis preexistentes. O ponto de partida é a infraestrutura atlântica portuguesa formada antes de 1497; a chegada ao Índico introduz um sistema econômico mais amplo e complexo.
 
 ## Princípios
 
@@ -19,79 +19,83 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-O **MVP Lisboa–Calecute está funcionalmente concluído**. A vertical slice reúne fundação histórica, economia relativa, navegação/viagem, serviços portuários, comércio, conhecimento/informação, acesso institucional, relações por atores documentados, risco marítimo estocástico reproduzível, planejamento logístico, cartografia, persistência, sessão integrada e interface jogável em Pygame. O gate final e os critérios de saída estão registrados em `docs/mvp-gate.md`.
+O **MVP Lisboa–Calecute e o P1 — retorno até os Baixos do Rio Grande estão concluídos**. O MVP permanece a vertical slice canônica e pode terminar em Calecute sem ativar a expansão. Depois da primeira operação comercial elegível em Calecute, a interface histórica v0.2 oferece, de forma explícita e opcional, a continuidade documentada do retorno até BRG.
 
-A base contém atualmente **25 nós, 14 bens, 41 relações nó–bem, 19 rotas, 15 fluxos de mercadorias, 12 observações de viagem, 1 piloto histórico, 1 expedição com 10 pernas normalizadas, 5 permanências logísticas documentadas e 3 atores/comunidades historicamente normalizados no primeiro recorte relacional**. Mpinda/Soyo e Sofala permanecem com âncoras cartográficas provisórias de confiança `MEDIUM`; o Rio do Cobre usa uma âncora `LOW`, porque sua identificação moderna é discutida. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada.
+O fluxo do MVP é:
 
-O domínio já oferece:
+`LIS → STG → SHB → CGH → SBR → RCO → RBS → MOZ → MOM → MAL → CAL`.
+
+O retorno estabilizado é:
+
+`CAL → SMI → ANJ → MAL → BSR → SBR → CGH → BRG`.
+
+A base validada contém atualmente **29 nós, 14 bens, 41 relações nó–bem, 26 rotas, 15 fluxos de mercadorias e 19 observações de viagem**, além do piloto histórico normalizado e das expedições/escala necessárias ao MVP e ao retorno. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada; o epílogo posterior a 25/04/1499 permanece documental e divergente, fora do loop jogável.
+
+O fechamento do MVP está em `docs/mvp-gate.md`. O fechamento documental do retorno está em `docs/p1-closeout.md`; o diagnóstico de robustez em `docs/return-p1-wave19-results.md`; a solução logística de Santa Maria em `docs/santa-maria-logistics-p1-func.md`; e o fechamento de interface/persistência em `docs/p1-ui-return-interface-results.md`.
+
+### O domínio já oferece
 
 - economia relativa com estoques estruturais e de trânsito;
 - calendário, monções e distâncias geodésicas de referência;
 - observações de viagem com precedência sobre extrapolações quando rota e data coincidem;
-- Melinde–Calecute em 1498 preservada em 26/27 dias;
-- itinerário de 1497–1498 segmentado operacionalmente em Lisboa → São Thiago → baía de Santa Helena → Cabo → São Brás → Rio do Cobre → Rio dos Bons Sinais → Moçambique → Mombaça → Melinde → Calecute;
-- Lisboa–Cabo e Cabo–Moçambique preservadas apenas como conexões estratégicas agregadas e explicitamente não executáveis;
-- permanências históricas em São Thiago, baía de Santa Helena, São Brás, Rio do Cobre e Rio dos Bons Sinais, com água, madeira, carenagem, reparos e transferência de carga registrados separadamente;
-- `ChronologyMode.GUIDED` e `ChronologyMode.COUNTERFACTUAL`, distinguindo campanha ainda alinhada à cronologia documentada de trajetória já divergente;
-- fase simulada de preparação a partir de 6/7/1497, sem antecipar a partida histórica de Lisboa em 8/7/1497;
+- itinerário da ida segmentado operacionalmente em dez pernas;
+- retorno segmentado em sete pernas até o limite do corpo primário do `Roteiro`;
+- Lisboa–Cabo e Cabo–Moçambique preservadas apenas como conexões estratégicas agregadas e não executáveis;
+- permanências históricas e atividades documentadas registradas separadamente dos seus efeitos de simulação;
+- `ChronologyMode.GUIDED` e `ChronologyMode.COUNTERFACTUAL`;
+- fase simulada de preparação anterior à partida histórica de 8/7/1497;
 - bloqueio de partida antes da data documentada quando há escala guiada ativa;
-- ação explícita de espera até a partida documentada, sem conceder automaticamente provisões, reparos, carga ou dinheiro;
-- planejamento logístico por horizonte até o próximo abastecimento documentado, com margem heurística de 20 dias claramente rotulada como `SIMULATION`;
+- espera explícita até partidas documentadas sem concessão automática de recursos;
+- planejamento logístico por horizonte até o próximo abastecimento documentado, com margem heurística rotulada como `SIMULATION`;
 - serviços, informação e negociação institucional consumindo o mesmo calendário;
 - quatro dimensões de conhecimento por nó e conhecimento náutico separado por rota;
 - estados separados para personagem e Coroa;
-- aquisição ativa por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`, sem copiar silenciosamente o conhecimento institucional;
-- rumor limitado a `RUMORED`, contato mercantil sem navegação operacional e consulta a piloto limitada a `PARTIAL`;
-- oportunidades de informação derivadas apenas de nós/rotas documentados, com repetição bloqueada por sessão e seleção determinística por semente;
-- `AccessModel` separado de conhecimento e relações, derivado de `access_regime` dos nós;
-- `OPEN_MARKET`/`CAPTAINCY` com acesso inicial aberto, `FOREIGN_NEGOTIATED` exigindo ação explícita, monopólios régios permanecendo restritos e ancoradouros/marcos náuticos não comerciais;
-- mercado conhecido mas ainda não autorizado permanecendo visível para consulta, porém não acionável para compra/venda;
-- negociação genérica sem taxa, presente, suborno ou probabilidade de sucesso inventados; o único custo v0.1 é um dia abstrato de simulação;
-- mercadorias com `node_goods.restricted=TRUE` bloqueadas independentemente do acesso portuário, de modo que uma autorização genérica não contorna monopólios específicos;
-- `RelationshipModel` com estado por ator, separado de conhecimento, acesso e comando institucional;
-- três atores/comunidades normalizados no primeiro gate: autoridade do Samudri Raja, mercadores muçulmanos/pardesi de Calecute e autoridade local de Melinde em 1498;
-- relações v0.1 limitadas a `UNESTABLISHED` e `CONTACTED`, sem pontuação global de reputação;
-- negociação de acesso e `MERCHANT_CONTACT` registrando contato somente quando existe associação histórica não ambígua com autoridade ou comunidade mercantil documentada;
-- ausência de ator genérico em portos ainda não pesquisados: uma negociação em Aden, por exemplo, não fabrica uma autoridade para preencher a interface;
-- atores ainda não contatados permanecendo ocultos na interface;
+- aquisição ativa por `RUMOR`, `MERCHANT_CONTACT` e `PILOT_CONSULTATION`;
+- `AccessModel` separado de conhecimento e relações;
+- `RelationshipModel` com estado por ator, sem reputação global inventada;
 - piloto guzerate de Melinde associado somente à rota documentada até Calecute;
-- `ExpeditionModel` com a armada de Vasco da Gama de 1497–1499;
-- `FLEET_COMMAND`, que permite participação na perna corrente sem transformar comando institucional em conhecimento pessoal;
-- `OWN_KNOWLEDGE`, `PILOT` e `FLEET_COMMAND` como bases distintas de viagem;
-- eventos marítimos `SIMULATION` com seleção determinística por semente, resolução tardia e no máximo um evento por viagem;
-- calmaria/atraso, mau tempo, avaria menor de aparelho e perturbação adicional de junho/julho em trajetórias onde o timing pode variar;
-- deterioração moderada de provisões, racionamento eficiente, `MAJOR_PROVISION_LOSS` e `STRUCTURAL_STRAIN` como contingências de simulação que podem operar sem reescrever um timing histórico observado quando marcadas `observed_timing_safe`;
-- precedência documental: em `GUIDED`, uma observação histórica exata preserva o timing documentado e suprime eventos que o alterariam, mas não elimina efeitos `observed_timing_safe` sobre recursos ou condição;
-- reserva segregada opcional de 0/5/10/15/20 dias-equivalentes contra `MAJOR_PROVISION_LOSS`, sem criar provisões e com custo de oportunidade em capital;
-- `GameSessionState` imutável reunindo navio, comércio, conhecimento, acesso, relações, histórico de informação, histórico de eventos de viagem, expedição ativa, cronologia e escala ativa;
-- provisões/condição abstratas, reabastecimento e reparo;
+- `ExpeditionModel`, `FLEET_COMMAND`, `OWN_KNOWLEDGE` e `PILOT` como bases distintas de viagem;
+- eventos marítimos `SIMULATION` com seleção determinística por semente e resolução tardia;
+- precedência documental: em `GUIDED`, observações históricas exatas preservam o timing documentado;
+- reserva segregada opcional contra `MAJOR_PROVISION_LOSS`, sem criação de provisões;
+- `GameSessionState` imutável reunindo navio, comércio, conhecimento, acesso, relações, históricos, expedição e cronologia;
+- provisões e condição abstratas, reabastecimento e reparo por ação explícita;
 - compra/venda somente em mercados documentados e institucionalmente acessíveis;
-- aprendizagem explícita por chegada e conclusão de rota;
-- objetivos e encerramento explícito da vertical slice em Calecute;
+- objetivos e encerramento explícito do MVP em Calecute;
 - persistência JSON versionada e round-trip de save/load;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
-- rótulos cartográficos deslocáveis apenas para legibilidade, sem alterar as coordenadas dos nós, com teste de regressão contra sobreposição nos cenários padrão;
-- interface Pygame com mapa conhecido, porto/data/navio, capital/carga, serviços, acesso, informação, relações estabelecidas, mercado, armada ativa, escala histórica, espera, rotas, planejamento logístico, proteção de provisões e registro discreto do último evento de viagem;
-- modo `HISTORICAL` com `EXP_GAMA_1497` e modo `TECHNICAL` separado para testes de integração;
+- interface Pygame com mapa, porto/data/navio, capital/carga, serviços, acesso, informação, relações, mercado, armada, escala, espera, rotas, planejamento logístico, proteção de provisões e eventos;
+- modo `HISTORICAL` e modo `TECHNICAL` separado para testes de integração;
 - testes automatizados, smoke tests, baterias sintéticas por arquétipos e capturas de interface no GitHub Actions.
 
-A arquitetura do primeiro jogável é **Python 3.12 + pygame-ce**, com núcleo de domínio independente da camada gráfica.
+### Retorno P1
 
-A segmentação do itinerário corrige um problema importante da primeira versão: 134 dias Lisboa–Cabo não são mais tratados como uma única perna operacional. O `Roteiro` passa a ser a fonte primária de cronologia fina; datas reconstruídas entre colchetes na edição Ravenstein são explicitamente marcadas como editoriais. O limite de provisões da simulação foi ampliado somente para comportar a longa perna São Thiago–baía de Santa Helena e continua sendo um índice abstrato, não capacidade histórica de um navio.
+O retorno é uma expansão **opt-in**. Quando não é ativado, o comportamento do MVP Lisboa–Calecute permanece inalterado.
 
-A permanência em escala não produz efeitos materiais por simples passagem do tempo. Uma atividade documentada como `WATER`, `CARENING` ou `MAST_REPAIR` registra evidência; seus efeitos jogáveis continuam exigindo ação explícita. Se o jogador ultrapassa a data documentada de partida e prossegue, a sessão passa para cronologia contrafactual em vez de forçar artificialmente o calendário histórico.
+A pesquisa documental posterior refinou a antiga perna agregada `CAL→ANJ` em `CAL→SMI→ANJ`. `SMI` representa os Ilhéus de Santa Maria como marco náutico de passagem; não recebe mercado nem serviço portuário genérico.
 
-A informação é um recurso acionável, mas de forma conservadora. Os canais genéricos de rumor e contato mercantil são mecânicas de simulação, não diálogos históricos inventados. Consulta a piloto só existe onde `pilots.csv`/`pilot_routes.csv` sustentam a competência. Nenhum desses canais torna automaticamente uma rota operacional.
+Durante o retorno:
 
-O acesso institucional também é distinto do conhecimento. A chegada a Calecute pode tornar o mercado conhecido operacionalmente sem conceder automaticamente permissão para comerciar. `FOREIGN_NEGOTIATED` exige uma ação separada; o botão genérico não reconstrói a audiência de 1498, não quantifica os presentes de Gama e não presume impostos ou privilégios. Monopólios régios e restrições específicas de mercadorias continuam bloqueios independentes.
+- em SMI existe uma única oportunidade alimentar específica do contato narrado, com efeito abstrato rotulado `SIMULATION` e sem consumo de um dia inteiro;
+- em ANJ, provisões e carena derivam da permanência documentada, sem transformar o nó em serviço genérico; a carena mínima de referência validada é +2 pontos abstratos de condição;
+- em BSR, abandono/queima do S. Rafael e transferência de carga permanecem registros específicos da expedição, sem sistema geral de frota/tripulação;
+- o epílogo posterior a BRG não é apresentado como continuação operacional certa.
 
-A camada relacional começa igualmente de forma conservadora. Calecute não é comprimida em uma reputação única: a autoridade do Samudri Raja e a comunidade mercantil muçulmana/pardesi são atores distintos porque o corpus permite distingui-los. O estado `CONTACTED` registra apenas que houve interação explícita; não concede amizade, hostilidade, crédito, desconto ou influência. Portos sem ator historicamente normalizado permanecem sem relação inventada.
+As ações one-shot do retorno reutilizam `information_history`, já persistido no schema v2. Assim, save/load preserva seu uso sem introduzir schema novo ou estado paralelo de interface.
 
-O risco marítimo é explicitamente uma camada de simulação. Os eventos não afirmam que determinado incidente ocorreu historicamente. A mesma seed aplicada ao mesmo estado é reproduzível, mas seeds diferentes podem produzir resultados distintos. Em cronologia guiada, a evidência histórica continua controlando as datas observadas; a incerteza entra por efeitos compatíveis com esse timing. Playtests pareados e diagnósticos ampliados são registrados em `docs/development-log.md`, `docs/player-archetypes-wave16-paired-results.md` e `docs/structural-strain-campaign-v06-results.md`.
+A wave19 concluiu **18/18 estados elegíveis, com zero blockers, todos em `GUIDED` até BRG em 25/04/1499**. O baseline funcional pós-retorno é o commit `47fb82baad1289077c048576f3bc52815d6b192f`; a validação pós-integração no `main` foi integralmente verde no GitHub Actions run `34118123204`.
 
-A próxima fase é **pós-MVP**. A expansão cronológica e sistêmica deve preservar esta vertical slice como baseline de regressão; novos sistemas continuam condicionados a necessidade jogável e suporte histórico suficiente.
+## Arquitetura
 
-## Estrutura
+O primeiro jogável utiliza **Python 3.12 + pygame-ce**, com núcleo de domínio independente da camada gráfica. Dados históricos ficam em `data/`; parâmetros experimentais ficam em `simulation/`.
+
+A permanência em escala não produz efeitos materiais por simples passagem do tempo. Uma atividade documentada como `WATER`, `FOOD`, `CARENING` ou `MAST_REPAIR` registra evidência; seu efeito jogável exige ação explícita e, quando quantificado sem medida histórica, permanece identificado como simulação.
+
+O acesso institucional é distinto do conhecimento. A chegada a um mercado pode torná-lo conhecido sem conceder automaticamente permissão para comerciar. Relações também são independentes: um contato documentado não concede amizade, desconto, crédito ou influência sem evidência própria.
+
+O risco marítimo é explicitamente uma camada de simulação. A mesma seed aplicada ao mesmo estado é reproduzível; seeds diferentes podem produzir resultados distintos. Em cronologia guiada, a evidência histórica controla as datas observadas e somente efeitos compatíveis com esse timing podem operar.
+
+## Estrutura principal
 
 ```text
 data/
@@ -109,6 +113,7 @@ data/
   expedition_stops.csv
   actors.csv
   node_actors.csv
+  expedition_epilogue_events.csv
 
 simulation/
   README.md
@@ -124,6 +129,7 @@ simulation/
   voyage_event_rules.csv
   port_rules.csv
   trade_rules.csv
+  return_rules.csv
 
 docs/
   historical-method.md
@@ -140,26 +146,30 @@ docs/
   interface-method.md
   roadmap.md
   mvp-gate.md
+  p1-closeout.md
+  p1-roadmap-handoff-2026-09-07.md
+  return-p1-wave19-results.md
+  santa-maria-logistics-p1-func.md
+  p1-ui-return-interface-results.md
   development-log.md
-  structural-strain-campaign-v06-results.md
   sources.md
   evidence/
-    pilot-malindi-1498.md
-    expedition-gama-1497.md
-    provisional-coordinates.md
   adr/
-    0001-runtime-and-engine.md
 
 src/quintoimperio/domain/
   access.py
   calendar.py
+  campaign.py
+  campaign_progress.py
   economy.py
   expedition.py
   information.py
   knowledge.py
   navigation.py
+  persistence.py
   port.py
   relationship.py
+  return_campaign.py
   risk_mitigation.py
   route_knowledge.py
   session.py
@@ -178,37 +188,22 @@ prototype/
   travel.py
   map.py
   game.py
+  historical_campaign.py
+  game_m5.py
+  game_m6.py
+  return_campaign.py
 
 tools/
   render_cartographic_map.py
   simulate_player_archetype.py
   diagnose_structural_strain.py
   diagnose_structural_strain_campaign.py
+  diagnose_return_from_mvp.py
+  diagnose_anjediva_careening.py
+  diagnose_return_with_careening.py
 
 tests/
-  test_access.py
-  test_access_data.py
-  test_economy.py
-  test_expedition.py
-  test_expedition_data.py
-  test_information.py
-  test_interface_layout.py
-  test_interface_relationships.py
-  test_knowledge.py
-  test_navigation.py
-  test_port.py
-  test_port_data.py
-  test_relationship.py
-  test_relationship_data.py
-  test_relationship_session.py
-  test_risk_mitigation.py
-  test_session.py
-  test_stop.py
-  test_trade.py
-  test_travel.py
-  test_voyage_event.py
-  test_voyage_event_data.py
-  test_world_map.py
+  test_*.py
 ```
 
 ## Desenvolvimento
@@ -233,10 +228,28 @@ python -m unittest discover -s tests -v
 python prototype/session.py
 ```
 
-Interface histórica:
+Interface histórica básica:
 
 ```bash
 python prototype/game.py --scenario HISTORICAL
+```
+
+Interface histórica v0.2:
+
+```bash
+python prototype/game_m5.py
+```
+
+Smoke completo do retorno até BRG:
+
+```bash
+SDL_VIDEODRIVER=dummy python prototype/game_m5.py --return-smoke --output /tmp/quintoimperio-interface-v02-brg.png
+```
+
+Persistência:
+
+```bash
+SDL_VIDEODRIVER=dummy python prototype/game_m6.py --roundtrip-smoke --save-path /tmp/quintoimperio-save.json --output /tmp/quintoimperio-interface-m6.png
 ```
 
 Cenário técnico de integração:
@@ -245,20 +258,15 @@ Cenário técnico de integração:
 python prototype/game.py --scenario TECHNICAL
 ```
 
-`R` reinicia, `Tab` alterna os modos e `Esc` encerra. Em uma escala histórica guiada, a interface expõe a data de partida e a ação de espera correspondente. Os botões de informação mostram apenas o canal disponível; o alvo só é revelado depois da interação. Em portos `FOREIGN_NEGOTIATED`, a interface oferece `Negociar acesso` quando aplicável. Relações só aparecem depois de contato explícito com um ator documentado. Eventos marítimos efetivamente ocorridos na simulação aparecem após a viagem como `SIM`, sem serem confundidos com fatos históricos.
-
-Renderização sem janela:
-
-```bash
-SDL_VIDEODRIVER=dummy python prototype/game.py --scenario HISTORICAL --output /tmp/game-historical.png
-SDL_VIDEODRIVER=dummy python prototype/game.py --scenario TECHNICAL --output /tmp/game-technical.png
-```
-
 Referência cartográfica:
 
 ```bash
 python tools/render_cartographic_map.py --perspective REFERENCE --output build/map-reference.png
 ```
+
+## Próximo gate
+
+O P1 está encerrado. O próximo gate é **P2-doc — Cochim e primeiros apoios portugueses no Malabar**, exclusivamente documental antes de qualquer alteração executável. Consultar `docs/roadmap.md`.
 
 ## Fontes de dados
 
