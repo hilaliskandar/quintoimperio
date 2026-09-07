@@ -23,6 +23,20 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(state.vessel.location_node, "LIS")
         self.assertEqual(state.vessel.clock.current_date, date(1500, 3, 9))
 
+    def test_cabral_playable_state_adds_only_simulated_predeparture_window(self):
+        state = self.model.initial_cabral_playable_state()
+        self.assertEqual(state.active_expedition_id, "EXP_CABRAL_1500")
+        self.assertEqual(state.expedition_leg_sequence, 1)
+        self.assertEqual(state.vessel.location_node, "LIS")
+        self.assertEqual(state.vessel.clock.current_date, date(1500, 3, 7))
+        plan = self.model.plan_current_leg(state, seed=1500)
+        self.assertFalse(plan.feasible)
+        self.assertIn("HISTORICAL_DEPARTURE_NOT_REACHED", plan.blockers)
+        waited = self.model.wait_for_guided_departure(state)
+        self.assertTrue(waited.executed)
+        self.assertEqual(waited.state_after.vessel.clock.current_date, date(1500, 3, 9))
+        self.assertEqual(waited.state_after.chronology_mode, ChronologyMode.GUIDED)
+
     def test_cabral_first_leg_uses_documented_timing_and_fleet_command(self):
         state = self.model.initial_cabral_state(provision_days=180.0)
         plan = self.model.plan_current_leg(state, seed=1500)
