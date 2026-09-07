@@ -90,6 +90,22 @@ def complete_mvp_state(archetype: str, seed: int):
     return state, progress.completed
 
 
+def apply_documented_provisions(model, state):
+    if not model.documented_stop_can_reprovision(state):
+        return state, 0
+    max_actions = 1 if state.vessel.location_node == "SMI" else 3
+    actions = 0
+    for _ in range(max_actions):
+        if state.vessel.provision_days >= 120.0:
+            break
+        result = model.reprovision_at_documented_stop(state, 120.0)
+        if not result.executed:
+            break
+        actions += 1
+        state = result.state_after
+    return state, actions
+
+
 def execute_return(state, seed: int):
     model = ReturnCampaignModel()
     state = model.activate_return(state)
@@ -104,15 +120,8 @@ def execute_return(state, seed: int):
     first_view = model.logistics_planning_view(state, seed=seed)
 
     while state.active_expedition_id == model.RETURN_EXPEDITION_ID:
-        if model.documented_stop_can_reprovision(state):
-            for _ in range(3):
-                if state.vessel.provision_days >= 120.0:
-                    break
-                result = model.reprovision_at_documented_stop(state, 120.0)
-                if not result.executed:
-                    break
-                provision_actions += 1
-                state = result.state_after
+        state, actions = apply_documented_provisions(model, state)
+        provision_actions += actions
 
         departure = model.guided_departure_date(state)
         if departure is not None and state.vessel.clock.current_date < departure:
@@ -234,7 +243,7 @@ def main():
                     blocked_routes.update([return_result["blocked_route"]])
 
     report = {
-        "diagnostic": "P1_RETURN_FROM_MVP_WAVE17",
+        "diagnostic": "P1_RETURN_SANTA_MARIA_BASELINE_WAVE19",
         "archetypes": list(ARCHETYPES_DIAGNOSTIC),
         "seeds": list(SEEDS),
         "cases_total": len(cases),
