@@ -39,6 +39,8 @@ jobs:
         run: python prototype/return_campaign.py
       - name: Diagnose return from completed MVP states
         run: python tools/diagnose_return_from_mvp.py --output /tmp/return-from-mvp-wave17.json
+      - name: Diagnose Anjediva careening sensitivity
+        run: python tools/diagnose_anjediva_careening.py --output /tmp/anjediva-careening-sensitivity.json
       - name: Smoke-test playable interface
         env:
           SDL_VIDEODRIVER: dummy
@@ -80,6 +82,7 @@ jobs:
             /tmp/quintoimperio-interface-v02-calicut.png
             /tmp/quintoimperio-interface-m6.png
             /tmp/return-from-mvp-wave17.json
+            /tmp/anjediva-careening-sensitivity.json
           if-no-files-found: error
       - name: Smoke-test coordinate map
         env:
