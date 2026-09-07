@@ -24,6 +24,7 @@ from .stop import ChronologyMode, ExpeditionStop
 class P3CampaignModel(HistoricalCampaignModel):
     """Extensão opt-in para as campanhas documentadas a partir de 1500."""
 
+    CABRAL_PREDEPARTURE_START = date(1500, 3, 7)
     CABRAL_DEPARTURE = date(1500, 3, 9)
     CABRAL_EXPEDITION_ID = "EXP_CABRAL_1500"
     CABRAL_DOCUMENTED_PROVISION_ACTIVITIES = frozenset({"WATER", "WOOD"})
@@ -49,6 +50,31 @@ class P3CampaignModel(HistoricalCampaignModel):
         return self.session.initial_state(
             location_node="LIS",
             start_date=self.CABRAL_DEPARTURE,
+            provision_days=provision_days,
+            condition=condition,
+            capital_index=capital_index,
+            capacity_total=capacity_total,
+            active_expedition_id=self.CABRAL_EXPEDITION_ID,
+            chronology_mode=ChronologyMode.GUIDED,
+        )
+
+    def initial_cabral_playable_state(
+        self,
+        *,
+        provision_days: float = 60.0,
+        condition: float = 100.0,
+        capital_index: float = 100.0,
+        capacity_total: float = 30.0,
+    ) -> GameSessionState:
+        """Abre dois dias simulados de preparação antes da partida documental.
+
+        07/03/1500 é uma camada de jogo, não uma alegação histórica sobre o início
+        do aprestamento da armada. A partida guiada continua fixada em 09/03/1500
+        pela observação da primeira perna, reproduzindo a separação já usada no MVP.
+        """
+        return self.session.initial_state(
+            location_node="LIS",
+            start_date=self.CABRAL_PREDEPARTURE_START,
             provision_days=provision_days,
             condition=condition,
             capital_index=capital_index,
