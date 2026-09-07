@@ -8,7 +8,11 @@ import json
 from pathlib import Path
 
 from quintoimperio.domain import ReturnCampaignModel
-from diagnose_return_from_mvp import ARCHETYPES_DIAGNOSTIC, complete_mvp_state
+from diagnose_return_from_mvp import (
+    ARCHETYPES_DIAGNOSTIC,
+    apply_documented_provisions,
+    complete_mvp_state,
+)
 
 
 SEED = 23004
@@ -30,14 +34,7 @@ def run_return(state, requested_repair: float):
     blocker = None
 
     while state.active_expedition_id == model.RETURN_EXPEDITION_ID:
-        if model.documented_stop_can_reprovision(state):
-            for _ in range(3):
-                if state.vessel.provision_days >= 120.0:
-                    break
-                result = model.reprovision_at_documented_stop(state, 120.0)
-                if not result.executed:
-                    break
-                state = result.state_after
+        state, _ = apply_documented_provisions(model, state)
 
         if requested_repair > 0 and model.documented_stop_can_repair(state):
             result = model.repair_at_documented_stop(state, requested_repair)
@@ -108,7 +105,7 @@ def main():
         }
 
     report = {
-        "diagnostic": "P1_ANJEDIVA_CAREENING_SENSITIVITY",
+        "diagnostic": "P1_ANJEDIVA_CAREENING_SENSITIVITY_WITH_SANTA_MARIA",
         "seed": SEED,
         "repair_points": list(REPAIR_POINTS),
         "summary": summary,
