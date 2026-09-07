@@ -63,8 +63,10 @@ jobs:
         run: |
           python prototype/game_m5.py --output /tmp/quintoimperio-interface-v02.png
           python prototype/game_m5.py --campaign-smoke --output /tmp/quintoimperio-interface-v02-calicut.png
+          python prototype/game_m5.py --return-smoke --output /tmp/quintoimperio-interface-v02-brg.png
           test -s /tmp/quintoimperio-interface-v02.png
           test -s /tmp/quintoimperio-interface-v02-calicut.png
+          test -s /tmp/quintoimperio-interface-v02-brg.png
       - name: Smoke-test persistence M6
         env:
           SDL_VIDEODRIVER: dummy
@@ -82,6 +84,7 @@ jobs:
             /tmp/quintoimperio-campaign-calicut.png
             /tmp/quintoimperio-interface-v02.png
             /tmp/quintoimperio-interface-v02-calicut.png
+            /tmp/quintoimperio-interface-v02-brg.png
             /tmp/quintoimperio-interface-m6.png
             /tmp/return-santa-maria-baseline-wave19.json
             /tmp/anjediva-careening-sensitivity-smi.json
