@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Controle pareado da wave17 com carena mínima de 2 pontos em Anjediva."""
+"""Controle pareado do retorno com Santa Maria e carena mínima de 2 pontos."""
 
 from __future__ import annotations
 
@@ -9,7 +9,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from quintoimperio.domain import ReturnCampaignModel
-from diagnose_return_from_mvp import ARCHETYPES_DIAGNOSTIC, SEEDS, complete_mvp_state
+from diagnose_return_from_mvp import (
+    ARCHETYPES_DIAGNOSTIC,
+    SEEDS,
+    apply_documented_provisions,
+    complete_mvp_state,
+)
 
 CARENING_POINTS = 2.0
 
@@ -26,16 +31,11 @@ def execute_return(state, seed: int):
     routes = []
     blockers = []
     repair_actions = 0
+    provision_actions = 0
 
     while state.active_expedition_id == model.RETURN_EXPEDITION_ID:
-        if model.documented_stop_can_reprovision(state):
-            for _ in range(3):
-                if state.vessel.provision_days >= 120.0:
-                    break
-                result = model.reprovision_at_documented_stop(state, 120.0)
-                if not result.executed:
-                    break
-                state = result.state_after
+        state, actions = apply_documented_provisions(model, state)
+        provision_actions += actions
 
         if model.documented_stop_can_repair(state):
             result = model.repair_at_documented_stop(state, CARENING_POINTS)
@@ -67,6 +67,7 @@ def execute_return(state, seed: int):
         "routes_completed": routes,
         "blockers": blockers,
         "repair_actions": repair_actions,
+        "provision_actions": provision_actions,
         "final_location": state.vessel.location_node,
         "final_date": state.vessel.clock.current_date.isoformat(),
         "final_condition": round(state.vessel.condition, 4),
@@ -104,7 +105,7 @@ def main():
     eligible = [c for c in cases if c["mvp_completed"]]
     completed = [c for c in eligible if c.get("return", {}).get("completed")]
     report = {
-        "diagnostic": "P1_RETURN_WITH_MINIMAL_CAREENING_WAVE18",
+        "diagnostic": "P1_RETURN_SANTA_MARIA_AND_CAREENING_WAVE19",
         "careening_points": CARENING_POINTS,
         "cases_total": len(cases),
         "mvp_completed": len(eligible),
