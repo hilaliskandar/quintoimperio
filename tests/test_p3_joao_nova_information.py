@@ -70,6 +70,21 @@ def test_first_leg_without_daily_observation_uses_simulated_timing_and_stays_gui
     assert after.expedition_leg_sequence == 2
 
 
+def test_simulated_arrival_at_sao_bras_falls_inside_documented_warning_window():
+    model = JoaoNovaCampaignModel()
+    state = model.initial_joao_nova_state(provision_days=180.0)
+    plan = model.plan_current_leg(state, seed=1501)
+    after = model.execute_voyage(state, plan)
+    event = model.malabar_warning_event()
+
+    assert event.date_from <= after.vessel.clock.current_date <= event.date_to, (
+        after.vessel.clock.current_date,
+        event.date_from,
+        event.date_to,
+    )
+    assert model.can_acquire_malabar_warning(after)
+
+
 def test_joao_nova_route_order_avoids_calicut():
     model = JoaoNovaCampaignModel()
     legs = model.session.expedition.legs[model.EXPEDITION_ID]
