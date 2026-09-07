@@ -25,6 +25,11 @@ def main() -> None:
             if result.executed:
                 state = result.state_after
 
+        if model.documented_stop_can_repair(state):
+            result = model.repair_at_documented_stop(state, 2.0)
+            if result.executed:
+                state = result.state_after
+
         departure = model.guided_departure_date(state)
         if departure is not None and state.vessel.clock.current_date < departure:
             waited = model.wait_for_guided_departure(state)
@@ -45,7 +50,8 @@ def main() -> None:
         state = model.execute_voyage(state, plan)
 
     expected = [
-        "R_CAL_ANJ",
+        "R_CAL_SMI",
+        "R_SMI_ANJ",
         "R_ANJ_MAL",
         "R_MAL_BSR",
         "R_BSR_SBR",
