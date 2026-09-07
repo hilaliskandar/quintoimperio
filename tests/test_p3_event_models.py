@@ -63,9 +63,10 @@ class P3EventModelTests(unittest.TestCase):
         resolved = [event for event in on_date if event.event_id == "NOVA1502_E04"]
         self.assertEqual(len(resolved), 1)
         self.assertEqual(resolved[0].event_type, "NAVAL_BLOCKADE_ENDS")
+        self.assertEqual(resolved[0].date_from, date(1502, 1, 2))
+        self.assertEqual(resolved[0].date_to, date(1502, 1, 2))
         self.assertEqual(resolved[0].origin_node, "CAN")
         self.assertEqual(resolved[0].destination_node, "CAN")
-        self.assertIn("não fixa a partida transoceânica", resolved[0].notes)
 
     def test_cabral_trajectory_events_are_separate_from_generic_fleet_state(self):
         events = self.expedition_events.preferred_for_expedition("EXP_CABRAL_1500")
