@@ -35,6 +35,8 @@ jobs:
         run: python prototype/trade.py
       - name: Run integrated session prototype
         run: python prototype/session.py
+      - name: Smoke-test return campaign to Rio Grande
+        run: python prototype/return_campaign.py
       - name: Smoke-test playable interface
         env:
           SDL_VIDEODRIVER: dummy
