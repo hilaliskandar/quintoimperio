@@ -9,6 +9,9 @@ class P3TemporalDataTests(unittest.TestCase):
     def setUpClass(cls):
         cls.repo = RepositoryData()
         cls.nodes = {row["node_id"]: row for row in cls.repo.historical("nodes.csv")}
+        cls.expeditions = {
+            row["expedition_id"]: row for row in cls.repo.historical("expeditions.csv")
+        }
         cls.events = cls.repo.historical("expedition_events.csv")
         cls.node_events = cls.repo.historical("node_state_events.csv")
 
@@ -49,6 +52,14 @@ class P3TemporalDataTests(unittest.TestCase):
     def test_all_temporal_events_reference_known_nodes(self):
         for row in self.node_events:
             self.assertIn(row["node_id"], self.nodes)
+
+    def test_all_expedition_events_reference_normalized_expeditions_and_nodes(self):
+        for row in self.events:
+            self.assertIn(row["expedition_id"], self.expeditions)
+            if row["origin_node"]:
+                self.assertIn(row["origin_node"], self.nodes)
+            if row["destination_node"]:
+                self.assertIn(row["destination_node"], self.nodes)
 
 
 if __name__ == "__main__":
