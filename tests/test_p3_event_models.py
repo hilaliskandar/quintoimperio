@@ -32,14 +32,29 @@ class P3EventModelTests(unittest.TestCase):
     def test_uncertain_transition_is_not_applied_before_upper_bound(self):
         during_range = self.node_states.effective_state("CAN", date(1501, 12, 15))
         self.assertEqual(during_range.institutional_presence, "NONE")
+        self.assertNotIn("CAN1501_E02", during_range.applied_event_ids)
         after_range = self.node_states.effective_state("CAN", date(1501, 12, 31))
         self.assertEqual(after_range.institutional_presence, "FACTORY")
+        self.assertEqual(after_range.fortification_state, "NONE")
+        self.assertEqual(after_range.garrison_state, "NONE")
+        self.assertIn("CAN1501_E02", after_range.applied_event_ids)
+        self.assertIn("Kolath", after_range.sovereignty_note)
 
     def test_joao_da_nova_warning_is_available_only_after_documentary_window(self):
         before = self.expedition_events.available_by("EXP_JOAO_NOVA_1501", date(1501, 8, 1))
         self.assertFalse(any(event.event_id == "NOVA1501_E01" for event in before))
         after = self.expedition_events.available_by("EXP_JOAO_NOVA_1501", date(1501, 8, 31))
         self.assertTrue(any(event.event_id == "NOVA1501_E01" for event in after))
+
+    def test_cannanore_blockade_begins_on_december_30_without_generic_combat(self):
+        before = self.expedition_events.available_by("EXP_JOAO_NOVA_1501", date(1501, 12, 29))
+        self.assertFalse(any(event.event_id == "NOVA1501_E03" for event in before))
+        on_date = self.expedition_events.available_by("EXP_JOAO_NOVA_1501", date(1501, 12, 30))
+        blockade = [event for event in on_date if event.event_id == "NOVA1501_E03"]
+        self.assertEqual(len(blockade), 1)
+        self.assertEqual(blockade[0].event_type, "NAVAL_BLOCKADE_BEGINS")
+        self.assertEqual(blockade[0].origin_node, "CAN")
+        self.assertEqual(blockade[0].destination_node, "CAN")
 
     def test_cabral_trajectory_events_are_separate_from_generic_fleet_state(self):
         events = self.expedition_events.preferred_for_expedition("EXP_CABRAL_1500")
