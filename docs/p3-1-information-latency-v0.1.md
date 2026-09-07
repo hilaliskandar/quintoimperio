@@ -11,17 +11,20 @@ A listagem de armadas da EVE/FCSH data a partida de João da Nova em **05/03/150
 
 Consequência: João da Nova **não pode iniciar sua campanha com conhecimento da Coroa sobre a ruptura em Calecute, a alternativa comercial de Cochim, a feitoria ali deixada ou o acolhimento de Cananor**, salvo se surgir fonte específica demonstrando comunicação anterior por outra via.
 
+Há, porém, uma exceção importante: a EVE/FCSH registra que Gaspar de Lemos regressou a Lisboa com cartas e objetos de Vera Cruz e chegou ao reino em **junho de 1500**. Assim, o conhecimento da descoberta atlântica já podia integrar o estado da Coroa antes da partida de João da Nova.
+
 ## Linha temporal mínima
 
 | Momento | Informação/evento | Onde existe | Disponível à Coroa em Lisboa? | Disponível a João da Nova na partida? |
 |---|---|---|---|---|
 | 1499 | resultados da primeira viagem de Gama | Lisboa/Portugal | SIM | SIM |
-| maio de 1500 | notícia/documentação de Vera Cruz enviada por navio destacado | circuito Atlântico → Lisboa | potencialmente SIM antes de 1501; data de chegada ainda a confirmar | somente se chegada anterior a 05/03/1501 for comprovada |
+| maio de 1500 | notícia/documentação de Vera Cruz enviada por Gaspar de Lemos | circuito Atlântico → Lisboa | em trânsito | ainda não |
+| junho de 1500 | Gaspar de Lemos chega a Lisboa com cartas e objetos | Lisboa | SIM | SIM em princípio; conteúdo detalhado deve respeitar o que foi efetivamente comunicado |
 | 16/12/1500 | ruptura da feitoria em Calecute | Calecute/Índico | NÃO | NÃO |
 | 24/12/1500–09/01/1501 | carregamento e residentes portugueses em Cochim | Cochim/Índico | NÃO | NÃO |
 | 15/01/1501 | acolhimento e compra em Cananor | Cananor/Índico | NÃO | NÃO |
 | 16/01/1501 | Cabral inicia retorno | Índico | NÃO | NÃO |
-| 05/03/1501 | João da Nova parte de Lisboa | Lisboa | apenas o que chegou ao reino até essa data | baseline de partida |
+| 05/03/1501 | João da Nova parte de Lisboa | Lisboa | resultados de Gama + notícia de Vera Cruz; não os resultados do Malabar de Cabral | baseline de partida |
 | 24/06/1501 | `Anunciada` chega ao Restelo | Lisboa | SIM para o conjunto de notícias que ela efetivamente transporta | tarde demais para alterar o estado inicial da armada já no mar |
 | fim jul. 1501 | outras embarcações de Cabral chegam | Lisboa | SIM, ampliando/confirmando informação | somente para decisões posteriores da Coroa, não retroativamente para João da Nova |
 
@@ -40,7 +43,7 @@ Esses são estados locais do mundo.
 
 ### 2. Conhecimento da Coroa
 
-A Coroa só deve receber uma informação quando houver uma trajetória documental plausível de transmissão até Lisboa. A chegada posterior de Cabral não pode retroagir conhecimento para 05/03/1501.
+A Coroa só deve receber uma informação quando houver uma trajetória documental plausível de transmissão até Lisboa. A chegada posterior de Cabral não pode retroagir conhecimento para 05/03/1501. A notícia de Vera Cruz é um caso positivo de transmissão anterior, via Gaspar de Lemos em junho de 1500.
 
 ### 3. Conhecimento da expedição seguinte
 
@@ -68,15 +71,15 @@ A formulação anterior de que os resultados de Cabral “devem persistir para J
 
 - **persistem no mundo local**, sim;
 - **não persistem automaticamente como conhecimento inicial da Coroa ou da armada de João da Nova**;
-- podem ser descobertos por João da Nova quando alcançar o teatro do Índico, conforme a documentação de sua própria viagem.
+- **a notícia de Vera Cruz é exceção documentada**, pois chegou a Lisboa em junho de 1500;
+- os fatos do Malabar podem ser descobertos por João da Nova quando alcançar o teatro do Índico, conforme a documentação de sua própria viagem.
 
 ## Próximas verificações
 
-1. determinar a data documentável de chegada do navio de Gaspar de Lemos com as notícias/documentos de Vera Cruz;
-2. determinar que informações a `Anunciada` efetivamente trouxe em 24/06/1501;
-3. reconstruir o primeiro contacto de João da Nova no Malabar e quando ele toma conhecimento da situação de Calecute/Cochim/Cananor;
-4. verificar se o modelo atual de `information_history` e conhecimento por ator já suporta esse comportamento sem novo schema;
-5. manter como erro de modelagem qualquer transferência de fatos de Cabral para João da Nova apenas porque cronologicamente ocorreram antes da chegada deste à Índia.
+1. determinar que informações a `Anunciada` efetivamente trouxe em 24/06/1501;
+2. reconstruir o primeiro contacto de João da Nova no Malabar e quando ele toma conhecimento da situação de Calecute/Cochim/Cananor;
+3. verificar se o modelo atual de `information_history` e conhecimento por ator já suporta esse comportamento sem novo schema;
+4. manter como erro de modelagem qualquer transferência de fatos de Cabral para João da Nova apenas porque cronologicamente ocorreram antes da chegada deste à Índia.
 
 ## Decisão provisória
 
