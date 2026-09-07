@@ -2,9 +2,9 @@
 
 ## Estado consolidado
 
-A vertical slice Lisboa–Calecute está concluída. Os gates **M0–M8 estão atendidos** e o projeto entra em fase pós-MVP após a marcação do commit de referência.
+A vertical slice Lisboa–Calecute está concluída. Os gates **M0–M8 estão atendidos**. O gate documental de **P1 — retorno da primeira viagem** também está concluído; a expansão pós-MVP entrou no gate funcional do retorno.
 
-A definição funcional e metodológica do MVP está em `docs/mvp-gate.md`. O histórico de balanceamento, agência e risco está em `docs/development-log.md`; os diagnósticos estocásticos detalhados permanecem em documentos próprios.
+A definição funcional e metodológica do MVP está em `docs/mvp-gate.md`. O histórico de balanceamento, agência e risco está em `docs/development-log.md`; o fechamento documental do retorno está em `docs/p1-closeout.md` e o procedimento de continuidade em `docs/p1-roadmap-handoff-2026-09-07.md`.
 
 Princípio permanente: **dados históricos e parâmetros de simulação permanecem separados; fatos históricos não são recalibrados para resolver jogabilidade**.
 
@@ -61,59 +61,58 @@ Os eventos atuais incluem efeitos positivos e negativos. `MAJOR_PROVISION_LOSS` 
 
 ### Agência sobre risco de provisões
 
-Playtests pareados mostraram que perdas severas de provisões podiam gerar seeds praticamente inevitáveis sem uma escolha preparatória. A solução validada foi uma reserva segregada de provisões já embarcadas:
-
-- opções 0/5/10/15/20 dias-equivalentes;
-- custo de 0,25 ponto de capital por dia protegido e por viagem;
-- atuação exclusiva sobre `MAJOR_PROVISION_LOSS`;
-- nenhum recurso criado;
-- nenhum evento revelado antes da viagem.
-
-Isso transformou parte da variância em decisão com custo de oportunidade.
+Playtests pareados mostraram que perdas severas de provisões podiam gerar seeds praticamente inevitáveis sem uma escolha preparatória. A solução validada foi uma reserva segregada de provisões já embarcadas, com opções 0/5/10/15/20 dias-equivalentes e custo de oportunidade. A proteção atua exclusivamente sobre `MAJOR_PROVISION_LOSS`, não cria recursos e não antecipa eventos.
 
 ### Diagnóstico de risco estrutural
 
-O mesmo princípio não foi aplicado automaticamente a `STRUCTURAL_STRAIN`. Primeiro foi medido.
-
-No diagnóstico de 7.000 campanhas com sete arquétipos competentes e 1.000 seeds pareadas:
-
-- houve 3.274 ocorrências de `STRUCTURAL_STRAIN`;
-- 185 terminaram abaixo de condição 40;
-- nenhuma terminou abaixo de 20;
-- não houve blocker `VESSEL_CONDITION_TOO_LOW` na perna seguinte.
+No diagnóstico de 7.000 campanhas com sete arquétipos competentes e 1.000 seeds pareadas houve 3.274 ocorrências de `STRUCTURAL_STRAIN`, 185 terminaram abaixo de condição 40, nenhuma abaixo de 20 e não houve blocker `VESSEL_CONDITION_TOO_LOW` na perna seguinte.
 
 Conclusão: **não criar mitigação estrutural sem problema de agência demonstrado**.
 
 ## Marco de versão do MVP
 
-Após a sincronização editorial final e CI verde, o commit resultante de `main` deve ser tratado como commit de referência do MVP Lisboa–Calecute e marcado com versão.
-
-A vertical slice marcada passa a ser baseline de comparação para toda expansão posterior.
+O commit `f308fb0e97687e34365fd23ed257a0114fd81613` permanece a referência documental do fechamento do MVP Lisboa–Calecute. A vertical slice deve continuar como baseline de comparação para toda expansão posterior.
 
 ## Pós-MVP — primeira expansão 1498–1505
 
-A expansão imediata deve ocorrer em gates pequenos e reversíveis, sem inserir todos os sistemas de uma vez.
+A expansão ocorre em gates pequenos e reversíveis, sem inserir todos os sistemas de uma vez.
 
 ### P1 — Retorno e reconfiguração da primeira viagem
 
-Objetivo: prolongar a campanha após Calecute até o retorno, preservando a lógica de evidência e contingência já validada.
+**Gate documental: CONCLUÍDO em 07/09/2026 — issue #92.**
 
-Antes de codificar, levantar:
+Foram auditados itinerário, cronologia, composição da frota, perdas documentadas, escalas, reparos, reabastecimentos, confiança cartográfica e a quebra de proveniência após 25/04/1499. O retorno documental primário foi normalizado até os Baixos do Rio Grande; o trecho posterior permanece em epílogo documental com trajetórias e datas divergentes.
 
-- itinerário e cronologia do retorno;
-- mudanças na composição da frota;
-- perdas de embarcações e homens apenas onde documentadas;
-- escalas, reparos e reabastecimentos sustentados por fonte;
-- consequências políticas e comerciais da primeira passagem por Calecute.
+A sequência operacional já incorporada até o fim do manuscrito é:
+
+`CAL → ANJ → MAL → BSR → SBR → CGH → BRG`.
+
+A issue técnica #93 resolveu a representação mínima de datas incertas, mudança de comando e trajetórias divergentes sem refatoração ampla.
+
+**Gate funcional atual: issue #99.**
+
+Objetivo: tornar jogável o retorno até BRG consumindo os dados já auditados, sem reabrir a pesquisa documental ampla e sem alterar o baseline Lisboa–Calecute.
+
+Critérios principais:
+
+- preservar as dez pernas do MVP e os saves existentes;
+- habilitar as seis pernas do retorno até BRG;
+- consumir permanências documentadas sem transformar ocorrências específicas em serviços genéricos;
+- representar a queima do S. Rafael como evento específico, sem sistema geral de frota/tripulação;
+- manter doença/mortalidade sistêmica fora deste gate;
+- manter o epílogo pós-manuscrito fora do loop jogável;
+- executar smoke test e pequena bateria sintética reproduzível antes de qualquer balanceamento.
 
 ### P2 — Cochim e primeiros apoios portugueses no Malabar
 
-Somente após P1 estabilizado:
+Somente após P1 funcional estabilizado:
 
 - normalizar Cochim e atores relevantes;
 - registrar mercados e regimes de acesso documentados;
 - introduzir consequências relacionais locais quando sustentadas;
 - ampliar o comércio sem inventar séries de preços inexistentes.
+
+P2 deve começar por gate documental próprio antes de alterações executáveis.
 
 ### P3 — Novas expedições 1500–1505
 
@@ -183,6 +182,10 @@ Continuam válidas as seguintes prioridades:
 - risco de cauda é medido antes de ser mitigado;
 - nova proteção só entra quando houver evidência de problema de agência e custo de oportunidade defensável.
 
+## Disciplina de memória
+
+Ao final de cada gate relevante: registrar decisão, evidência, testes, issue/PR/commit e próximo passo no repositório; atualizar o espelho de acompanhamento no Drive; somente então iniciar o gate seguinte.
+
 ## Próximo gate
 
-Após a marcação de versão do MVP, abrir **P1 — Retorno da primeira viagem** como frente histórica e funcional independente. O primeiro passo de P1 deve ser documental: reconstruir e auditar o itinerário de retorno antes de alterar o domínio ou expandir o mapa.
+Executar **#99 — P1-func: integrar retorno jogável até os Baixos do Rio Grande**. O primeiro subgate é uma auditoria do domínio atual para identificar a menor alteração necessária para consumir `EXP_GAMA_RETURN_1498`, preservando o encerramento e o comportamento do MVP quando a expansão não estiver ativada.
