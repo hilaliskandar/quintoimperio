@@ -1,0 +1,33 @@
+name: P3 East Africa logistics diagnostic
+
+on:
+  push:
+    branches: [p3-func-a-116]
+    paths:
+      - "tools/diagnose_p3_east_africa_logistics.py"
+      - ".github/workflows/p3-east-africa-logistics-diagnostic.yml"
+      - "data/**"
+      - "simulation/**"
+      - "src/quintoimperio/domain/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Diagnose East Africa logistics sensitivity
+        run: python tools/diagnose_p3_east_africa_logistics.py | tee /tmp/p3-east-africa-logistics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p3-east-africa-logistics-diagnostic
+          path: /tmp/p3-east-africa-logistics.json
+          if-no-files-found: error
