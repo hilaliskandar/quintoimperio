@@ -19,6 +19,15 @@ class ReturnCampaignTests(unittest.TestCase):
             chronology_mode=ChronologyMode.GUIDED,
         )
 
+    def state_at_anjediva(self):
+        state = self.completed_mvp_state()
+        state = self.model.activate_return(state)
+        waited = self.model.wait_for_guided_departure(state)
+        state = waited.state_after
+        plan = self.model.plan_current_leg(state, seed=1498)
+        self.assertTrue(plan.feasible, plan.blockers)
+        return self.model.execute_voyage(state, plan)
+
     def test_return_is_explicit_and_preserves_mvp_completion_state(self):
         state = self.completed_mvp_state()
         self.assertIsNone(state.active_expedition_id)
@@ -41,24 +50,19 @@ class ReturnCampaignTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.model.activate_return(state)
 
-    def test_anjediva_generic_port_service_remains_unknown(self):
-        self.assertEqual(
-            self.model.session.port.availability("ANJ", PortServiceKind.PROVISIONS),
-            ServiceAvailability.UNKNOWN,
-        )
-        quote = self.model.session.port.quote("ANJ", PortServiceKind.PROVISIONS)
-        self.assertFalse(quote.documented)
-        self.assertFalse(quote.actionable)
+    def test_anjediva_generic_port_services_remain_unknown(self):
+        for service in (PortServiceKind.PROVISIONS, PortServiceKind.REPAIR):
+            with self.subTest(service=service.value):
+                self.assertEqual(
+                    self.model.session.port.availability("ANJ", service),
+                    ServiceAvailability.UNKNOWN,
+                )
+                quote = self.model.session.port.quote("ANJ", service)
+                self.assertFalse(quote.documented)
+                self.assertFalse(quote.actionable)
 
     def test_documented_stop_reprovision_is_specific_not_generic(self):
-        state = self.completed_mvp_state()
-        state = self.model.activate_return(state)
-        waited = self.model.wait_for_guided_departure(state)
-        state = waited.state_after
-        plan = self.model.plan_current_leg(state, seed=1498)
-        self.assertTrue(plan.feasible, plan.blockers)
-        state = self.model.execute_voyage(state, plan)
-
+        state = self.state_at_anjediva()
         self.assertEqual(state.vessel.location_node, "ANJ")
         self.assertTrue(self.model.documented_stop_can_reprovision(state))
         before = state.vessel.provision_days
@@ -67,6 +71,20 @@ class ReturnCampaignTests(unittest.TestCase):
         self.assertGreater(result.state_after.vessel.provision_days, before)
         self.assertEqual(
             self.model.session.port.availability("ANJ", PortServiceKind.PROVISIONS),
+            ServiceAvailability.UNKNOWN,
+        )
+
+    def test_documented_careening_repairs_without_generic_port_service(self):
+        state = self.state_at_anjediva()
+        self.assertTrue(self.model.documented_stop_can_repair(state))
+        before = state.vessel.condition
+        result = self.model.repair_at_documented_stop(state, 1.0)
+        self.assertTrue(result.executed, result.reasons)
+        self.assertAlmostEqual(result.service_result.effect, 1.0)
+        self.assertEqual(result.service_result.days_spent, 1)
+        self.assertAlmostEqual(result.state_after.vessel.condition, before + 1.0)
+        self.assertEqual(
+            self.model.session.port.availability("ANJ", PortServiceKind.REPAIR),
             ServiceAvailability.UNKNOWN,
         )
 
