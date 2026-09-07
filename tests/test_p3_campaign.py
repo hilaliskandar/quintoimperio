@@ -2,6 +2,7 @@ import unittest
 from datetime import date
 
 from quintoimperio.domain import (
+    ChronologyMode,
     ExpeditionEventModel,
     KnowledgeLevel,
     NavigationBasis,
@@ -38,7 +39,7 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(after.active_stop_id, "CABRAL1500_VCR")
 
     def advance_to_mozambique(self):
-        state = self.model.initial_cabral_state(provision_days=180.0)
+        state = self.model.initial_cabral_state(provision_days=240.0)
         first = self.model.plan_current_leg(state, seed=1500)
         at_vera_cruz = self.model.execute_voyage(state, first)
         waited = self.model.wait_for_stop_release(at_vera_cruz)
@@ -53,8 +54,16 @@ class P3CampaignTests(unittest.TestCase):
         self.assertTrue(plan.feasible, plan.blockers)
         return self.model.execute_voyage(at_mozambique, plan)
 
+    def advance_to_malindi(self):
+        at_kilwa = self.advance_to_kilwa()
+        waited = self.model.wait_for_stop_release(at_kilwa)
+        self.assertTrue(waited.executed)
+        plan = self.model.plan_current_leg(waited.state_after, seed=1500)
+        self.assertTrue(plan.feasible, plan.blockers)
+        return self.model.execute_voyage(waited.state_after, plan)
+
     def test_vera_cruz_stop_blocks_early_departure_and_second_leg_reaches_mozambique(self):
-        state = self.model.initial_cabral_state(provision_days=180.0)
+        state = self.model.initial_cabral_state(provision_days=240.0)
         first = self.model.plan_current_leg(state, seed=1500)
         at_vera_cruz = self.model.execute_voyage(state, first)
         second = self.model.plan_current_leg(at_vera_cruz, seed=1500)
@@ -118,16 +127,64 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(at_malindi.vessel.location_node, "MAL")
         self.assertEqual(at_malindi.vessel.clock.current_date, date(1500, 8, 2))
         self.assertEqual(at_malindi.active_stop_id, "CABRAL1500_MAL")
-        stop = self.model.active_stop(at_malindi)
+        self.assertEqual(at_malindi.active_expedition_id, "EXP_CABRAL_1500")
+        self.assertEqual(at_malindi.expedition_leg_sequence, 5)
+
+    def test_malindi_releases_on_august_7_and_reaches_anjediva(self):
+        at_malindi = self.advance_to_malindi()
+        blocked = self.model.plan_current_leg(at_malindi, seed=1500)
+        self.assertFalse(blocked.feasible)
+        self.assertIn("HISTORICAL_STOP_NOT_RELEASED", blocked.blockers)
+        self.assertIsNone(
+            self.model.recommended_pilot_id(at_malindi, "R_MAL_ANJ_CAB")
+        )
+
+        waited = self.model.wait_for_stop_release(at_malindi)
+        self.assertTrue(waited.executed)
+        self.assertEqual(waited.state_after.vessel.clock.current_date, date(1500, 8, 7))
+        plan = self.model.plan_current_leg(waited.state_after, seed=1500)
+        self.assertTrue(plan.feasible, plan.blockers)
+        self.assertEqual(plan.route_id, "R_MAL_ANJ_CAB")
+        self.assertEqual(plan.navigation_basis, NavigationBasis.FLEET_COMMAND)
+        self.assertEqual(plan.travel_days, 15)
+        self.assertEqual(plan.arrival_date, date(1500, 8, 22))
+
+        at_anjediva = self.model.execute_voyage(waited.state_after, plan)
+        self.assertEqual(at_anjediva.vessel.location_node, "ANJ")
+        self.assertEqual(at_anjediva.vessel.clock.current_date, date(1500, 8, 22))
+        self.assertEqual(at_anjediva.active_stop_id, "CABRAL1500_ANJ")
+        self.assertEqual(at_anjediva.expedition_leg_sequence, 6)
+        self.assertEqual(at_anjediva.chronology_mode, ChronologyMode.GUIDED)
+
+    def test_anjediva_operational_derivation_releases_on_september_5_and_reaches_calicut(self):
+        at_malindi = self.advance_to_malindi()
+        mal_release = self.model.wait_for_stop_release(at_malindi)
+        leg = self.model.plan_current_leg(mal_release.state_after, seed=1500)
+        at_anjediva = self.model.execute_voyage(mal_release.state_after, leg)
+
+        blocked = self.model.plan_current_leg(at_anjediva, seed=1500)
+        self.assertFalse(blocked.feasible)
+        self.assertIn("HISTORICAL_STOP_NOT_RELEASED", blocked.blockers)
+        stop = self.model.active_stop(at_anjediva)
         self.assertIsNotNone(stop)
         assert stop is not None
-        self.assertEqual(stop.departure_date, date(1500, 8, 7))
-        self.assertEqual(
-            stop.activities,
-            ("DIPLOMATIC_CONTACT", "DEGREDADOS_DISEMBARKED", "PILOTS_PROVIDED"),
-        )
-        self.assertIsNone(at_malindi.active_expedition_id)
-        self.assertIsNone(at_malindi.expedition_leg_sequence)
+        self.assertEqual(stop.departure_date, date(1500, 9, 5))
+        self.assertEqual(stop.observed_stay_days, 14)
+
+        waited = self.model.wait_for_stop_release(at_anjediva)
+        self.assertEqual(waited.state_after.vessel.clock.current_date, date(1500, 9, 5))
+        plan = self.model.plan_current_leg(waited.state_after, seed=1500)
+        self.assertTrue(plan.feasible, plan.blockers)
+        self.assertEqual(plan.route_id, "R_ANJ_CAL_CAB")
+        self.assertEqual(plan.travel_days, 8)
+        self.assertEqual(plan.arrival_date, date(1500, 9, 13))
+
+        at_calicut = self.model.execute_voyage(waited.state_after, plan)
+        self.assertEqual(at_calicut.vessel.location_node, "CAL")
+        self.assertEqual(at_calicut.vessel.clock.current_date, date(1500, 9, 13))
+        self.assertEqual(at_calicut.chronology_mode, ChronologyMode.GUIDED)
+        self.assertIsNone(at_calicut.active_expedition_id)
+        self.assertIsNone(at_calicut.expedition_leg_sequence)
 
     def test_two_gujarati_pilots_remain_documentary_event_in_1500(self):
         events = self.expedition_events.preferred_for_expedition("EXP_CABRAL_1500")
@@ -141,9 +198,9 @@ class P3CampaignTests(unittest.TestCase):
         self.assertFalse(
             self.model.session.travel.pilot_can_guide(
                 "PIL_MAL_GUJ_1498",
-                "R_KIL_MAL_CAB",
-                date(1500, 8, 2),
-                "KIL",
+                "R_MAL_ANJ_CAB",
+                date(1500, 8, 7),
+                "MAL",
             )
         )
 
@@ -152,7 +209,7 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(route["route_type"], "STRATEGIC_AGGREGATE")
         self.assertNotEqual(
             self.model.current_leg(
-                self.model.initial_cabral_state(provision_days=180.0)
+                self.model.initial_cabral_state(provision_days=240.0)
             ).route_id,
             "R_VCR_CGH_CAB",
         )
@@ -169,7 +226,7 @@ class P3CampaignTests(unittest.TestCase):
         self.assertEqual(splits[0].trajectory_id, "DIOGO_DIAS_SPLIT")
 
     def test_fleet_command_does_not_pregrant_operational_route_knowledge(self):
-        state = self.model.initial_cabral_state(provision_days=180.0)
+        state = self.model.initial_cabral_state(provision_days=240.0)
         self.assertNotEqual(
             self.model.route_nav(state, "R_LIS_VCR_CAB"),
             KnowledgeLevel.OPERATIONAL,
