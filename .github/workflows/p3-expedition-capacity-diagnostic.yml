@@ -1,0 +1,30 @@
+name: P3 Cabral expedition capacity diagnostic
+
+on:
+  push:
+    branches: [p3-func-a-116]
+    paths:
+      - "tools/diagnose_p3_expedition_capacity.py"
+      - ".github/workflows/p3-expedition-capacity-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Diagnose expedition-specific provision cap
+        run: python tools/diagnose_p3_expedition_capacity.py | tee /tmp/p3-expedition-capacity.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p3-expedition-capacity-diagnostic
+          path: /tmp/p3-expedition-capacity.json
+          if-no-files-found: error
