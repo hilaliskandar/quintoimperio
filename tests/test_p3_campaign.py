@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from quintoimperio.domain import NavigationBasis, P3CampaignModel
+from quintoimperio.domain import KnowledgeLevel, NavigationBasis, P3CampaignModel
 
 
 class P3CampaignTests(unittest.TestCase):
@@ -27,12 +27,19 @@ class P3CampaignTests(unittest.TestCase):
         self.assertIsNone(after.active_expedition_id)
         self.assertIsNone(after.expedition_leg_sequence)
 
-    def test_cabral_first_leg_does_not_upgrade_personal_route_knowledge(self):
+    def test_fleet_command_does_not_pregrant_operational_route_knowledge(self):
         state = self.model.initial_cabral_state(provision_days=180.0)
-        before = self.model.route_nav(state, "R_LIS_VCR_CAB")
+        self.assertNotEqual(
+            self.model.route_nav(state, "R_LIS_VCR_CAB"),
+            KnowledgeLevel.OPERATIONAL,
+        )
         plan = self.model.plan_current_leg(state, seed=1500)
+        self.assertEqual(plan.navigation_basis, NavigationBasis.FLEET_COMMAND)
         after = self.model.execute_voyage(state, plan)
-        self.assertEqual(self.model.route_nav(after, "R_LIS_VCR_CAB"), before)
+        self.assertEqual(
+            self.model.route_nav(after, "R_LIS_VCR_CAB"),
+            KnowledgeLevel.OPERATIONAL,
+        )
 
 
 if __name__ == "__main__":
