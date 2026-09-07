@@ -1,0 +1,89 @@
+name: P3 Cabral archetypes paired seeds wave 20
+
+on:
+  push:
+    branches:
+      - p3-func-a-116
+    paths:
+      - "tools/simulate_p3_archetype.py"
+      - "tools/aggregate_p3_archetype_playtest.py"
+      - "src/quintoimperio/domain/p3_campaign.py"
+      - "data/expedition_routes.csv"
+      - "data/expedition_stops.csv"
+      - "data/voyage_observations.csv"
+      - "data/expedition_events.csv"
+      - "data/node_state_events.csv"
+      - ".github/workflows/p3-archetypes-wave20.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  play:
+    name: p3-${{ matrix.archetype }}-20-sessions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        archetype:
+          - GRAND_STRATEGIST
+          - SURVIVALIST
+          - MERCHANT
+          - SPEEDRUNNER
+          - ROGUELIKE
+          - ROLEPLAYER
+          - EXPLORER
+          - OPTIMIZER
+          - COMPLETIONIST
+          - CASUAL
+          - RANDOM_PER_LEG
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Run paired 20 seeds
+        run: |
+          mkdir -p build/p3-paired/${{ matrix.archetype }}
+          for i in $(seq 1 20); do
+            seed=$((24000 + i))
+            python tools/simulate_p3_archetype.py \
+              --player-id "$i" \
+              --archetype "${{ matrix.archetype }}" \
+              --seed "$seed" \
+              --wave 20 \
+              --output "build/p3-paired/${{ matrix.archetype }}/seed-${seed}.json"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p3-${{ matrix.archetype }}-wave20
+          path: build/p3-paired/${{ matrix.archetype }}/*.json
+
+  aggregate:
+    needs: play
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: p3-*-wave20
+          path: build/p3-results
+          merge-multiple: false
+      - name: Aggregate paired P3 results
+        run: |
+          python tools/aggregate_p3_archetype_playtest.py \
+            --input-dir build/p3-results \
+            --csv build/p3-archetypes-wave20.csv \
+            --summary build/p3-archetypes-wave20-summary.json \
+            --paired-csv build/p3-archetypes-wave20-paired.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p3-archetypes-wave20-paired-results
+          path: |
+            build/p3-archetypes-wave20.csv
+            build/p3-archetypes-wave20-summary.json
+            build/p3-archetypes-wave20-paired.csv
