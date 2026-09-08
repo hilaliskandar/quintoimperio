@@ -73,3 +73,49 @@ def test_sodre_force_is_documentary_world_event_not_second_active_expedition():
     assert event.event_type == "FORCE_REMAINS"
     assert event.date_from == date(1503, 1, 1)
     assert event.date_to == date(1503, 3, 31)
+
+
+def test_calcoen_witness_anchors_malabar_sequence_without_general_combat():
+    model = Gama1502CampaignModel()
+    events = {
+        event.event_id: event
+        for event in model.expedition_events.preferred_for_expedition(model.EXPEDITION_ID)
+    }
+
+    can_to_cal = events["GAMA1502_E04"]
+    cal_to_coc = events["GAMA1502_E05"]
+    cochin_audience = events["GAMA1502_E06"]
+    cochin_departure = events["GAMA1503_E07"]
+    calicut_engagement = events["GAMA1503_E08"]
+    return_preparation = events["GAMA1503_E09"]
+
+    assert can_to_cal.date_from == date(1502, 10, 27)
+    assert can_to_cal.origin_node == "CAN"
+    assert can_to_cal.destination_node == "CAL"
+    assert can_to_cal.event_type == "FLEET_DEPARTURE"
+
+    assert cal_to_coc.date_from == date(1502, 11, 2)
+    assert cal_to_coc.origin_node == "CAL"
+    assert cal_to_coc.destination_node == "COC"
+
+    assert cochin_audience.date_from == date(1502, 11, 28)
+    assert cochin_audience.event_type == "ROYAL_NEGOTIATION"
+
+    assert cochin_departure.date_from == date(1503, 1, 3)
+    assert cochin_departure.origin_node == "COC"
+
+    assert calicut_engagement.date_from == date(1503, 2, 12)
+    assert calicut_engagement.event_type == "NAVAL_ENGAGEMENT"
+
+    assert return_preparation.date_from == date(1503, 2, 13)
+    assert return_preparation.origin_node == "CAL"
+    assert return_preparation.destination_node == "CAN"
+
+    assert all("CALCOEN_1504" in event.source_id for event in (
+        can_to_cal,
+        cal_to_coc,
+        cochin_audience,
+        cochin_departure,
+        calicut_engagement,
+        return_preparation,
+    ))
