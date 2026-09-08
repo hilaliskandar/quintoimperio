@@ -96,7 +96,7 @@ Se a rota de Lopo ou F5 demonstrar necessidade comercial/logística real, Coulã
 
 ## 7. Transição de comando
 
-Duarte Pacheco regressa com a armada de Lopo Soares. A documentação aponta Manuel Teles/Vasconcelos/Barreto como responsável subsequente pela guarda de Cochim, mas a cronologia segura alcança janeiro de 1505.
+Duarte Pacheco regressa com a armada de Lopo Soares. A documentação aponta Manuel Teles Barreto como responsável subsequente pela guarda de Cochim; outras variantes onomásticas permanecem pendentes de auditoria. A cronologia segura alcança janeiro de 1505.
 
 Decisão:
 
