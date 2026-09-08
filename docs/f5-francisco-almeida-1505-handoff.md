@@ -57,16 +57,24 @@ O gate documental F5 (#132) foi concluído e integrado pelo PR #133. A implement
 - commits `6b69463431498905d503ff1dd9fec397f7becdbf` e `11fbfd2c509d2af8def3be2dc753cb8889c9d908`;
 - CI `34193505777` integralmente verde.
 
+### Estados persistentes — Quiloa e Anjediva
+
+- `KIL1505_E01`: janela `22–24/07/1505`; o estado persistente de presença fortificada e guarnição só é aplicado em `24/07`, preservando a diferença entre entrada e ocupação;
+- a soberania não é convertida automaticamente em portuguesa e o evento não cria mecânica geral de combate;
+- `ANJ1505_E01`: janela mensal `01–30/09/1505`; 13/09 e 14/09 continuam candidatos historiográficos e não são promovidos a `EXACT`;
+- em Anjediva, fortificação e guarnição só se tornam efetivas em `30/09`, pela regra conservadora de `NodeStateEventModel`;
+- teste em `tests/test_f5_kilwa_anjediva_states.py` cobre limites temporais e não anexação automática;
+- commits `33ab2b7a201ffdb2ba71d9334736d72433c5fcd1` e `7ae93ec8a38457cd06b8f3b84f303d95f258c3c7`;
+- CI `34193613911` integralmente verde.
+
 ## Próximos incrementos
 
 Implementar em sequência estreita, com CI a cada gate:
 
-1. tratar Quiloa em gate próprio, separando evento de ocupação do estado persistente final;
-2. tratar Anjediva com janela conservadora de setembro, sem promover 13/09 ou 14/09 a certeza factual;
-3. representar nomeação, Regimento, partida, exercício institucional no Índico e presença segura em Cochim como eventos da expedição de Almeida;
-4. representar a centralidade administrativa de Cochim sem alterar soberania nem duplicar fortificação/guarnição herdadas de 1503;
-5. fechar teste de estado em `1505-12-31` e save/load;
-6. executar regressão integral; somente depois avaliar necessidade de campanha jogável adicional.
+1. representar nomeação, Regimento, partida, exercício institucional no Índico e presença segura em Cochim como eventos da expedição de Almeida;
+2. representar a centralidade administrativa de Cochim sem alterar soberania nem duplicar fortificação/guarnição herdadas de 1503;
+3. fechar teste de estado em `1505-12-31` e save/load;
+4. executar regressão integral; somente depois avaliar necessidade de campanha jogável adicional.
 
 ## Restrições
 
