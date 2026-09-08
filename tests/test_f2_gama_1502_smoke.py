@@ -71,8 +71,8 @@ def test_sodre_force_is_documentary_world_event_not_second_active_expedition():
     assert state.active_expedition_id == model.EXPEDITION_ID
     assert event.trajectory_id == "SODRE_FORCE"
     assert event.event_type == "FORCE_REMAINS"
-    assert event.date_from == date(1503, 1, 1)
-    assert event.date_to == date(1503, 3, 31)
+    assert event.date_from == date(1503, 2, 23)
+    assert event.date_to == date(1503, 2, 28)
 
 
 def test_calcoen_witness_anchors_malabar_sequence_without_general_combat():
@@ -119,3 +119,32 @@ def test_calcoen_witness_anchors_malabar_sequence_without_general_combat():
         calicut_engagement,
         return_preparation,
     ))
+
+
+def test_return_split_is_range_not_invented_exact_departure():
+    model = Gama1502CampaignModel()
+    events = {
+        event.event_id: event
+        for event in model.expedition_events.preferred_for_expedition(model.EXPEDITION_ID)
+    }
+
+    resident = events["GAMA1502_E03"]
+    departure = events["GAMA1503_E10"]
+
+    assert resident.date_from == date(1503, 2, 23)
+    assert resident.date_to == date(1503, 2, 28)
+    assert resident.date_precision == "RANGE"
+
+    assert departure.event_type == "RETURN_FLEET_DEPARTS"
+    assert departure.origin_node == "CAN"
+    assert departure.destination_node == "LIS"
+    assert departure.date_from == date(1503, 2, 23)
+    assert departure.date_to == date(1503, 2, 28)
+    assert departure.date_precision == "RANGE"
+
+    # O retorno fica documental: F2 não cria rota executável CAN→LIS.
+    assert not any(
+        leg.origin_node == "CAN" and leg.destination_node == "LIS"
+        for leg in model.expeditions.legs
+        if leg.expedition_id == model.EXPEDITION_ID
+    )
