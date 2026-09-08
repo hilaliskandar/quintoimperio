@@ -15,6 +15,45 @@ class P3EventModelTests(unittest.TestCase):
         self.assertEqual(state.fortification_state, "NONE")
         self.assertNotIn("COC1503_E03", state.applied_event_ids)
 
+    def test_cochin_1503_state_sequence_is_conservative_and_ordered(self):
+        before_crisis = self.node_states.effective_state("COC", date(1503, 4, 29))
+        crisis = self.node_states.effective_state("COC", date(1503, 4, 30))
+        before_restoration = self.node_states.effective_state("COC", date(1503, 9, 29))
+        restored_and_fortified = self.node_states.effective_state("COC", date(1503, 9, 30))
+        before_garrison = self.node_states.effective_state("COC", date(1503, 12, 30))
+        garrisoned = self.node_states.effective_state("COC", date(1503, 12, 31))
+
+        self.assertNotIn("COC1503_E01", before_crisis.applied_event_ids)
+        self.assertEqual(before_crisis.institutional_presence, "FACTORY_REORGANIZED")
+
+        self.assertIn("COC1503_E01", crisis.applied_event_ids)
+        self.assertEqual(crisis.institutional_presence, "FACTORY_DISPLACED")
+        self.assertEqual(crisis.access_state, "DISRUPTED")
+        self.assertEqual(crisis.relationship_state, "HOSTILE_PRESSURE")
+        self.assertEqual(crisis.fortification_state, "NONE")
+
+        self.assertEqual(before_restoration.institutional_presence, "FACTORY_DISPLACED")
+        self.assertNotIn("COC1503_E02", before_restoration.applied_event_ids)
+        self.assertNotIn("COC1503_E03", before_restoration.applied_event_ids)
+
+        self.assertIn("COC1503_E02", restored_and_fortified.applied_event_ids)
+        self.assertIn("COC1503_E03", restored_and_fortified.applied_event_ids)
+        self.assertEqual(restored_and_fortified.institutional_presence, "FACTORY_RESTORED")
+        self.assertEqual(restored_and_fortified.fortification_state, "PORTUGUESE_FORT")
+        self.assertEqual(restored_and_fortified.garrison_state, "NONE")
+        self.assertEqual(restored_and_fortified.access_state, "NEGOTIATED")
+        self.assertEqual(restored_and_fortified.relationship_state, "FAVORABLE")
+        self.assertIn("soberania local", restored_and_fortified.sovereignty_note.lower())
+
+        self.assertEqual(before_garrison.fortification_state, "PORTUGUESE_FORT")
+        self.assertEqual(before_garrison.garrison_state, "NONE")
+        self.assertNotIn("COC1503_E04", before_garrison.applied_event_ids)
+
+        self.assertEqual(garrisoned.fortification_state, "PORTUGUESE_FORT")
+        self.assertEqual(garrisoned.garrison_state, "PORTUGUESE_GARRISON")
+        self.assertIn("COC1503_E04", garrisoned.applied_event_ids)
+        self.assertIn("soberania local", garrisoned.sovereignty_note.lower())
+
     def test_cochin_becomes_fortified_without_sovereignty_change(self):
         state = self.node_states.effective_state("COC", date(1503, 12, 31))
         self.assertEqual(state.fortification_state, "PORTUGUESE_FORT")
