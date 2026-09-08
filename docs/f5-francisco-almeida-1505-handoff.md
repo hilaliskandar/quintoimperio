@@ -12,15 +12,17 @@ O gate documental F5 (#132) foi concluído e integrado pelo PR #133. A implement
 ## Decisões fechadas
 
 1. `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO` para o horizonte 1505.
-2. Não criar schema global de vice-reinado/governo enquanto não houver consumidor funcional que o exija.
-3. `node_state_events.csv` é a camada de fortificação, guarnição, presença institucional, acesso, relação e soberania.
-4. A autoridade de Francisco de Almeida permanece decomposta entre nomeação régia, Regimento, comando expedicionário e exercício institucional no Índico; não é retroprojetada como estado único desde Lisboa.
-5. O tamanho da armada permanece `UNRESOLVED` diante das variantes 20/21/22/23.
-6. Soberania local permanece explícita mesmo com fortificação/guarnição portuguesa.
-7. Sofala/Pêro de Anhaia permanece unidade histórica própria.
-8. Anjediva usa janela conservadora em setembro; 13/09 × 14/09 não é resolvido artificialmente.
-9. A chegada diária de Almeida a Cochim não é fixada; 16/12/1505 é a presença documental segura usada no freeze.
-10. A divergência `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto` permanece aberta.
+2. `NEW_GLOBAL_AUTHORITY_SCHEMA = NAO_NECESSARIO` até 31/12/1505.
+3. `MULTI_ACTIVE_FLEET_SCHEMA = NAO_NECESSARIO` até 31/12/1505.
+4. `node_state_events.csv` é a camada de fortificação, guarnição, presença institucional, acesso, relação e soberania.
+5. A autoridade de Francisco de Almeida permanece decomposta entre nomeação régia, Regimento, comando expedicionário e exercício institucional no Índico.
+6. O tamanho da armada permanece `UNRESOLVED` diante das variantes 20/21/22/23.
+7. Soberania local permanece explícita mesmo com fortificação/guarnição portuguesa.
+8. Sofala/Pêro de Anhaia permanece unidade histórica própria.
+9. Anjediva usa janela conservadora em setembro; 13/09 × 14/09 não é resolvido artificialmente.
+10. A chegada diária de Almeida a Cochim não é fixada; 16/12/1505 é a presença documental segura usada no freeze.
+11. A divergência `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto` permanece aberta.
+12. A centralidade administrativa de Cochim não recebe novo campo: o evento institucional de Almeida satisfaz o consumidor atual e não existe consulta global de sede que justifique schema adicional.
 
 ## Checkpoints funcionais concluídos
 
@@ -60,7 +62,7 @@ O gate documental F5 (#132) foi concluído e integrado pelo PR #133. A implement
 - `ALM1505_E02 — ROYAL_REGIMENT_ISSUED`: 03/03/1505, `EXACT`;
 - `ALM1505_E03 — FLEET_DEPARTURE`: Lisboa, 25/03/1505, `EXACT`, destino não normalizado;
 - `ALM1505_E04 — VICEROYAL_AUTHORITY_ACTIVE_IN_INDIA`: Cananor, janela `01–31/10/1505`, `RANGE`, efetiva conservadoramente em 31/10;
-- `ALM1505_E05 — PRESENCE_IN_COCHIN`: Cochim, 16/12/1505, `EXACT`, baseada em presença documental segura e sem promover 31/10 a chegada factual;
+- `ALM1505_E05 — PRESENCE_IN_COCHIN`: Cochim, 16/12/1505, `EXACT`, sem promover 31/10 a chegada factual;
 - nenhuma dessas linhas cria schema global de governo ou altera soberania de nó;
 - commits `a05d3d4b7fe13b650534369d95f4750689bf3e97` e `4bddbc64c2056e69aa8360b10edefafd58e865f4`;
 - teste em `tests/test_f5_almeida_authority_events.py`;
@@ -68,26 +70,42 @@ O gate documental F5 (#132) foi concluído e integrado pelo PR #133. A implement
 
 ### Golden state documental de 31/12/1505
 
-- teste `tests/test_f5_1505_golden_state.py` fixa consultas determinísticas para `KIL`, `SOF`, `ANJ`, `CAN`, `COC` e `MOM` em `31/12/1505`;
-- Quiloa, Sofala, Anjediva e Cananor resolvem forte + guarnição portugueses conforme seus gates temporais;
+- `tests/test_f5_1505_golden_state.py` fixa consultas determinísticas para `KIL`, `SOF`, `ANJ`, `CAN`, `COC` e `MOM`;
+- Quiloa, Sofala, Anjediva e Cananor resolvem forte + guarnição conforme seus gates;
 - Cochim herda forte e guarnição de 1503, sem duplicação em 1505;
-- Mombaça não recebe fortificação/guarnição persistente apenas por causa do ataque de agosto;
-- a sequência institucional completa de Almeida está disponível no freeze e termina com presença documental em Cochim;
-- duas instâncias independentes de `NodeStateEventModel` resolvem exatamente o mesmo estado, provando determinismo da projeção documental;
+- Mombaça não recebe estado persistente português apenas por causa do ataque de agosto;
+- sequência institucional de Almeida termina com presença documental em Cochim;
 - commit `243083930138354f54ac59dd48713c41eeca3732`;
 - CI `34194546533` integralmente verde.
 
-## Próximos incrementos
+### Persistência do contexto de freeze
 
-1. provar explicitamente o round-trip save/load no contexto do freeze, sem inventar campanha jogável de Almeida;
-2. decidir se a centralidade administrativa de Cochim precisa de qualquer representação adicional; a presunção atual é **não**, pois `ALM1505_E05` já satisfaz o consumidor documental e não há consulta global de sede;
-3. executar regressão integral final da branch e auditar o diff contra o baseline integrado;
-4. preparar fechamento da issue #134 e handoff `domain-freeze-1505` / `Python 1505 GREEN`.
+- `tests/test_f5_1505_freeze_persistence.py` cria uma sessão em Cochim em `31/12/1505`, sem campanha Almeida ativa fictícia;
+- o round-trip `CampaignPersistence.dumps/loads` preserva data, local, seed, ausência de expedição ativa e modo cronológico;
+- o estado histórico objetivo não é duplicado no save: ele continua derivado de data + `node_state_events`, e a projeção antes/depois do round-trip é idêntica;
+- isso mantém o contrato existente de persistência sem elevar Almeida a campanha jogável sem pernas;
+- commit `8cf7343b7c4a7da2d9eab16d0dbf23db6d98250c`;
+- CI `34194659164` integralmente verde.
 
-## Restrições
+## Auditoria do diff funcional
 
-Não implementar por antecipação combate geral, múltiplas frotas simultâneas, sistema global de governo/autoridade, itinerários diários reconstruídos por analogia, novos nós sem necessidade demonstrada ou resolução artificial de divergências documentais.
+Comparação do baseline integrado `5e10409fa10e4b412f3ffcb3232d9674c09c1773` com `8cf7343b7c4a7da2d9eab16d0dbf23db6d98250c`:
 
-## Critério de fechamento F5
+- branch 20 commits à frente, zero atrás;
+- alterações funcionais limitadas a `data/expeditions.csv`, `data/expedition_events.csv`, `data/node_state_events.csv`, testes F5 e documentação;
+- nenhum arquivo em `src/` ou `simulation/` foi alterado;
+- nenhuma nova mecânica geral foi criada;
+- `docs/roadmap.md` já havia sido atualizado no início da própria branch funcional após o fechamento documental, não sendo uma alteração incidental de mecânica.
 
-A tranche pode ser encerrada quando o estado de `31/12/1505` estiver também coberto pelo contrato de persistência/save-load aplicável, a regressão integral permanecer verde e o diff final não introduzir mecânica geral não demonstrada. O fechamento deve produzir `domain-freeze-1505` ou handoff explícito para o gate final do Python 1505 GREEN.
+## Estado de fechamento
+
+Os critérios funcionais de F5 estão satisfeitos na branch:
+
+- estado de `31/12/1505` determinístico;
+- round-trip save/load validado;
+- soberanias locais preservadas;
+- divergências documentais mantidas;
+- sem combate geral, schema global de governo ou múltiplas frotas ativas;
+- regressão integral verde no HEAD funcional testado.
+
+Próximo gate: preparar PR/merge de F5, executar CI pós-merge no `main` e então produzir o fechamento `domain-freeze-1505` / `Python 1505 GREEN` com contratos e golden states para a futura implementação em Godot.
