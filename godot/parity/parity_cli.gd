@@ -2,6 +2,7 @@ extends SceneTree
 
 const CanonicalData = preload("res://autoload/canonical_data.gd")
 const NodeStateModel = preload("res://domain/node_state.gd")
+const ExpeditionEventModel = preload("res://domain/expedition_event.gd")
 
 
 func _initialize() -> void:
@@ -11,6 +12,10 @@ func _initialize() -> void:
         return
 
     if not _node_state_parity():
+        quit(1)
+        return
+
+    if not _expedition_event_parity():
         quit(1)
         return
 
@@ -122,3 +127,95 @@ func _node_state_parity() -> bool:
     }
     print("NODE_STATE_PARITY=" + JSON.stringify(payload))
     return true
+
+
+func _expedition_event_parity() -> bool:
+    var model := ExpeditionEventModel.new()
+    if not model.is_ready():
+        push_error(model.load_error())
+        return false
+
+    var fixture_file := FileAccess.open(
+        "res://parity/fixtures/almeida_1505_expedition_events.json",
+        FileAccess.READ
+    )
+    if fixture_file == null:
+        push_error("Fixture de ExpeditionEvent indisponível")
+        return false
+
+    var fixture = JSON.parse_string(fixture_file.get_as_text())
+    if typeof(fixture) != TYPE_DICTIONARY:
+        push_error("Fixture de ExpeditionEvent não é um objeto JSON")
+        return false
+
+    var expedition_id := String(fixture.get("expedition_id", ""))
+    var events := model.for_expedition(expedition_id)
+    var ordered_ids := _event_ids(events)
+    var expected_order: Array = fixture.get("ordered_event_ids", [])
+    if ordered_ids != expected_order:
+        push_error(
+            "Ordenação ExpeditionEvent divergiu\nexpected=%s\nactual=%s" % [
+                JSON.stringify(expected_order),
+                JSON.stringify(ordered_ids),
+            ]
+        )
+        return false
+
+    var availability: Dictionary = fixture.get("availability", {})
+    var dates := availability.keys()
+    dates.sort()
+    for date_variant in dates:
+        var on_date := String(date_variant)
+        var actual_ids := _event_ids(model.available_by(expedition_id, on_date))
+        var expected_ids: Array = availability[on_date]
+        if actual_ids != expected_ids:
+            push_error(
+                "Disponibilidade ExpeditionEvent divergiu em %s\nexpected=%s\nactual=%s" % [
+                    on_date,
+                    JSON.stringify(expected_ids),
+                    JSON.stringify(actual_ids),
+                ]
+            )
+            return false
+
+    var by_id: Dictionary = {}
+    for event in events:
+        by_id[String(event.get("event_id", ""))] = event
+
+    var selected_fields: Dictionary = fixture.get("selected_fields", {})
+    for event_id_variant in selected_fields.keys():
+        var event_id := String(event_id_variant)
+        if not by_id.has(event_id):
+            push_error("Evento esperado ausente: %s" % event_id)
+            return false
+        var actual_event: Dictionary = by_id[event_id]
+        var expected_fields: Dictionary = selected_fields[event_id]
+        for field_variant in expected_fields.keys():
+            var field := String(field_variant)
+            if actual_event.get(field) != expected_fields[field]:
+                push_error(
+                    "Campo ExpeditionEvent divergiu em %s.%s: expected=%s actual=%s" % [
+                        event_id,
+                        field,
+                        JSON.stringify(expected_fields[field]),
+                        JSON.stringify(actual_event.get(field)),
+                    ]
+                )
+                return false
+
+    var payload := {
+        "status": "ok",
+        "contract": "ExpeditionEventModel",
+        "expedition_id": expedition_id,
+        "ordered_event_ids": ordered_ids,
+        "availability_checkpoints": dates,
+    }
+    print("EXPEDITION_EVENT_PARITY=" + JSON.stringify(payload))
+    return true
+
+
+func _event_ids(events: Array[Dictionary]) -> Array:
+    var ids: Array = []
+    for event in events:
+        ids.append(String(event.get("event_id", "")))
+    return ids
