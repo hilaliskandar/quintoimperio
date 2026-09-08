@@ -13,6 +13,7 @@ from datetime import date
 from pathlib import Path
 
 from .expedition_event import ExpeditionEvent, ExpeditionEventModel
+from .node_state_event import NodeHistoricalState, NodeStateEventModel
 from .p3_campaign import P3CampaignModel
 from .session import GameSessionState
 from .stop import ChronologyMode
@@ -28,6 +29,7 @@ class Gama1502CampaignModel(P3CampaignModel):
     def __init__(self, root: Path | None = None) -> None:
         super().__init__(root)
         self.expedition_events = ExpeditionEventModel(root)
+        self.node_states = NodeStateEventModel(root)
 
     def initial_gama_1502_state(
         self,
@@ -48,6 +50,19 @@ class Gama1502CampaignModel(P3CampaignModel):
             active_expedition_id=self.EXPEDITION_ID,
             chronology_mode=ChronologyMode.GUIDED,
         )
+
+    def malabar_institutional_state(
+        self, node_id: str, on_date: date
+    ) -> NodeHistoricalState:
+        """Consulta o estado histórico objetivo de Cochim/Cananor por data.
+
+        O método não altera o save nem concede controle territorial. Ele apenas
+        reutiliza ``node_state_events`` para que a reorganização institucional de
+        1502 seja consultável independentemente da posição da frota do jogador.
+        """
+        if node_id not in {"COC", "CAN"}:
+            raise ValueError("F2 consulta apenas os estados institucionais de COC/CAN")
+        return self.node_states.effective_state(node_id, on_date)
 
     def sodre_force_remains_event(self) -> ExpeditionEvent:
         """Retorna o estado documental da força residente sem ativá-la no save."""
