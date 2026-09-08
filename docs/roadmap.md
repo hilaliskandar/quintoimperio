@@ -2,15 +2,16 @@
 
 ## Estado consolidado
 
-O projeto possui três baselines já integrados e uma primeira tranche funcional de P3 também integrada ao `main`:
+O projeto possui os baselines históricos e funcionais de 1497–1504 integrados ao `main`, e o gate documental de 1505 também está concluído:
 
 - MVP Lisboa–Calecute: `f308fb0e97687e34365fd23ed257a0114fd81613`;
 - P1 retorno até BRG: `47fb82baad1289077c048576f3bc52815d6b192f`;
 - P2 Cochim mínimo: `7b8a19ca3313095790d0ce1760b98aa270fa9e5f`;
 - P3-func-A: merge do PR #117 em `1011507d5dd1332585b01cfd90351395952bb5f1`;
-- CI pós-P3-func-A: run `34160737955` — integralmente verde.
+- F4/1504: merge do PR #131 em `0a75006a5097c7b5f2cf04ab83fbf5312a53fca6`, CI pós-merge `34189675875` verde;
+- F5-doc/1505: merge do PR #133 em `5e10409fa10e4b412f3ffcb3232d9674c09c1773`, CI pós-merge `34192641101` verde.
 
-O objetivo de produção passa a ser explícito: **concluir e estabilizar em Python o domínio necessário para representar 1497–1505 antes de migrar o runtime de produção para Godot**.
+O objetivo de produção permanece explícito: **concluir e estabilizar em Python o domínio necessário para representar 1497–1505 antes de migrar o runtime de produção para Godot**.
 
 O Python permanece, até esse gate, como laboratório de domínio, implementação de referência, ambiente de pesquisa histórica, diagnóstico e playtest sintético. Pygame continua apenas como interface suficiente para validação e smoke tests; não deve receber investimento de produção que será descartado na migração.
 
@@ -75,92 +76,113 @@ Baseline integrado: `1011507d5dd1332585b01cfd90351395952bb5f1`.
 
 Issue #118 — **Fechar domínio Python 1497–1505 e preparar freeze para Godot**.
 
-A #110 continua como guarda-chuva documental de 1500–1505. Os subgates #111–#114 estão concluídos; #115 permanece aberto para 1504.
+A #110 permanece como guarda-chuva documental de 1500–1505. Os gates documentais até 1505 estão concluídos; o gate funcional corrente é F5, issue #134.
 
 ## F1 — João da Nova 1501–1502
 
-**Status: PRÓXIMO GATE FUNCIONAL.**
+**Status: CONCLUÍDO.**
 
-Objetivos:
+Objetivos estabilizados:
 
 1. completar somente as pernas e âncoras temporais documentalmente sustentáveis;
 2. manter a partida em Lisboa sem conhecimento do desfecho de Cabral no Malabar;
 3. aplicar a aquisição de informação em São Brás como evento próprio da expedição;
 4. integrar Cananor/Cochim e a presença institucional correspondente;
 5. preservar Ceilão fora da rota enquanto a evidência permanecer insuficiente;
-6. representar confronto específico sem combate geral, salvo necessidade demonstrada;
+6. representar confronto específico sem combate geral;
 7. testar save/load, cronologia e informação sem vazamento retrospectivo;
-8. CI integral e smoke da campanha antes do fechamento.
+8. manter regressão integral contra MVP/P1/P2/P3-func-A.
 
-Critério de verde de F1: campanha representável até seu limite documental, informação correta por data/local e regressão integral contra MVP/P1/P2/P3-func-A.
+Resultado: campanha representável até seu limite documental, com informação correta por data/local e sem introdução de combate geral.
 
 ## F2 — Vasco da Gama 1502–1503
 
-Objetivos:
+**Status: CONCLUÍDO.**
 
-1. integrar `EXP_GAMA_1502`;
-2. normalizar apenas as rotas e escalas necessárias;
-3. aplicar reorganização de Cochim e Cananor por estados temporais;
-4. representar mudanças de feitor/presença sem alterar soberania local;
-5. representar Vicente Sodré como subcampanha/força residente se o schema atual bastar;
-6. distinguir missão institucional de decisão operacional;
-7. manter Mîrî, bloqueio e bombardeio como eventos específicos enquanto não houver necessidade de combate geral;
-8. testar persistência de efeitos mundiais após separação da força residente.
+Resultados consolidados:
 
-Critério de verde de F2: Gama 1502 e Sodré representáveis sem lacuna arquitetural bloqueante, save/load íntegro e regressão completa.
+1. `EXP_GAMA_1502` integrado como unidade histórica;
+2. rotas e marcos adicionados apenas quando documentalmente necessários;
+3. reorganização de Cochim e Cananor aplicada por estados temporais;
+4. mudanças de feitor/presença sem alteração de soberania local;
+5. força residente de Vicente Sodré tratada sem generalizar múltiplas frotas simultâneas;
+6. missão institucional distinguida de decisão operacional;
+7. bloqueio e combate mantidos como eventos específicos;
+8. persistência de efeitos mundiais preservada após separação da força residente.
 
 ## F3 — Ciclo de 1503 em Cochim
 
-Objetivos:
+**Status: CONCLUÍDO.**
 
-1. integrar crise e retirada para Vaipim como eventos/estados históricos;
-2. restaurar Cochim no momento documentado;
-3. materializar fortificação e guarnição com temporalidade;
-4. preservar soberania do rajá;
-5. manter Vaipim fora do grafo jogável salvo necessidade operacional demonstrada;
-6. testar persistência de feitoria, fortificação, guarnição, acesso e relação como dimensões distintas;
-7. provar que estados de 1503 não contaminam campanhas anteriores.
+Resultados consolidados:
 
-Critério de verde de F3: transições de Cochim reproduzíveis por data, sem anacronismo e com regressão integral.
+1. crise e retirada para Vaipim representadas sem criar nó jogável desnecessário;
+2. Cochim restaurado no momento documentado;
+3. fortificação e guarnição materializadas com temporalidade;
+4. soberania do rajá preservada;
+5. feitoria, fortificação, guarnição, acesso e relação mantidos como dimensões distintas;
+6. estados de 1503 não contaminam campanhas anteriores.
 
 ## F4 — Lopo Soares 1504
 
-Issue documental atual: #115.
+**Status: CONCLUÍDO E INTEGRADO AO MAIN.**
 
-Objetivos:
+Issue funcional #130 encerrada; PR #131 integrado em `0a75006a5097c7b5f2cf04ab83fbf5312a53fca6`; CI pós-merge `34189675875` verde.
 
-1. concluir cronologia, comando e composição de 1504;
-2. reconstruir as ofensivas contra Cochim e a defesa sob Duarte Pacheco Pereira;
-3. carregar corretamente fortificação, guarnição, aliança e soberania herdadas de 1503;
-4. decidir formalmente entre `eventos guiados` e `combate funcional mínimo`;
-5. incorporar Coulão e outros nós somente se indispensáveis ao loop;
-6. representar a transição de comando/presença após o ciclo defensivo;
-7. implementar a tranche mínima;
-8. executar playtests sintéticos específicos se surgirem decisões novas de agência/risco.
+Resultados consolidados:
 
-Critério de verde de F4: 1504 representável sem lacuna militar/institucional bloqueante e decisão de arquitetura sobre combate formalmente encerrada.
+1. `EXP_LOPO_SOARES_1504` registrado como unidade histórica sem pernas fictícias;
+2. defesa de Cochim sob Duarte Pacheco estruturada como subcampanha residente documental;
+3. cadeia defensiva de março–julho representada por eventos conservadores, sem microtática;
+4. chegada da armada de Lopo Soares a Cochim em 14/09/1504 e saída em 26/12/1504 registradas sem fabricar itinerário intermediário;
+5. fortificação, guarnição, feitoria, relação favorável e soberania local herdadas de 1503 preservadas;
+6. saída da armada principal não elimina a presença residente em 31/12/1504;
+7. Coulão, Cranganor e Pandarane permaneceram fora do grafo por ausência de necessidade funcional;
+8. divergência `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto` preservada sem harmonização prematura.
+
+Decisão T4 de F4: `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO`.
 
 ## F5 — Francisco de Almeida 1505
 
-**Status: gate documental ainda não aberto.**
+**Status: GATE DOCUMENTAL CONCLUÍDO; IMPLEMENTAÇÃO FUNCIONAL EM ANDAMENTO NA ISSUE #134.**
 
-Objetivos documentais:
+Gate documental #132 encerrado; PR #133 integrado em `5e10409fa10e4b412f3ffcb3232d9674c09c1773`; CI pós-merge `34192641101` verde.
 
-1. reconstruir armada, comando, itinerário, escalas e objetivos de 1505;
-2. identificar mudanças institucionais necessárias ao loop;
-3. documentar fortificações, guarnições, forças residentes, relações e novos nós somente quando sustentados e necessários;
-4. distinguir continuidade de estados 1503–1504 de mudanças efetivas em 1505;
-5. avaliar se o horizonte 1505 exige generalização de governo/autoridade, frota, força residente ou combate;
-6. produzir proposta mínima de normalização antes de implementação.
+Documentação canônica:
 
-Objetivos funcionais:
+- `docs/f5-1505-evidence-matrix-v0.1.md`;
+- `docs/f5-1505-authority-fleet-audit-v0.1.md`;
+- `docs/f5-1505-route-chronology-audit-v0.1.md`;
+- `docs/f5-1505-institutional-matrix-v0.1.md`;
+- `docs/f5-1505-sofala-anhaia-anjediva-audit-v0.1.md`;
+- `docs/f5-1505-cannanore-cochin-audit-v0.1.md`;
+- `docs/f5-1505-minimal-normalization-proposal.md`;
+- `docs/f5-1505-documentary-closeout.md`;
+- `docs/f5-francisco-almeida-1505-handoff.md`.
 
-1. implementar apenas os estados/campanhas necessários ao horizonte 1505;
-2. preservar decisões metodológicas anteriores;
-3. validar persistência e transição entre campanhas;
-4. executar smoke, playtests e regressão completa.
+Decisões documentais fechadas:
 
-Critério de verde de F5: o estado do mundo e as campanhas necessárias em 1505 são reproduzíveis sem lacuna arquitetural bloqueante.
+1. `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO` permanece válido para o horizonte 1505;
+2. não criar schema global de vice-reinado/governo enquanto não houver consumidor funcional;
+3. `node_state_events` é suficiente para presença institucional, fortificação, guarnição, acesso, relação e soberania;
+4. autoridade de Francisco de Almeida deve permanecer decomposta entre nomeação régia, comando expedicionário e exercício institucional no Índico;
+5. composição da armada permanece `UNRESOLVED` diante das variantes 20/21/22/23;
+6. Sofala/Pêro de Anhaia deve ser preservada como unidade histórica própria quando necessário;
+7. Anjediva deve usar janela conservadora em setembro enquanto 13/09 × 14/09 não for resolvido;
+8. chegada diária de Almeida a Cochim não deve ser fixada sem evidência melhor;
+9. soberania local deve permanecer explícita em Cananor e Cochim apesar de fortificações/guarnições portuguesas;
+10. a divergência `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto` continua aberta.
+
+Objetivos funcionais da issue #134:
+
+1. registrar Francisco de Almeida/armada de 1505 sem fixar `fleet_size` factual único;
+2. representar somente os estados persistentes de Quiloa, Sofala, Anjediva, Cananor e Cochim necessários ao horizonte de 31/12/1505;
+3. usar preferencialmente os schemas já existentes;
+4. preservar soberanias locais e separação entre fortificação, guarnição e domínio;
+5. provar estado de 31/12/1505 por data e após save/load;
+6. executar regressão integral antes de qualquer generalização de nova mecânica.
+
+Critério de verde de F5: estado do mundo em 31/12/1505 determinístico e reproduzível, sem lacuna arquitetural bloqueante, com CI/regressão integral verdes e sem nova mecânica geral não demonstrada.
 
 ## Gates transversais obrigatórios
 
@@ -193,12 +215,11 @@ Nenhuma transição posterior pode existir retroativamente em campanhas anterior
 
 ### T4 — Combate e violência
 
-1504–1505 constituem o gate decisório.
+O gate decisório 1504–1505 está, até o baseline atual, resolvido a favor de eventos guiados específicos:
 
-- não criar combate geral por antecipação;
-- se eventos guiados forem suficientes, manter essa arquitetura;
-- se houver decisões relevantes do jogador que exijam resolução funcional, criar a menor abstração testável;
-- evitar microtática, controle individual de tripulação ou estatísticas militares sem necessidade demonstrada.
+`COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO`.
+
+A decisão deve ser reaberta somente se uma nova ação controlável pelo jogador demonstrar necessidade real de resolução militar funcional.
 
 ### T5 — Persistência e interface Python
 
@@ -260,16 +281,14 @@ No freeze:
 
 ## Ordem de execução imediata
 
-1. **F1 — João da Nova 1501–1502**;
-2. **F2 — Vasco da Gama 1502–1503**;
-3. **F3 — ciclo de 1503 em Cochim**;
-4. **F4 — concluir e implementar Lopo Soares 1504**;
-5. **F5 — documentar e implementar Francisco de Almeida 1505**;
-6. fechar T1–T6 conforme as lacunas efetivamente demonstradas;
-7. executar regressão integrada 1497–1505;
-8. atingir **Python 1505 GREEN**;
-9. produzir `domain-freeze-1505` e golden tests;
-10. somente então iniciar a migração para Godot.
+1. **F5 funcional — issue #134: implementar Francisco de Almeida e estados persistentes de 1505**;
+2. executar regressão integrada 1497–1505;
+3. fechar os pontos transversais T1–T6 que permanecerem efetivamente abertos após F5;
+4. atingir **Python 1505 GREEN**;
+5. produzir `docs/domain-freeze-1505.md`;
+6. gerar golden states/golden tests para paridade futura;
+7. sincronizar `README`, roadmap, docs metodológicas e Diário do Drive;
+8. somente então iniciar a migração para Godot.
 
 ## Disciplina de memória
 
