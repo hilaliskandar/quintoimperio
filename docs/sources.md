@@ -9,6 +9,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 | source_id | Referência curta | Uso principal |
 |---|---|---|
 | `ROTEIRO_GAMA_1497` | *Roteiro da primeira viagem de Vasco da Gama à Índia*, relato de participante da expedição; edição/tradução de E. G. Ravenstein, Hakluyt Society, 1898 | itinerário 1497–1499, escalas, abastecimento, reparos, encontros e cronologia fina |
+| `CALCOEN_1504` | *Calcoen / Le second voyage de Vasco da Gama à Calicut*, relação flamenga contemporânea impressa em Antuérpia c. 1504; reprodução, tradução e introdução de J. Ph. Berjeau, 1881 | cronologia testemunhal da armada de 1502–1503, especialmente Cananor, Calecute, Cochim e preparação da torna-viagem; divergências com sínteses posteriores devem ser preservadas |
 | `CAMINHA_1500_ANTT` | Pêro Vaz de Caminha, carta a D. Manuel I, Porto Seguro/Vera Cruz, 1 de maio de 1500; ANTT, PT/TT/GAV/8/2/8, transcrição paleográfica e contemporânea | cronologia testemunhal da armada de Cabral entre Lisboa e Vera Cruz, desaparecimento de Vasco de Ataíde, sinais/avistamento de terra, contactos e permanência até a véspera da retomada da viagem |
 | `PILOTO_ANONIMO_CABRAL_1500` | *Relação do Piloto Anônimo*, narrativa contemporânea da armada de Pedro Álvares Cabral, preservada em tradição impressa e edições documentais | viagem de 1500–1501 após Vera Cruz; passagem por Moçambique em 20/07/1500 com aguada, refrescos e piloto para Quiloa; retorno e reparos em Moçambique |
 | `NEWITT_PEW` | Malyn Newitt, *Portugal in European and World History* | expansão atlântica, ilhas, África Ocidental, Mina, Kongo e Cabo |
@@ -31,6 +32,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 ## Expansão atlântica portuguesa
 
 - *Roteiro da primeira viagem de Vasco da Gama à Índia* — fonte primária para o itinerário de 1497–1499; a edição Ravenstein explicita que palavras e datas ausentes do manuscrito foram colocadas entre colchetes, distinção que deve ser preservada nas notas de evidência.
+- *Calcoen*, relação flamenga contemporânea impressa c. 1504 e reproduzida por Berjeau em 1881 — fonte testemunhal para a segunda viagem de Gama. O texto deve ser usado com preservação de suas próprias datas e topônimos, sem harmonização automática com cronologias modernas; é especialmente valioso para a sequência Cananor–Calecute–Cochim e os marcos de 1503.
 - Pêro Vaz de Caminha, carta de 1 de maio de 1500 — fonte primária para a cronologia atlântica inicial de Cabral; usar a transcrição do Arquivo Nacional da Torre do Tombo e dar precedência às datas explícitas do documento quando divergirem de sínteses posteriores.
 - *Relação do Piloto Anônimo* — fonte narrativa contemporânea para a continuação da armada de Cabral após Vera Cruz; para Moçambique em 20/07/1500, sustenta diretamente aguada, refrescos e obtenção de piloto para Quiloa. A magnitude de qualquer efeito logístico no jogo continua sendo parâmetro de simulação, não dado histórico.
 - Malyn Newitt, *Portugal in European and World History*.
@@ -66,6 +68,7 @@ Os arquivos de dados usam IDs estáveis de proveniência. Quando uma linha depen
 10. Ceilão não deve ser incorporado à rota de João da Nova em 1501 apenas com base na inscrição de Colombo: a hipótese é historiograficamente discutida e não possui documentação contemporânea suficiente.
 11. Para Cabral em Anjediva, 22/08/1500 pode ser usado como chegada de trabalho apenas pela combinação da cronologia de Oliveira e Costa, que fixa a chegada à costa indiana nesse dia, com Greenlee, que identifica Anjediva como a terra alcançada. A saída derivada de uma permanência de duas semanas deve permanecer marcada como reconstrução operacional, não como data primária independente.
 12. Para Cabral em Moçambique em 20/07/1500, a *Relação do Piloto Anônimo* autoriza aguada, refrescos e obtenção de piloto para Quiloa. Isso não transforma `MOZ` em serviço portuário universal nem determina quantitativamente o efeito de provisões no modelo.
+13. Para Gama 1502–1503, `CALCOEN_1504` introduz âncoras testemunhais que não devem ser misturadas silenciosamente com a síntese EVE: a relação registra partida de Lisboa em 10/02, enquanto a EVE registra 01/02; para F2, a divergência permanece documentada e o baseline já adotado não deve ser reescrito sem gate específico.
 
 ## Lacunas prioritárias
 
