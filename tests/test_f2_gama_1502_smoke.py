@@ -142,9 +142,10 @@ def test_return_split_is_range_not_invented_exact_departure():
     assert departure.date_to == date(1503, 2, 28)
     assert departure.date_precision == "RANGE"
 
-    # O retorno fica documental: F2 não cria rota executável CAN→LIS.
+    # O retorno permanece documental: F2 não cria rota executável CAN→LIS.
+    gama_legs = model.expedition.legs.get(model.EXPEDITION_ID, ())
     assert not any(
-        leg.origin_node == "CAN" and leg.destination_node == "LIS"
-        for leg in model.expeditions.legs
-        if leg.expedition_id == model.EXPEDITION_ID
+        model.routes[leg.route_id]["origin_node"] == "CAN"
+        and model.routes[leg.route_id]["destination_node"] == "LIS"
+        for leg in gama_legs
     )
