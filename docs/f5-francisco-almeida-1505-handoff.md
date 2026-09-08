@@ -31,15 +31,33 @@ O gate documental F5 (#132) foi concluído e integrado pelo PR #133. A implement
 9. A chegada diária de Almeida a Cochim não deve ser fixada sem evidência melhor; para o freeze de 31/12/1505 basta o terminus ante quem documentalmente seguro.
 10. A divergência `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto` permanece aberta e não deve ser harmonizada silenciosamente.
 
-## Primeiro incremento recomendado
+## Checkpoints funcionais concluídos
+
+### Catálogo de Almeida
+
+- `EXP_ALMEIDA_1505` registrado sem `fleet_size` factual único e sem pernas jogáveis;
+- teste de catálogo/não ativação em `tests/test_f5_almeida_registry.py`;
+- CI `34192932424` integralmente verde.
+
+### Estados persistentes — Sofala e Cananor
+
+- `SOF1505_E01`: presença institucional/capitania em `04/09/1505`, sem antecipar forte ou guarnição;
+- `SOF1505_E02`: fortificação e guarnição em `21/09/1505`, mantendo soberania local explícita;
+- `CAN1505_E01`: janela conservadora `23–31/10/1505`; forte e guarnição só se tornam efetivos em `31/10` pela semântica do modelo; feitoria e acesso negociado são preservados e a relação passa a `TENSE`, não `HOSTILE`;
+- teste em `tests/test_f5_1505_node_states.py` cobre ordem temporal, não retroprojeção e soberania local;
+- a primeira CI do teste (`34193339030`) falhou porque `SOF1505_E01` escrevia `NONE` sobre o baseline `LOW` de fortificação de Sofala;
+- correção `5ee221d8428a8f50c2a4fbe7b084a10f0e59d46c`: campos de fortificação/guarnição do evento inicial ficam vazios, preservando o baseline até a tranqueira;
+- CI corrigida `34193403253` integralmente verde.
+
+## Próximos incrementos
 
 Implementar em sequência estreita, com CI a cada gate:
 
-1. registrar `EXP_ALMEIDA_1505` no catálogo histórico sem depender de `fleet_size` e sem tornar automaticamente toda a rota jogável;
-2. adicionar testes que provem existência no catálogo sem ativação acidental e preservação dos baselines anteriores;
-3. materializar somente estados persistentes de 1505 com evidência suficiente, começando por Sofala e Cananor;
-4. tratar Quiloa e Anjediva em gates próprios, separando evento de tomada/construção do estado persistente final;
-5. representar a centralidade administrativa de Cochim como evento institucional sem alterar soberania;
+1. registrar `EXP_ANHAIA_1505` separadamente, sem pernas executáveis na primeira tranche;
+2. tratar Quiloa em gate próprio, separando evento de ocupação do estado persistente final;
+3. tratar Anjediva com janela conservadora de setembro, sem promover 13/09 ou 14/09 a certeza factual;
+4. representar nomeação, Regimento, partida, exercício institucional no Índico e presença segura em Cochim como eventos da expedição de Almeida;
+5. representar a centralidade administrativa de Cochim sem alterar soberania nem duplicar fortificação/guarnição herdadas de 1503;
 6. fechar teste de estado em `1505-12-31` e save/load;
 7. executar regressão integral; somente depois avaliar necessidade de campanha jogável adicional.
 
