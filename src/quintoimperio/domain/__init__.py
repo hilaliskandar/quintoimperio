@@ -20,6 +20,7 @@ from .fleet import (
     PhysicalVessel,
     ProvisionLoad,
 )
+from .gama_1502_campaign import Gama1502CampaignModel
 from .information import (
     InformationChannel,
     InformationModel,
@@ -97,6 +98,7 @@ __all__ = [
     "ExpeditionStopModel",
     "FleetModel",
     "FleetState",
+    "Gama1502CampaignModel",
     "GameClock",
     "GameSessionModel",
     "GameSessionState",
