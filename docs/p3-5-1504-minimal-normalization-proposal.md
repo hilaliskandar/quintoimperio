@@ -110,7 +110,7 @@ A primeira implementação deve registrar como eventos, sem rota observada inven
 
 ### F4_E04 — `ROYAL_FLEET_ARRIVES_MALABAR`
 
-- setembro de 1504, `RANGE` enquanto a divergência fina não for fechada;
+- setembro de 1504, `INTERVAL` enquanto os limites inferior e superior não forem fechados documentalmente;
 - sujeito: armada de Lopo Soares;
 - efeito: reforço objetivo da presença portuguesa no Malabar.
 
@@ -135,7 +135,7 @@ A batalha/ação de Pandarane e outras operações tardias da armada devem perma
 
 ## 7. Transição de comando
 
-A documentação indica que Duarte Pacheco regressa com Lopo Soares e que Manuel Teles/Vasconcelos/Barreto aparece como responsável subsequente pela guarda de Cochim, com cronologia que alcança janeiro de 1505.
+A documentação indica que Duarte Pacheco regressa com Lopo Soares e que Manuel Teles Barreto aparece como responsável subsequente pela guarda de Cochim; outras variantes onomásticas permanecem pendentes de auditoria. A cronologia segura alcança janeiro de 1505.
 
 ### Decisão
 
