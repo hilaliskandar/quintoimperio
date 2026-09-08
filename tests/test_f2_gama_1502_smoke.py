@@ -44,6 +44,25 @@ def test_gama_1502_departure_is_exact_but_does_not_force_later_daily_dates():
     assert not plan.timing_events_suppressed_by_observation
 
 
+def test_malabar_reorganization_is_conservative_and_preserves_local_sovereignty():
+    model = Gama1502CampaignModel()
+
+    before_cochin = model.malabar_institutional_state("COC", date(1502, 12, 30))
+    after_cochin = model.malabar_institutional_state("COC", date(1502, 12, 31))
+    before_cannanore = model.malabar_institutional_state("CAN", date(1502, 12, 30))
+    after_cannanore = model.malabar_institutional_state("CAN", date(1502, 12, 31))
+
+    assert "COC1502_E01" not in before_cochin.applied_event_ids
+    assert "COC1502_E01" in after_cochin.applied_event_ids
+    assert after_cochin.institutional_presence == "FACTORY_REORGANIZED"
+    assert "Perumpadappu" in after_cochin.sovereignty_note
+
+    assert "CAN1502_E01" not in before_cannanore.applied_event_ids
+    assert "CAN1502_E01" in after_cannanore.applied_event_ids
+    assert after_cannanore.institutional_presence == "FACTORY_REORGANIZED"
+    assert "Kolathunad" in after_cannanore.sovereignty_note
+
+
 def test_sodre_force_is_documentary_world_event_not_second_active_expedition():
     model = Gama1502CampaignModel()
     state = model.initial_gama_1502_state(provision_days=500.0)
