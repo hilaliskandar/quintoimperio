@@ -2,18 +2,21 @@
 
 ## Estado consolidado
 
-O projeto possui os baselines históricos e funcionais de 1497–1504 integrados ao `main`, e o gate documental de 1505 também está concluído:
+O domínio histórico e funcional de 1497–1505 está integrado ao `main` até F5:
 
 - MVP Lisboa–Calecute: `f308fb0e97687e34365fd23ed257a0114fd81613`;
 - P1 retorno até BRG: `47fb82baad1289077c048576f3bc52815d6b192f`;
 - P2 Cochim mínimo: `7b8a19ca3313095790d0ce1760b98aa270fa9e5f`;
 - P3-func-A: merge do PR #117 em `1011507d5dd1332585b01cfd90351395952bb5f1`;
 - F4/1504: merge do PR #131 em `0a75006a5097c7b5f2cf04ab83fbf5312a53fca6`, CI pós-merge `34189675875` verde;
-- F5-doc/1505: merge do PR #133 em `5e10409fa10e4b412f3ffcb3232d9674c09c1773`, CI pós-merge `34192641101` verde.
+- F5-doc/1505: merge do PR #133 em `5e10409fa10e4b412f3ffcb3232d9674c09c1773`, CI pós-merge `34192641101` verde;
+- F5-func/1505: merge do PR #135 em `e982d5b83a1c8a8bfe77f512e354c63347004266`, CI pós-merge `34200338707` verde.
 
 O objetivo de produção permanece explícito: **concluir e estabilizar em Python o domínio necessário para representar 1497–1505 antes de migrar o runtime de produção para Godot**.
 
-O Python permanece, até esse gate, como laboratório de domínio, implementação de referência, ambiente de pesquisa histórica, diagnóstico e playtest sintético. Pygame continua apenas como interface suficiente para validação e smoke tests; não deve receber investimento de produção que será descartado na migração.
+Esse objetivo funcional foi atingido até F5. O gate corrente é agora o **freeze formal do domínio**, issue #136, necessário para declarar `Python 1505 GREEN`.
+
+O Python permanece como laboratório de domínio, implementação de referência, ambiente de pesquisa histórica, diagnóstico e playtest sintético. Pygame continua apenas como interface suficiente para validação e smoke tests; não deve receber investimento de produção que será descartado na migração.
 
 Princípio permanente: **dados históricos e parâmetros de simulação permanecem separados; fatos históricos não são recalibrados para resolver jogabilidade**.
 
@@ -23,7 +26,7 @@ A partir de P3, cada tranche histórica segue obrigatoriamente:
 
 `documentação suficiente → normalização mínima → implementação → testes/CI → playtest/diagnóstico → fechamento → próxima tranche`.
 
-Não se deve acumular vários anos de especificação sem feedback do domínio, nem criar uma mecânica geral antes de um caso histórico demonstrar sua necessidade.
+Nenhuma mecânica geral deve ser criada antes de um caso histórico demonstrar sua necessidade.
 
 ## Baselines concluídos
 
@@ -57,7 +60,7 @@ Cochim foi integrado minimamente como porto soberano local, com pimenta, autorid
 
 **Status: INTEGRADA AO MAIN.**
 
-Resultados já incorporados:
+Resultados incorporados:
 
 - `VCR` e `CAN`;
 - `expedition_events.csv` / `ExpeditionEventModel`;
@@ -72,28 +75,26 @@ Resultados já incorporados:
 
 Baseline integrado: `1011507d5dd1332585b01cfd90351395952bb5f1`.
 
-## Gate-mãe atual — P3-1505
+## Gate-mãe — P3-1505
 
 Issue #118 — **Fechar domínio Python 1497–1505 e preparar freeze para Godot**.
 
-A #110 permanece como guarda-chuva documental de 1500–1505. Os gates documentais até 1505 estão concluídos; o gate funcional corrente é F5, issue #134.
+A #110 permanece como guarda-chuva documental de 1500–1505. Todos os gates documentais e funcionais F1–F5 estão concluídos. O gate ativo é #136 — **Python 1505 GREEN — domain freeze e handoff para Godot**.
 
 ## F1 — João da Nova 1501–1502
 
 **Status: CONCLUÍDO.**
 
-Objetivos estabilizados:
+Resultados estabilizados:
 
-1. completar somente as pernas e âncoras temporais documentalmente sustentáveis;
-2. manter a partida em Lisboa sem conhecimento do desfecho de Cabral no Malabar;
-3. aplicar a aquisição de informação em São Brás como evento próprio da expedição;
-4. integrar Cananor/Cochim e a presença institucional correspondente;
-5. preservar Ceilão fora da rota enquanto a evidência permanecer insuficiente;
-6. representar confronto específico sem combate geral;
-7. testar save/load, cronologia e informação sem vazamento retrospectivo;
-8. manter regressão integral contra MVP/P1/P2/P3-func-A.
-
-Resultado: campanha representável até seu limite documental, com informação correta por data/local e sem introdução de combate geral.
+1. somente pernas e âncoras temporalmente sustentáveis foram normalizadas;
+2. a partida de Lisboa não conhece retrospectivamente o desfecho de Cabral no Malabar;
+3. a aquisição de informação em São Brás é evento próprio da expedição;
+4. Cananor/Cochim e presença institucional correspondente foram integrados;
+5. Ceilão permanece fora da rota enquanto a evidência for insuficiente;
+6. confronto específico foi representado sem combate geral;
+7. save/load, cronologia e informação foram testados sem vazamento retrospectivo;
+8. regressão contra MVP/P1/P2/P3-func-A permanece preservada.
 
 ## F2 — Vasco da Gama 1502–1503
 
@@ -144,9 +145,11 @@ Decisão T4 de F4: `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO`.
 
 ## F5 — Francisco de Almeida 1505
 
-**Status: GATE DOCUMENTAL CONCLUÍDO; IMPLEMENTAÇÃO FUNCIONAL EM ANDAMENTO NA ISSUE #134.**
+**Status: CONCLUÍDO E INTEGRADO AO MAIN.**
 
 Gate documental #132 encerrado; PR #133 integrado em `5e10409fa10e4b412f3ffcb3232d9674c09c1773`; CI pós-merge `34192641101` verde.
+
+Gate funcional #134 encerrado; PR #135 integrado em `e982d5b83a1c8a8bfe77f512e354c63347004266`; CI pós-merge `34200338707` integralmente verde.
 
 Documentação canônica:
 
@@ -160,86 +163,73 @@ Documentação canônica:
 - `docs/f5-1505-documentary-closeout.md`;
 - `docs/f5-francisco-almeida-1505-handoff.md`.
 
-Decisões documentais fechadas:
+Resultados funcionais consolidados:
 
-1. `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO` permanece válido para o horizonte 1505;
-2. não criar schema global de vice-reinado/governo enquanto não houver consumidor funcional;
-3. `node_state_events` é suficiente para presença institucional, fortificação, guarnição, acesso, relação e soberania;
-4. autoridade de Francisco de Almeida deve permanecer decomposta entre nomeação régia, comando expedicionário e exercício institucional no Índico;
-5. composição da armada permanece `UNRESOLVED` diante das variantes 20/21/22/23;
-6. Sofala/Pêro de Anhaia deve ser preservada como unidade histórica própria quando necessário;
-7. Anjediva deve usar janela conservadora em setembro enquanto 13/09 × 14/09 não for resolvido;
-8. chegada diária de Almeida a Cochim não deve ser fixada sem evidência melhor;
-9. soberania local deve permanecer explícita em Cananor e Cochim apesar de fortificações/guarnições portuguesas;
-10. a divergência `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto` continua aberta.
+1. `EXP_ALMEIDA_1505` registrado sem `fleet_size` factual único e sem pernas fictícias;
+2. autoridade de Francisco de Almeida decomposta entre nomeação régia, Regimento, partida, exercício institucional no Índico e presença documental em Cochim;
+3. `EXP_ANHAIA_1505` preservada como unidade histórica própria;
+4. estados persistentes de Quiloa, Sofala, Anjediva e Cananor materializados com temporalidade conservadora;
+5. Cochim herda fortificação e guarnição de 1503 sem duplicação;
+6. soberanias locais permanecem explícitas;
+7. Mombaça não recebe forte/guarnição persistente apenas pelo ataque de agosto;
+8. golden state de 31/12/1505 é determinístico;
+9. round-trip de persistência do contexto de freeze preserva a projeção histórica sem inventar campanha Almeida ativa;
+10. nenhuma nova mecânica geral foi necessária em `src/` ou `simulation/`.
 
-Objetivos funcionais da issue #134:
+Decisões finais de F5:
 
-1. registrar Francisco de Almeida/armada de 1505 sem fixar `fleet_size` factual único;
-2. representar somente os estados persistentes de Quiloa, Sofala, Anjediva, Cananor e Cochim necessários ao horizonte de 31/12/1505;
-3. usar preferencialmente os schemas já existentes;
-4. preservar soberanias locais e separação entre fortificação, guarnição e domínio;
-5. provar estado de 31/12/1505 por data e após save/load;
-6. executar regressão integral antes de qualquer generalização de nova mecânica.
+- `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO`;
+- `NEW_GLOBAL_AUTHORITY_SCHEMA = NAO_NECESSARIO`;
+- `MULTI_ACTIVE_FLEET_SCHEMA = NAO_NECESSARIO`.
 
-Critério de verde de F5: estado do mundo em 31/12/1505 determinístico e reproduzível, sem lacuna arquitetural bloqueante, com CI/regressão integral verdes e sem nova mecânica geral não demonstrada.
+Divergências preservadas:
 
-## Gates transversais obrigatórios
+- tamanho total da armada de Almeida: 20/21/22/23;
+- Anjediva: 13/09 × 14/09;
+- `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto`;
+- chegada diária de Almeida a Cochim antes da âncora segura de 16/12/1505.
+
+## Gates transversais T1–T6
 
 ### T1 — Estado mundial temporal
 
-Consolidar `node_state_events` e `expedition_events` como contratos estáveis para:
+**Status no horizonte 1505: SATISFEITO.**
 
-- soberania;
-- acesso;
-- relação;
-- presença institucional;
-- feitoria;
-- fortificação;
-- guarnição;
-- eventos de expedição e aquisição de informação.
-
-Nenhuma transição posterior pode existir retroativamente em campanhas anteriores.
+`node_state_events` e `expedition_events` constituem os contratos estáveis para soberania, acesso, relação, presença institucional, feitoria, fortificação, guarnição, eventos de expedição e aquisição de informação. Testes temporais impedem retroprojeção.
 
 ### T2 — Expedições, subcampanhas e forças residentes
 
-- verificar até 1505 se `active_expedition_id` + subcampanhas continuam suficientes;
-- generalizar múltiplas forças simultâneas somente se os casos de 1502–1505 demonstrarem necessidade;
-- garantir efeitos persistentes de forças não controladas pelo jogador.
+**Status no horizonte 1505: SATISFEITO.**
+
+`active_expedition_id` + campanhas/subcampanhas documentais são suficientes. Os casos de Sodré, Duarte Pacheco e Pêro de Anhaia não demonstraram necessidade de múltiplas frotas simultaneamente controláveis.
 
 ### T3 — Informação e latência
 
-- manter separados estado objetivo/local, conhecimento da Coroa e conhecimento da expedição;
-- impedir vazamento retrospectivo;
-- criar mensagens/cartas persistentes somente se os casos até 1505 realmente exigirem.
+**Status no horizonte 1505: SATISFEITO.**
+
+Estado objetivo/local, conhecimento institucional e conhecimento da expedição permanecem separados; João da Nova demonstra aquisição tardia sem vazamento retrospectivo. Não houve necessidade demonstrada de um sistema adicional de mensagens persistentes.
 
 ### T4 — Combate e violência
 
-O gate decisório 1504–1505 está, até o baseline atual, resolvido a favor de eventos guiados específicos:
+**Status no horizonte 1505: SATISFEITO.**
 
 `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO`.
 
-A decisão deve ser reaberta somente se uma nova ação controlável pelo jogador demonstrar necessidade real de resolução militar funcional.
+A decisão só deverá ser reaberta quando horizonte posterior introduzir ação militar controlável que exija resolução funcional.
 
 ### T5 — Persistência e interface Python
 
-- manter save/load compatível ou versionado;
-- cobrir estados temporais, subcampanhas, ações one-shot e informação adquirida;
-- Pygame continua ferramenta de validação, não alvo de produção final.
+**Status no horizonte 1505: SATISFEITO.**
+
+Save/load versionado cobre estado de sessão e transições necessárias; golden state e freeze de 31/12/1505 possuem round-trip dedicado. Pygame permanece ferramenta de validação.
 
 ### T6 — Regressão e playtests
 
-Para cada tranche com nova decisão jogável:
+**Status no horizonte 1505: SATISFEITO PARA O FREEZE.**
 
-- CI integral;
-- smoke específico da campanha;
-- baterias de arquétipos quando úteis;
-- `RANDOM_PER_LEG` nas baterias comparáveis;
-- seeds sentinela para regimes de risco/agência;
-- telemetria de blockers;
-- diagnóstico antes de recalibrar qualquer parâmetro.
+CI integral, smokes, baterias por arquétipos, `RANDOM_PER_LEG` e seeds sentinela permanecem no repositório. A CI pós-F5 no `main` (`34200338707`) passou todos os testes, smokes, diagnósticos, persistência e mapas.
 
-## Sistemas que só entram por necessidade demonstrada
+## Sistemas que permanecem fora por ausência de necessidade demonstrada
 
 - doença e mortalidade sistêmica;
 - tripulação individual;
@@ -252,43 +242,46 @@ Para cada tranche com nova decisão jogável:
 
 ## Gate final — Python 1505 GREEN
 
-O domínio Python somente será considerado pronto para freeze quando todos os critérios abaixo forem atendidos:
+**Status: EM FECHAMENTO — issue #136.**
 
-1. campanhas e estados necessários de 1497 a 1505 representados no grau definido neste roadmap;
-2. nenhuma lacuna arquitetural conhecida bloqueante para esse horizonte;
-3. CI integralmente verde no `main`;
-4. regressão canônica integrada 1497–1505;
-5. cronologia `GUIDED` validada onde há evidência suficiente e incerteza explícita onde não há;
-6. save/load cobrindo campanhas, estados temporais e transições relevantes;
-7. baterias sintéticas e seeds sentinela consolidadas;
-8. zero blockers artificiais conhecidos no runner/telemetria;
-9. divergências históricas preservadas e rastreáveis;
-10. `README`, roadmap, docs metodológicas e Diário do Drive sincronizados;
-11. criação de `docs/domain-freeze-1505.md` com contratos de dados e estado;
-12. geração de golden states/golden tests suficientes para validar uma implementação futura em outro engine.
+O baseline funcional `e982d5b83a1c8a8bfe77f512e354c63347004266` já satisfaz os critérios funcionais e não apresenta lacuna `BLOCKING` conhecida. O trabalho corrente é congelar e integrar os contratos em `docs/domain-freeze-1505.md` e sincronizar a documentação.
+
+Critérios:
+
+1. campanhas e estados necessários de 1497 a 1505 representados no grau definido neste roadmap — **SATISFEITO**;
+2. nenhuma lacuna arquitetural conhecida bloqueante — **SATISFEITO**;
+3. CI integralmente verde no `main` — **SATISFEITO, run `34200338707`**;
+4. regressão canônica integrada 1497–1505 — **SATISFEITO pelos testes e smokes inventariados no freeze**;
+5. cronologia `GUIDED` validada onde há evidência e incerteza explícita onde não há — **SATISFEITO**;
+6. save/load cobrindo campanhas, estados temporais e transições relevantes — **SATISFEITO**;
+7. baterias sintéticas e seeds sentinela consolidadas — **SATISFEITO no horizonte em que são funcionalmente aplicáveis**;
+8. zero blockers artificiais conhecidos no runner/telemetria — **SATISFEITO no baseline corrente**;
+9. divergências históricas preservadas e rastreáveis — **SATISFEITO**;
+10. `README`, roadmap, docs metodológicas e Diário do Drive sincronizados — **EM FECHAMENTO NA #136**;
+11. `docs/domain-freeze-1505.md` criado com contratos de dados e estado — **CRIADO NA BRANCH #136**;
+12. golden states/golden tests suficientes para futura implementação em outro engine — **INVENTARIADOS NO FREEZE**.
 
 ## Freeze e migração para Godot
 
-Somente depois de `Python 1505 GREEN` será aberta a frente Godot.
+Somente depois de `Python 1505 GREEN` ser integrado ao `main` e a issue #118 ser encerrada será aberta a frente Godot.
 
 No freeze:
 
 - Python deixa de ser o runtime de produção alvo, mas permanece implementação de referência;
 - `data/` e `simulation/` continuam fontes canônicas;
 - golden tests passam a definir paridade de domínio;
-- Godot recebe interface, mapa, UX, animação, áudio e distribuição;
-- a migração deve portar contratos e comportamento, não copiar literalmente a arquitetura Pygame.
+- Godot receberá interface, mapa, UX, animação, áudio e distribuição;
+- a migração deverá portar contratos e comportamento, não copiar literalmente a arquitetura Pygame.
 
 ## Ordem de execução imediata
 
-1. **F5 funcional — issue #134: implementar Francisco de Almeida e estados persistentes de 1505**;
-2. executar regressão integrada 1497–1505;
-3. fechar os pontos transversais T1–T6 que permanecerem efetivamente abertos após F5;
-4. atingir **Python 1505 GREEN**;
-5. produzir `docs/domain-freeze-1505.md`;
-6. gerar golden states/golden tests para paridade futura;
-7. sincronizar `README`, roadmap, docs metodológicas e Diário do Drive;
-8. somente então iniciar a migração para Godot.
+1. concluir issue #136 com `docs/domain-freeze-1505.md`;
+2. sincronizar README, roadmap e Diário do Drive;
+3. executar CI integral da branch do freeze;
+4. abrir e validar PR de `Python 1505 GREEN`;
+5. integrar o PR e confirmar CI pós-merge no `main`;
+6. encerrar #136 e #118 sem lacuna `BLOCKING`;
+7. somente então abrir a frente de migração para Godot.
 
 ## Disciplina de memória
 
