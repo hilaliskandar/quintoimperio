@@ -49,17 +49,24 @@ O gate documental F5 (#132) foi concluído e integrado pelo PR #133. A implement
 - correção `5ee221d8428a8f50c2a4fbe7b084a10f0e59d46c`: campos de fortificação/guarnição do evento inicial ficam vazios, preservando o baseline até a tranqueira;
 - CI corrigida `34193403253` integralmente verde.
 
+### Expedição separada de Pêro de Anhaia
+
+- `EXP_ANHAIA_1505` registrado como `ROYAL_FORTIFICATION_MISSION`, período 1505–1506 e partida documentada em `18/05/1505`;
+- permanece unidade documental separada de `EXP_ALMEIDA_1505`, sem pernas executáveis e sem exigir múltiplas frotas simultâneas;
+- teste em `tests/test_f5_anhaia_registry.py` comprova separação de catálogo e não ativação;
+- commits `6b69463431498905d503ff1dd9fec397f7becdbf` e `11fbfd2c509d2af8def3be2dc753cb8889c9d908`;
+- CI `34193505777` integralmente verde.
+
 ## Próximos incrementos
 
 Implementar em sequência estreita, com CI a cada gate:
 
-1. registrar `EXP_ANHAIA_1505` separadamente, sem pernas executáveis na primeira tranche;
-2. tratar Quiloa em gate próprio, separando evento de ocupação do estado persistente final;
-3. tratar Anjediva com janela conservadora de setembro, sem promover 13/09 ou 14/09 a certeza factual;
-4. representar nomeação, Regimento, partida, exercício institucional no Índico e presença segura em Cochim como eventos da expedição de Almeida;
-5. representar a centralidade administrativa de Cochim sem alterar soberania nem duplicar fortificação/guarnição herdadas de 1503;
-6. fechar teste de estado em `1505-12-31` e save/load;
-7. executar regressão integral; somente depois avaliar necessidade de campanha jogável adicional.
+1. tratar Quiloa em gate próprio, separando evento de ocupação do estado persistente final;
+2. tratar Anjediva com janela conservadora de setembro, sem promover 13/09 ou 14/09 a certeza factual;
+3. representar nomeação, Regimento, partida, exercício institucional no Índico e presença segura em Cochim como eventos da expedição de Almeida;
+4. representar a centralidade administrativa de Cochim sem alterar soberania nem duplicar fortificação/guarnição herdadas de 1503;
+5. fechar teste de estado em `1505-12-31` e save/load;
+6. executar regressão integral; somente depois avaliar necessidade de campanha jogável adicional.
 
 ## Restrições
 
