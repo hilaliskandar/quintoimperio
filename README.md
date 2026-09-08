@@ -19,19 +19,38 @@ Construir um jogo pequeno, baseado em dados e historicamente documentado, cujo n
 
 ## Estado atual
 
-O **MVP Lisboa–Calecute e o P1 — retorno até os Baixos do Rio Grande estão concluídos**. O MVP permanece a vertical slice canônica e pode terminar em Calecute sem ativar a expansão. Depois da primeira operação comercial elegível em Calecute, a interface histórica v0.2 oferece, de forma explícita e opcional, a continuidade documentada do retorno até BRG.
+O domínio Python necessário ao horizonte **1497–1505 está implementado até F5 e integrado ao `main`**. O PR #135 integrou a tranche funcional de Francisco de Almeida em 1505 no commit `e982d5b83a1c8a8bfe77f512e354c63347004266`; a CI pós-merge `34200338707` ficou integralmente verde.
 
-O fluxo do MVP é:
+O projeto está agora no gate final **Python 1505 GREEN**, issue #136. Nesta etapa não se acrescentam novas mecânicas históricas: são congelados contratos de dados/estado, golden tests, divergências preservadas e critérios de paridade para a futura migração a Godot. O documento canônico desse gate é `docs/domain-freeze-1505.md`.
+
+O **MVP Lisboa–Calecute** permanece a vertical slice canônica. Seu fluxo é:
 
 `LIS → STG → SHB → CGH → SBR → RCO → RBS → MOZ → MOM → MAL → CAL`.
 
-O retorno estabilizado é:
+O **retorno P1** permanece opt-in e estabilizado até os Baixos do Rio Grande:
 
 `CAL → SMI → ANJ → MAL → BSR → SBR → CGH → BRG`.
 
-A base validada contém atualmente **29 nós, 14 bens, 41 relações nó–bem, 26 rotas, 15 fluxos de mercadorias e 19 observações de viagem**, além do piloto histórico normalizado e das expedições/escala necessárias ao MVP e ao retorno. A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada; o epílogo posterior a 25/04/1499 permanece documental e divergente, fora do loop jogável.
+O arco posterior foi incorporado por tranches documentais e funcionais:
 
-O fechamento do MVP está em `docs/mvp-gate.md`. O fechamento documental do retorno está em `docs/p1-closeout.md`; o diagnóstico de robustez em `docs/return-p1-wave19-results.md`; a solução logística de Santa Maria em `docs/santa-maria-logistics-p1-func.md`; e o fechamento de interface/persistência em `docs/p1-ui-return-interface-results.md`.
+- 1500: Cabral, Vera Cruz, ruptura de Calecute e presença inicial em Cochim/Cananor;
+- 1501–1502: João da Nova, incluindo aquisição tardia de informação em São Brás;
+- 1502–1503: Vasco da Gama e força residente de Vicente Sodré, sem generalizar múltiplas frotas ativas;
+- 1503: crise, restauração, fortificação e guarnição de Cochim com soberania local preservada;
+- 1504: Lopo Soares e defesa de Cochim sob Duarte Pacheco, representada por eventos específicos sem combate geral;
+- 1505: Francisco de Almeida, Pêro de Anhaia e estados persistentes de Quiloa, Sofala, Anjediva, Cananor e Cochim.
+
+As decisões arquiteturais consolidadas até 31/12/1505 são:
+
+- `COMBATE_FUNCIONAL_MINIMO = NAO_NECESSARIO`;
+- `NEW_GLOBAL_AUTHORITY_SCHEMA = NAO_NECESSARIO`;
+- `MULTI_ACTIVE_FLEET_SCHEMA = NAO_NECESSARIO`.
+
+Essas decisões não proíbem evolução posterior; apenas impedem que sistemas gerais sejam introduzidos antes de um caso histórico/jogável demonstrar sua necessidade.
+
+A divergência documental da chegada de Vasco da Gama a Calecute em 20/21 de maio de 1498 continua preservada. Também permanecem abertas, sem harmonização artificial, as variantes 20/21/22/23 para o tamanho da armada de Almeida, 13/09 × 14/09 em Anjediva, `Manuel Teles de Vasconcelos` × `Manuel Teles Barreto` e a chegada diária de Almeida a Cochim antes da âncora documental segura de 16/12/1505.
+
+O fechamento do MVP está em `docs/mvp-gate.md`; o retorno P1 em `docs/p1-closeout.md`; o desenvolvimento 1500–1505 e seus gates estão documentados no `docs/roadmap.md`; e o contrato final do domínio está em `docs/domain-freeze-1505.md`.
 
 ### O domínio já oferece
 
@@ -55,6 +74,8 @@ O fechamento do MVP está em `docs/mvp-gate.md`. O fechamento documental do reto
 - `RelationshipModel` com estado por ator, sem reputação global inventada;
 - piloto guzerate de Melinde associado somente à rota documentada até Calecute;
 - `ExpeditionModel`, `FLEET_COMMAND`, `OWN_KNOWLEDGE` e `PILOT` como bases distintas de viagem;
+- `ExpeditionEventModel` para acontecimentos documentais que não devem virar automaticamente mecânicas gerais;
+- `NodeStateEventModel` para projeção temporal de presença institucional, fortificação, guarnição, acesso, relação e soberania;
 - eventos marítimos `SIMULATION` com seleção determinística por semente e resolução tardia;
 - precedência documental: em `GUIDED`, observações históricas exatas preservam o timing documentado;
 - reserva segregada opcional contra `MAJOR_PROVISION_LOSS`, sem criação de provisões;
@@ -63,10 +84,12 @@ O fechamento do MVP está em `docs/mvp-gate.md`. O fechamento documental do reto
 - compra/venda somente em mercados documentados e institucionalmente acessíveis;
 - objetivos e encerramento explícito do MVP em Calecute;
 - persistência JSON versionada e round-trip de save/load;
+- estado histórico objetivo derivado de dados temporais + data da sessão, sem duplicação artificial no save;
+- golden state determinístico de 31/12/1505;
 - mapa de runtime em Pygame e referência cartográfica programática com costa real;
 - interface Pygame com mapa, porto/data/navio, capital/carga, serviços, acesso, informação, relações, mercado, armada, escala, espera, rotas, planejamento logístico, proteção de provisões e eventos;
 - modo `HISTORICAL` e modo `TECHNICAL` separado para testes de integração;
-- testes automatizados, smoke tests, baterias sintéticas por arquétipos e capturas de interface no GitHub Actions.
+- testes automatizados, smoke tests, baterias sintéticas por arquétipos, seeds sentinela e capturas de interface no GitHub Actions.
 
 ### Retorno P1
 
@@ -85,15 +108,29 @@ As ações one-shot do retorno reutilizam `information_history`, já persistido 
 
 A wave19 concluiu **18/18 estados elegíveis, com zero blockers, todos em `GUIDED` até BRG em 25/04/1499**. O baseline funcional pós-retorno é o commit `47fb82baad1289077c048576f3bc52815d6b192f`; a validação pós-integração no `main` foi integralmente verde no GitHub Actions run `34118123204`.
 
+### Estado temporal 1500–1505
+
+A expansão do domínio após o retorno não é uma campanha única artificial. `expedition_events.csv` registra acontecimentos documentais por expedição e `node_state_events.csv` projeta efeitos persistentes por data.
+
+O contrato temporal preserva três regras centrais:
+
+1. transições posteriores não podem retroagir para campanhas anteriores;
+2. campos não alterados por um evento preservam o estado anterior;
+3. eventos `RANGE` tornam-se seguramente disponíveis no limite superior da janela quando usados por consultas conservadoras.
+
+No freeze de 31/12/1505, Quiloa, Sofala, Anjediva e Cananor apresentam as presenças fortificadas/guarnições documentadas pelas respectivas tranches; Cochim herda forte e guarnição de 1503 sem duplicação; Mombaça não recebe presença fortificada persistente apenas pelo ataque de agosto de 1505. Em todos esses casos, presença portuguesa e soberania territorial permanecem dimensões distintas.
+
 ## Arquitetura
 
-O primeiro jogável utiliza **Python 3.12 + pygame-ce**, com núcleo de domínio independente da camada gráfica. Dados históricos ficam em `data/`; parâmetros experimentais ficam em `simulation/`.
+O jogável de referência utiliza **Python 3.12 + pygame-ce**, com núcleo de domínio independente da camada gráfica. Dados históricos ficam em `data/`; parâmetros experimentais ficam em `simulation/`.
 
 A permanência em escala não produz efeitos materiais por simples passagem do tempo. Uma atividade documentada como `WATER`, `FOOD`, `CARENING` ou `MAST_REPAIR` registra evidência; seu efeito jogável exige ação explícita e, quando quantificado sem medida histórica, permanece identificado como simulação.
 
 O acesso institucional é distinto do conhecimento. A chegada a um mercado pode torná-lo conhecido sem conceder automaticamente permissão para comerciar. Relações também são independentes: um contato documentado não concede amizade, desconto, crédito ou influência sem evidência própria.
 
 O risco marítimo é explicitamente uma camada de simulação. A mesma seed aplicada ao mesmo estado é reproduzível; seeds diferentes podem produzir resultados distintos. Em cronologia guiada, a evidência histórica controla as datas observadas e somente efeitos compatíveis com esse timing podem operar.
+
+O estado histórico temporal não é copiado para dentro do save como um segundo mundo paralelo. A sessão persiste seu próprio estado e a data; os estados objetivos dos nós são recompostos a partir dos dados canônicos. Esse contrato foi validado pelo round-trip do freeze de 31/12/1505.
 
 ## Estrutura principal
 
@@ -111,6 +148,8 @@ data/
   expeditions.csv
   expedition_routes.csv
   expedition_stops.csv
+  expedition_events.csv
+  node_state_events.csv
   actors.csv
   node_actors.csv
   expedition_epilogue_events.csv
@@ -145,12 +184,14 @@ docs/
   voyage-event-method.md
   interface-method.md
   roadmap.md
+  domain-freeze-1505.md
   mvp-gate.md
   p1-closeout.md
   p1-roadmap-handoff-2026-09-07.md
   return-p1-wave19-results.md
   santa-maria-logistics-p1-func.md
   p1-ui-return-interface-results.md
+  f5-francisco-almeida-1505-handoff.md
   development-log.md
   sources.md
   evidence/
@@ -163,9 +204,11 @@ src/quintoimperio/domain/
   campaign_progress.py
   economy.py
   expedition.py
+  expedition_event.py
   information.py
   knowledge.py
   navigation.py
+  node_state_event.py
   persistence.py
   port.py
   relationship.py
@@ -266,7 +309,13 @@ python tools/render_cartographic_map.py --perspective REFERENCE --output build/m
 
 ## Próximo gate
 
-O P1 está encerrado. O próximo gate é **P2-doc — Cochim e primeiros apoios portugueses no Malabar**, exclusivamente documental antes de qualquer alteração executável. Consultar `docs/roadmap.md`.
+O desenvolvimento funcional F1–F5 até 31/12/1505 está integrado. O gate corrente é **issue #136 — Python 1505 GREEN: domain freeze e handoff para Godot**.
+
+A sequência obrigatória é:
+
+`domain-freeze-1505 → sincronização README/roadmap/Diário → CI/PR do freeze → CI pós-merge no main → fechamento da #118 → abertura da frente Godot`.
+
+A migração para Godot **ainda não começou**. Ela somente deverá ser aberta depois que a issue #136 e a issue-mãe #118 estiverem encerradas sem lacuna `BLOCKING`.
 
 ## Fontes de dados
 
