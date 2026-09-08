@@ -1,0 +1,44 @@
+name: Godot parity smoke
+
+on:
+  push:
+    branches: [main, godot-g0-138]
+    paths:
+      - "godot/**"
+      - "data/**"
+      - "simulation/**"
+      - ".github/workflows/godot-parity.yml"
+  pull_request:
+    paths:
+      - "godot/**"
+      - "data/**"
+      - "simulation/**"
+      - ".github/workflows/godot-parity.yml"
+
+jobs:
+  parity-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.7.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip"
+          zip="$RUNNER_TEMP/godot.zip"
+          dir="$RUNNER_TEMP/godot"
+          curl -L --fail --retry 3 -o "$zip" "$url"
+          echo "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  $zip" | sha256sum -c -
+          mkdir -p "$dir"
+          unzip -q "$zip" -d "$dir"
+          binary="$dir/Godot_v4.7.2-stable_linux.x86_64"
+          chmod +x "$binary"
+          echo "GODOT_BIN=$binary" >> "$GITHUB_ENV"
+
+      - name: Import project headless
+        run: "$GODOT_BIN --headless --path godot --editor --quit"
+
+      - name: Read canonical data through Godot
+        run: "$GODOT_BIN --headless --path godot --script res://parity/parity_cli.gd"

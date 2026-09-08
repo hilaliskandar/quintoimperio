@@ -1,0 +1,20 @@
+; Engine configuration file.
+; Godot 4.7.2-stable is the pinned G0 reference runtime.
+; Edit through the Godot editor only after parity gates are established.
+
+config_version=5
+
+[application]
+
+config/name="Quinto Imperio"
+run/main_scene="res://scenes/bootstrap.tscn"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

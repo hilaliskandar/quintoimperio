@@ -1,0 +1,72 @@
+{
+  "freeze_date": "1505-12-31",
+  "reference": "Python NodeStateEventModel at f4fd140677b7fda49a6f97456fa0b9e6ff83a735",
+  "nodes": {
+    "KIL": {
+      "ok": true,
+      "node_id": "KIL",
+      "institutional_presence": "PORTUGUESE_RESIDENT_PRESENCE",
+      "fortification_state": "PORTUGUESE_FORT",
+      "garrison_state": "PORTUGUESE_GARRISON",
+      "access_state": "CONTROLLED",
+      "relationship_state": "TENSE",
+      "sovereignty_note": "A intervenção portuguesa altera coercivamente a ordem política local de Quiloa, mas este estado não é modelado como anexação territorial ou soberania portuguesa automática.",
+      "applied_event_ids": ["KIL1505_E01"]
+    },
+    "SOF": {
+      "ok": true,
+      "node_id": "SOF",
+      "institutional_presence": "FACTORY",
+      "fortification_state": "PORTUGUESE_FORT",
+      "garrison_state": "PORTUGUESE_GARRISON",
+      "access_state": "NEGOTIATED",
+      "relationship_state": "FAVORABLE",
+      "sovereignty_note": "Fortificação e guarnição portuguesas coexistem com autoridade política local; o estado não equivale a anexação territorial portuguesa.",
+      "applied_event_ids": ["SOF1505_E01", "SOF1505_E02"]
+    },
+    "ANJ": {
+      "ok": true,
+      "node_id": "ANJ",
+      "institutional_presence": "PORTUGUESE_RESIDENT_PRESENCE",
+      "fortification_state": "PORTUGUESE_FORT",
+      "garrison_state": "PORTUGUESE_GARRISON",
+      "access_state": "CONTROLLED",
+      "relationship_state": "TENSE",
+      "sovereignty_note": "A presença fortificada portuguesa em Anjediva não é convertida automaticamente em soberania territorial portuguesa sobre a ilha ou sua região política envolvente.",
+      "applied_event_ids": ["ANJ1505_E01"]
+    },
+    "CAN": {
+      "ok": true,
+      "node_id": "CAN",
+      "institutional_presence": "FACTORY_REORGANIZED",
+      "fortification_state": "PORTUGUESE_FORT",
+      "garrison_state": "PORTUGUESE_GARRISON",
+      "access_state": "NEGOTIATED",
+      "relationship_state": "TENSE",
+      "sovereignty_note": "Soberania permanece com Kolathunad / Kolathiri; fortificação e guarnição portuguesas resultam de acesso negociado e não de anexação.",
+      "applied_event_ids": ["CAN1501_E01", "CAN1501_E02", "CAN1502_E01", "CAN1505_E01"]
+    },
+    "COC": {
+      "ok": true,
+      "node_id": "COC",
+      "institutional_presence": "FACTORY_RESTORED",
+      "fortification_state": "PORTUGUESE_FORT",
+      "garrison_state": "PORTUGUESE_GARRISON",
+      "access_state": "NEGOTIATED",
+      "relationship_state": "FAVORABLE",
+      "sovereignty_note": "Guarnição portuguesa residente não altera a soberania local de Cochim.",
+      "applied_event_ids": ["COC1500_E01", "COC1502_E01", "COC1503_E01", "COC1503_E02", "COC1503_E03", "COC1503_E04"]
+    },
+    "MOM": {
+      "ok": true,
+      "node_id": "MOM",
+      "institutional_presence": "NONE",
+      "fortification_state": "NONE",
+      "garrison_state": "NONE",
+      "access_state": "FOREIGN_NEGOTIATED",
+      "relationship_state": "UNESTABLISHED",
+      "sovereignty_note": "Cidade-Estado suaíli",
+      "applied_event_ids": []
+    }
+  }
+}

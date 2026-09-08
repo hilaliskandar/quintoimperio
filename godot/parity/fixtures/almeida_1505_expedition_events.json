@@ -1,0 +1,49 @@
+{
+  "expedition_id": "EXP_ALMEIDA_1505",
+  "ordered_event_ids": [
+    "ALM1505_E01",
+    "ALM1505_E02",
+    "ALM1505_E03",
+    "ALM1505_E04",
+    "ALM1505_E05"
+  ],
+  "availability": {
+    "1505-02-26": [],
+    "1505-02-27": ["ALM1505_E01"],
+    "1505-03-03": ["ALM1505_E01", "ALM1505_E02"],
+    "1505-03-25": ["ALM1505_E01", "ALM1505_E02", "ALM1505_E03"],
+    "1505-10-30": ["ALM1505_E01", "ALM1505_E02", "ALM1505_E03"],
+    "1505-10-31": ["ALM1505_E01", "ALM1505_E02", "ALM1505_E03", "ALM1505_E04"],
+    "1505-12-15": ["ALM1505_E01", "ALM1505_E02", "ALM1505_E03", "ALM1505_E04"],
+    "1505-12-16": ["ALM1505_E01", "ALM1505_E02", "ALM1505_E03", "ALM1505_E04", "ALM1505_E05"]
+  },
+  "selected_fields": {
+    "ALM1505_E01": {
+      "event_type": "ROYAL_APPOINTMENT",
+      "origin_node": null,
+      "destination_node": null,
+      "date_precision": "EXACT"
+    },
+    "ALM1505_E03": {
+      "event_type": "FLEET_DEPARTURE",
+      "origin_node": "LIS",
+      "destination_node": null,
+      "date_precision": "EXACT"
+    },
+    "ALM1505_E04": {
+      "event_type": "VICEROYAL_AUTHORITY_ACTIVE_IN_INDIA",
+      "origin_node": "CAN",
+      "destination_node": "CAN",
+      "date_precision": "RANGE",
+      "date_from": "1505-10-01",
+      "date_to": "1505-10-31"
+    },
+    "ALM1505_E05": {
+      "event_type": "PRESENCE_IN_COCHIN",
+      "origin_node": "COC",
+      "destination_node": "COC",
+      "date_precision": "EXACT",
+      "date_from": "1505-12-16"
+    }
+  }
+}
